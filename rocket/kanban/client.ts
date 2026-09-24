@@ -2,6 +2,7 @@
 import { rocket } from "/js/datastar-rocket.js";
 import { installFlip } from "../../core/flip";
 import { insertionBefore } from "../../core/insertion-target";
+import { keyMatches } from "../../core/keyboard";
 import { installPointerDrag } from "../../core/pointer-drag";
 import { kanbanContract, kanbanKeyboardConfig, type KanbanMoveDetail } from "../../contracts/kanban";
 
@@ -9,16 +10,6 @@ type Target = { col: number; before: string; lane: HTMLElement };
 
 function datasetKey(slot: string): keyof DOMStringMap {
   return `key${slot[0]!.toUpperCase()}${slot.slice(1)}` as keyof DOMStringMap;
-}
-
-function keyMatches(value: string, key: string, event: KeyboardEvent): boolean {
-  const parts = value.split("+");
-  const base = parts.pop() ?? "";
-  const alt = parts.some((part) => part.toLowerCase() === "alt");
-  const shift = parts.some((part) => part.toLowerCase() === "shift");
-  const command = parts.some((part) => ["cmd", "ctrl", "meta"].includes(part.toLowerCase()));
-  const hasCommand = event.metaKey || event.ctrlKey;
-  return base === key && event.altKey === alt && event.shiftKey === shift && hasCommand === command;
 }
 
 rocket(kanbanContract.tag, {
@@ -161,27 +152,27 @@ rocket(kanbanContract.tag, {
       const card = (keyEvent.target as HTMLElement).closest<HTMLElement>(kanbanContract.selectors.card);
       const itemId = card?.dataset.kanbanCard;
       if (!card || !itemId) return;
-      if (keyboard.cancel.some((key) => keyMatches(key, keyEvent.key, keyEvent))) {
+      if (keyboard.cancel.some((key) => keyMatches(key, keyEvent))) {
         if (staged) event.preventDefault();
         cancelStaged();
         clearDragging();
         return;
       }
-      if (keyboard.selectNext.some((key) => keyMatches(key, keyEvent.key, keyEvent))) {
+      if (keyboard.selectNext.some((key) => keyMatches(key, keyEvent))) {
         event.preventDefault();
         const all = cards();
         select(all[Math.min(all.length - 1, Math.max(0, all.indexOf(card) + 1))]);
         return;
       }
-      if (keyboard.selectPrevious.some((key) => keyMatches(key, keyEvent.key, keyEvent))) {
+      if (keyboard.selectPrevious.some((key) => keyMatches(key, keyEvent))) {
         event.preventDefault();
         const all = cards();
         select(all[Math.max(0, all.indexOf(card) - 1)]);
         return;
       }
-      const laneDirection = keyboard.selectLeft.some((key) => keyMatches(key, keyEvent.key, keyEvent))
+      const laneDirection = keyboard.selectLeft.some((key) => keyMatches(key, keyEvent))
         ? -1
-        : keyboard.selectRight.some((key) => keyMatches(key, keyEvent.key, keyEvent))
+        : keyboard.selectRight.some((key) => keyMatches(key, keyEvent))
           ? 1
           : 0;
       if (laneDirection) {
@@ -197,14 +188,14 @@ rocket(kanbanContract.tag, {
         select(targetCards[Math.min(targetCards.length - 1, Math.max(0, row))]);
         return;
       }
-      const direction = keyboard.moveLeft.some((key) => keyMatches(key, keyEvent.key, keyEvent))
+      const direction = keyboard.moveLeft.some((key) => keyMatches(key, keyEvent))
         ? -1
-        : keyboard.moveRight.some((key) => keyMatches(key, keyEvent.key, keyEvent))
+        : keyboard.moveRight.some((key) => keyMatches(key, keyEvent))
           ? 1
           : 0;
-      const rowDirection = keyboard.moveUp.some((key) => keyMatches(key, keyEvent.key, keyEvent))
+      const rowDirection = keyboard.moveUp.some((key) => keyMatches(key, keyEvent))
         ? -1
-        : keyboard.moveDown.some((key) => keyMatches(key, keyEvent.key, keyEvent))
+        : keyboard.moveDown.some((key) => keyMatches(key, keyEvent))
           ? 1
           : 0;
       if (!direction && !rowDirection) return;
