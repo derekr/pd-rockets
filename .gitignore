@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+
+# Local Go build output.
+examples/go/rocket-kit-go-example

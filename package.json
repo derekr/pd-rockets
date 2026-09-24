@@ -1,0 +1,25 @@
+{
+  "name": "rocket-kit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:client": "bun run build-client.ts",
+    "bundle:browser": "bun run build:client && bun run scripts/package-browser.ts",
+    "demo": "bun run build:client && bun run examples/hono-datastar/server.tsx",
+    "build:site": "bun run build:client && bun run site/build.tsx",
+    "serve:site": "bun run build:site && bun run site/serve.ts",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "hono": "^4"
+  },
+  "devDependencies": {
+    "bun-types": "^1.4.2",
+    "oxfmt": "0.68.0",
+    "typescript": "^5"
+  }
+}

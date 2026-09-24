@@ -1,0 +1,166 @@
+:root {
+  color-scheme: light dark;
+  font:
+    16px/1.4 system-ui,
+    sans-serif;
+}
+
+body {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+section,
+rocket-sortable-list {
+  display: block;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 0.75rem;
+}
+
+.kanban {
+  min-width: 0;
+}
+
+.kanban rocket-kanban-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+[data-kanban-lane-cards],
+rocket-sortable-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+[data-kanban-card],
+[data-sortable-item] {
+  padding: 0.75rem;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 0.5rem;
+  background: Canvas;
+  cursor: grab;
+  transition:
+    opacity 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+[data-kanban-card-main] {
+  all: unset;
+  cursor: inherit;
+}
+
+[data-dragging] {
+  opacity: 0.45;
+  cursor: grabbing;
+}
+
+[data-drag-preview] {
+  margin: 0;
+  opacity: 0.9;
+  pointer-events: none;
+  box-shadow: 0 12px 30px color-mix(in srgb, CanvasText 20%, transparent);
+  transform: rotate(1deg) scale(1.02);
+}
+
+body:has([data-drag-active]) {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+[data-drop-active] {
+  background: color-mix(in srgb, Highlight 8%, transparent);
+}
+
+[data-kanban-card],
+[data-sortable-item],
+[data-kanban-lane-cards],
+rocket-sortable-list {
+  position: relative;
+}
+
+[data-kanban-lane-cards] {
+  min-height: 12px;
+}
+
+:is([data-kanban-card], [data-sortable-item])[data-drop-before]::before,
+:is([data-kanban-lane-cards], rocket-sortable-list)[data-drop-end]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 3px;
+  background: Highlight;
+  pointer-events: none;
+  z-index: 2;
+}
+
+:is([data-kanban-card], [data-sortable-item])[data-drop-before]::before {
+  top: -7px;
+}
+
+:is([data-kanban-lane-cards], rocket-sortable-list)[data-drop-end]::after {
+  bottom: -7px;
+}
+
+[data-selected] {
+  outline: 2px solid Highlight;
+  outline-offset: 2px;
+}
+
+.demo-block {
+  margin-block: 2rem;
+}
+
+.docs-shell {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.docs-header {
+  max-width: 680px;
+  margin-block: 1rem 3rem;
+}
+
+.eyebrow {
+  color: Highlight;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.docs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.docs-card {
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 0.75rem;
+}
+
+pre {
+  overflow: auto;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, CanvasText 8%, Canvas);
+}
+
+.docs-note {
+  margin-block: 3rem 1rem;
+  color: color-mix(in srgb, currentColor 70%, transparent);
+}
+
+@media (max-width: 700px) {
+  .docs-grid {
+    grid-template-columns: 1fr;
+  }
+}

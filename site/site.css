@@ -1,0 +1,598 @@
+/* Docs skin inspired by the warm graph-paper console palette of Kanbananza.
+   This stylesheet is site-only; the server examples keep their own CSS. */
+:root {
+  color-scheme: light;
+  --bg: #f2efdf;
+  --panel: #f8f5e8;
+  --raised: #fffaf0;
+  --card: #fffdf6;
+  --line: #c9c2a8;
+  --text: #20362d;
+  --text-2: #56665d;
+  --text-3: #858b7d;
+  --yellow: #e8b84f;
+  --blue: oklch(0.49 0.09 178);
+  --shadow: 4px 4px 0 color-mix(in srgb, var(--text) 22%, transparent);
+  font:
+    16px/1.55 ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  min-height: 100dvh;
+  background:
+    linear-gradient(color-mix(in srgb, var(--text) 2.5%, transparent) 1px, transparent 1px) 0 0 / 100% 24px,
+    linear-gradient(90deg, color-mix(in srgb, var(--text) 2%, transparent) 1px, transparent 1px) 0 0 / 24px 100%,
+    var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: var(--blue);
+  text-underline-offset: 3px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.site-frame {
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  min-height: 78px;
+  padding: 12px clamp(20px, 4vw, 60px);
+  border-bottom: 2px solid var(--text);
+  background: var(--panel);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  font:
+    800 19px/1 ui-monospace,
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+  letter-spacing: -0.06em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brand-mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 2px solid var(--text);
+  border-radius: 5px;
+  background: var(--yellow);
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--text) 22%, transparent);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.site-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(12px, 2vw, 30px);
+  margin-left: auto;
+}
+
+.site-header nav a,
+.site-footer a {
+  color: var(--text);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.site-header nav a:hover,
+.site-footer a:hover,
+.docs-sidebar a:hover {
+  color: var(--blue);
+  text-decoration: underline;
+}
+
+.site-edition,
+.sidebar-label,
+.diagram-label,
+.section-kicker,
+.example-head,
+.site-footer {
+  font:
+    750 11px/1.4 ui-monospace,
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+  letter-spacing: 0.08em;
+}
+
+.site-edition {
+  padding-left: 20px;
+  border-left: 1px solid var(--line);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.docs-shell {
+  max-width: none;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.6fr);
+  gap: clamp(30px, 5vw, 90px);
+  align-items: center;
+  padding: clamp(55px, 7vw, 100px) clamp(20px, 5vw, 80px);
+  border-bottom: 2px solid var(--text);
+}
+
+.eyebrow,
+.section-kicker {
+  margin: 0 0 18px;
+  color: var(--blue);
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--text);
+  letter-spacing: -0.045em;
+}
+
+h1,
+h2 {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+.hero h1 {
+  max-width: 880px;
+  margin: 0;
+  font-size: clamp(2.8rem, 5.7vw, 5.7rem);
+  line-height: 1.08;
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--blue);
+}
+
+.hero-lead {
+  max-width: 650px;
+  margin: 26px 0;
+  color: var(--text-2);
+  font-size: 1.15rem;
+  line-height: 1.65;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+}
+
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  padding: 11px 17px;
+  border: 2px solid var(--text);
+  background: var(--yellow);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.button-link:active {
+  translate: 2px 2px;
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--text) 22%, transparent);
+}
+
+.text-link {
+  font-weight: 700;
+}
+
+.hero-diagram {
+  padding: 25px;
+  border: 2px solid var(--text);
+  background: var(--raised);
+  box-shadow: 7px 7px 0 color-mix(in srgb, var(--text) 18%, transparent);
+  transform: rotate(1deg);
+}
+
+.diagram-label {
+  color: var(--text-2);
+}
+
+.hero-diagram ol {
+  margin: 22px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hero-diagram li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--line);
+  font-weight: 700;
+}
+
+.hero-diagram li b {
+  color: var(--blue);
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+.hero-diagram p {
+  margin-bottom: 0;
+  color: var(--text-2);
+  font-size: 0.9rem;
+}
+
+.docs-layout {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 80px);
+  padding: 0 clamp(20px, 5vw, 80px);
+}
+
+.docs-sidebar nav {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 8px;
+  padding-top: 55px;
+}
+
+.sidebar-label {
+  margin-bottom: 14px;
+  color: var(--text-3);
+}
+
+.docs-sidebar a {
+  padding: 5px 0;
+  color: var(--text-2);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.docs-sidebar a:is(:first-of-type, :nth-of-type(6), :last-child) {
+  margin-top: 8px;
+  color: var(--text);
+  font-weight: 750;
+}
+
+.docs-content {
+  min-width: 0;
+  max-width: 1040px;
+}
+
+.docs-section {
+  padding: 65px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  scroll-margin-top: 22px;
+}
+
+.docs-section h2 {
+  margin: 0 0 22px;
+  font-size: clamp(1.7rem, 3vw, 2.75rem);
+  line-height: 1.18;
+}
+
+.docs-section h3 {
+  margin: 36px 0 16px;
+  font-size: 1.25rem;
+  scroll-margin-top: 24px;
+}
+
+.docs-section p:not(.section-kicker) {
+  max-width: 760px;
+  color: var(--text-2);
+  line-height: 1.75;
+}
+
+.docs-section code,
+.site-footer,
+.example-head,
+kbd,
+pre {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+.docs-section p code,
+.docs-section td code {
+  padding: 2px 4px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 0.88em;
+  overflow-wrap: anywhere;
+}
+
+.docs-section pre {
+  max-width: 100%;
+  margin: 24px 0;
+  padding: 20px 22px;
+  overflow: auto;
+  border: 1px solid var(--text);
+  border-radius: 0;
+  background: var(--text);
+  color: #f1f2e8;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.docs-section pre code {
+  font-size: inherit;
+}
+
+.layer-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 34px;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.layer-strip span {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  background: var(--panel);
+}
+
+.layer-strip b {
+  font:
+    750 0.85rem ui-monospace,
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+}
+
+.layer-strip small {
+  color: var(--text-2);
+}
+
+.future-strip {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.docs-section .callout {
+  max-width: none;
+  margin: 24px 0;
+  padding: 14px 18px;
+  border-left: 4px solid var(--yellow);
+  background: var(--panel);
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-bottom: 2px solid var(--text-2);
+  border-radius: 3px;
+  background: var(--raised);
+  color: var(--text);
+  font-size: 0.8em;
+  text-align: center;
+}
+
+.example-frame {
+  margin: 28px 0;
+  border: 2px solid var(--text);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.example-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--text);
+  background: var(--yellow);
+  color: var(--text);
+}
+
+.example-head > span:last-child {
+  margin-left: auto;
+  color: var(--text-2);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--text);
+  border-radius: 50%;
+  background: var(--blue);
+}
+
+.example-body {
+  padding: 20px;
+}
+
+.example-body .kanban rocket-kanban-board {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.example-body [data-kanban-lane],
+.example-body rocket-sortable-list {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--raised);
+}
+
+.example-body [data-kanban-lane] h2 {
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  font:
+    750 0.85rem ui-monospace,
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+  letter-spacing: 0;
+}
+
+.example-body [data-kanban-card],
+.example-body [data-sortable-item] {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--text) 10%, transparent);
+  color: var(--text);
+  touch-action: none;
+}
+
+.example-body :is([data-kanban-card], [data-sortable-item])[data-drop-before]::before,
+.example-body :is([data-kanban-lane-cards], rocket-sortable-list)[data-drop-end]::after {
+  background: var(--blue);
+}
+
+.example-body [data-drop-active] {
+  background: color-mix(in srgb, var(--blue) 8%, var(--raised));
+}
+
+.list-frame rocket-sortable-list {
+  max-width: 540px;
+  margin-inline: auto;
+}
+
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--raised);
+  font-size: 0.88rem;
+  text-align: left;
+}
+
+th,
+td {
+  padding: 13px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+th {
+  background: var(--panel);
+  color: var(--text);
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+td small {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--text-2);
+}
+
+.last-section {
+  border: 0;
+}
+
+.site-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 25px clamp(20px, 5vw, 80px);
+  border-top: 2px solid var(--text);
+  background: var(--panel);
+  color: var(--text-2);
+}
+
+@media (max-width: 950px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-diagram {
+    max-width: 450px;
+    transform: none;
+  }
+
+  .docs-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .docs-sidebar {
+    display: none;
+  }
+}
+
+@media (max-width: 650px) {
+  .site-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .site-header nav {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .site-edition {
+    margin-left: auto;
+  }
+
+  .layer-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .example-body .kanban rocket-kanban-board {
+    grid-template-columns: 1fr;
+  }
+
+  .example-head > span:last-child {
+    display: none;
+  }
+
+  .docs-section {
+    padding-block: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

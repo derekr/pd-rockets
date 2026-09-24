@@ -1,0 +1,76 @@
+type BoardTarget = { cardId: string; col: number; before: string };
+type ListTarget = { itemId: string; before: string };
+
+const kanbanRoot = document.querySelector<HTMLElement>("#kanban-demo");
+const sortableRoot = document.querySelector<HTMLElement>("#sortable-demo");
+if (!kanbanRoot || !sortableRoot) throw new Error("rocket kit site: missing example root");
+
+const kanbanModel = kanbanRoot.cloneNode(true) as HTMLElement;
+const sortableModel = sortableRoot.cloneNode(true) as HTMLElement;
+
+function signalPayload(body: string): Record<string, unknown> {
+  const payload = JSON.parse(body) as Record<string, unknown>;
+  const signals = payload.signals;
+  return signals && typeof signals === "object" ? (signals as Record<string, unknown>) : payload;
+}
+
+function moveCard(target: BoardTarget): void {
+  const card = kanbanModel.querySelector<HTMLElement>(`[data-kanban-card="${CSS.escape(target.cardId)}"]`);
+  const lane = kanbanModel.querySelector<HTMLElement>(`[data-kanban-lane][data-col="${target.col}"]`);
+  const list = lane?.querySelector<HTMLElement>("[data-kanban-lane-cards]");
+  if (!card || !list) return;
+  card.remove();
+  const before = target.before
+    ? list.querySelector<HTMLElement>(`[data-kanban-card="${CSS.escape(target.before)}"]`)
+    : null;
+  list.insertBefore(card, before);
+}
+
+function moveListItem(target: ListTarget): void {
+  const item = sortableModel.querySelector<HTMLElement>(`[data-sortable-item="${CSS.escape(target.itemId)}"]`);
+  const before = target.before
+    ? sortableModel.querySelector<HTMLElement>(`[data-sortable-item="${CSS.escape(target.before)}"]`)
+    : null;
+  const list = item?.parentElement;
+  if (!item || !list) return;
+  list.insertBefore(item, before);
+}
+
+function patchResponse(selector: string, model: HTMLElement): Response {
+  const lines = ["event: datastar-patch-elements", `data: selector ${selector}`, "data: mode outer"];
+  for (const line of model.outerHTML.split("\n")) lines.push(`data: elements ${line}`);
+  lines.push("", "");
+  return new Response(lines.join("\n"), {
+    headers: {
+      "Cache-Control": "no-store",
+      "Content-Type": "text/event-stream",
+    },
+  });
+}
+
+const originalFetch = window.fetch.bind(window);
+const interceptFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const request = new Request(input, init);
+  const url = new URL(request.url);
+  if (request.method !== "POST") return originalFetch(input, init);
+
+  if (url.pathname.endsWith("/list-move")) {
+    moveListItem(signalPayload(await request.text()) as unknown as ListTarget);
+    return patchResponse("#sortable-demo", sortableModel);
+  }
+
+  if (url.pathname.endsWith("/move")) {
+    moveCard(signalPayload(await request.text()) as unknown as BoardTarget);
+    return patchResponse("#kanban-demo", kanbanModel);
+  }
+
+  return originalFetch(input, init);
+};
+window.fetch = interceptFetch as typeof window.fetch;
+
+document.addEventListener("rocket-kanban-select", (event) => {
+  const cardId = (event as CustomEvent<{ cardId: string }>).detail.cardId;
+  document.querySelectorAll<HTMLElement>("[data-kanban-card]").forEach((card) => {
+    card.toggleAttribute("data-selected", card.dataset.kanbanCard === cardId);
+  });
+});

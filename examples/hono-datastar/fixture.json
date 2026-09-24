@@ -1,0 +1,24 @@
+{
+  "columns": [
+    {
+      "id": 0,
+      "label": "Backlog",
+      "cards": [{ "id": "card-a", "title": "Explore the contract" }]
+    },
+    {
+      "id": 1,
+      "label": "Doing",
+      "cards": [{ "id": "card-b", "title": "Build the Rocket host" }]
+    },
+    {
+      "id": 2,
+      "label": "Done",
+      "cards": [{ "id": "card-c", "title": "Keep the browser bundle vendorable" }]
+    }
+  ],
+  "list": [
+    { "id": "list-a", "label": "First item" },
+    { "id": "list-b", "label": "Second item" },
+    { "id": "list-c", "label": "Third item" }
+  ]
+}
