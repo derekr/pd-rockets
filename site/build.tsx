@@ -285,6 +285,7 @@ const page = renderHTML(
             <a href="#reference">Reference</a>
             <a href="#examples">Examples</a>
             <a href="#try-it">Run locally</a>
+            <a href="https://github.com/derekr/pd-rockets">GitHub ↗</a>
           </nav>
         </header>
 
