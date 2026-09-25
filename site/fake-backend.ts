@@ -12,7 +12,9 @@ const groupRoot = document.querySelector<HTMLElement>("#group-demo");
 const bentoRoot = document.querySelector<HTMLElement>("#bento-demo");
 const treeRoot = document.querySelector<HTMLElement>("#tree-demo");
 const nestedRoot = document.querySelector<HTMLElement>("#nested-demo");
-if (!kanbanRoot || !sortableRoot || !groupRoot || !bentoRoot || !treeRoot || !nestedRoot)
+const customRoot = document.querySelector<HTMLElement>("#custom-demo");
+const trashRoot = document.querySelector<HTMLElement>("#trash-demo");
+if (!kanbanRoot || !sortableRoot || !groupRoot || !bentoRoot || !treeRoot || !nestedRoot || !customRoot || !trashRoot)
   throw new Error("rocket kit site: missing example root");
 
 const kanbanModel = kanbanRoot.cloneNode(true) as HTMLElement;
@@ -21,6 +23,8 @@ const groupModel = groupRoot.cloneNode(true) as HTMLElement;
 const bentoModel = bentoRoot.cloneNode(true) as HTMLElement;
 const treeModel = treeRoot.cloneNode(true) as HTMLElement;
 const nestedModel = nestedRoot.cloneNode(true) as HTMLElement;
+const customModel = customRoot.cloneNode(true) as HTMLElement;
+const trashModel = trashRoot.cloneNode(true) as HTMLElement;
 
 function signalPayload(body: string): Record<string, unknown> {
   const payload = JSON.parse(body) as Record<string, unknown>;
@@ -28,16 +32,21 @@ function signalPayload(body: string): Record<string, unknown> {
   return signals && typeof signals === "object" ? (signals as Record<string, unknown>) : payload;
 }
 
-function moveCard(target: BoardTarget): void {
-  const card = kanbanModel.querySelector<HTMLElement>(`[data-kanban-card="${CSS.escape(target.cardId)}"]`);
-  const lane = kanbanModel.querySelector<HTMLElement>(`[data-kanban-lane][data-col="${target.col}"]`);
+function moveCard(target: BoardTarget, model = kanbanModel): void {
+  if (typeof target?.cardId !== "string" || !Number.isInteger(target.col) || typeof target.before !== "string") return;
+  const card = model.querySelector<HTMLElement>(`[data-kanban-card="${CSS.escape(target.cardId)}"]`);
+  const lane = model.querySelector<HTMLElement>(`[data-kanban-lane][data-col="${target.col}"]`);
   const list = lane?.querySelector<HTMLElement>("[data-kanban-lane-cards]");
   if (!card || !list) return;
-  card.remove();
   const before = target.before
     ? list.querySelector<HTMLElement>(`[data-kanban-card="${CSS.escape(target.before)}"]`)
     : null;
+  if (target.before && !before) return;
   list.insertBefore(card, before);
+  for (const lane of model.querySelectorAll<HTMLElement>("[data-kanban-lane]")) {
+    const count = lane.querySelector<HTMLElement>(".signal-lane-count");
+    if (count) count.textContent = String(lane.querySelectorAll("[data-kanban-card]").length).padStart(2, "0");
+  }
 }
 
 function moveListItem(target: ListTarget, model = sortableModel): void {
@@ -200,6 +209,35 @@ const interceptFetch = async (input: RequestInfo | URL, init?: RequestInit): Pro
     return patchResponse("#sortable-demo", sortableModel);
   }
 
+  if (url.pathname.endsWith("/custom-move")) {
+    showActivity("Datastar", "@post('./custom-move')");
+    moveCard(signalPayload(await request.text()) as unknown as BoardTarget, customModel);
+    return patchResponse("#custom-demo", customModel);
+  }
+
+  if (url.pathname.endsWith("/trash-move")) {
+    showActivity("Datastar", "@post('./trash-move')");
+    const target = signalPayload(await request.text()) as unknown as GroupTarget;
+    if (target?.fromList === "tropes" && target.toList === "bin" && typeof target.itemId === "string") {
+      const item = trashModel.querySelector<HTMLElement>(
+        `[data-drop-list="tropes"] [data-drag-item="${CSS.escape(target.itemId)}"]`,
+      );
+      if (item) {
+        item.remove();
+        const count = trashModel.querySelector<HTMLElement>("[data-trope-count]");
+        if (count) count.textContent = String(trashModel.querySelectorAll("[data-drag-item]").length).padStart(2, "0");
+        document.dispatchEvent(new Event("site:trash-confirmed"));
+        const burst = document.querySelector<HTMLElement>(".trash-poof");
+        burst?.replaceChildren();
+        const spark = document.createElement("span");
+        spark.textContent = "✳ POOF!";
+        burst?.append(spark);
+        spark.addEventListener("animationend", () => spark.remove(), { once: true });
+      }
+    }
+    return patchResponse("#trash-demo", trashModel);
+  }
+
   if (url.pathname.endsWith("/move")) {
     showActivity("Datastar", "@post('./move')");
     moveCard(signalPayload(await request.text()) as unknown as BoardTarget);
@@ -212,7 +250,8 @@ window.fetch = interceptFetch as typeof window.fetch;
 
 document.addEventListener("rocket-kanban-select", (event) => {
   const cardId = (event as CustomEvent<{ cardId: string }>).detail.cardId;
-  document.querySelectorAll<HTMLElement>("[data-kanban-card]").forEach((card) => {
+  const board = (event.target as Element).closest("rocket-kanban-board");
+  board?.querySelectorAll<HTMLElement>("[data-kanban-card]").forEach((card) => {
     card.toggleAttribute("data-selected", card.dataset.kanbanCard === cardId);
   });
 });

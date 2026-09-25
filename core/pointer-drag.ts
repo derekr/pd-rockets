@@ -107,6 +107,7 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     item.setAttribute("data-dragging", "true");
     const rect = item.getBoundingClientRect();
     previewOffset = { x: start!.x - rect.left, y: start!.y - rect.top };
+    const customPreview = !!item.querySelector(":scope > template[data-rocket-preview]");
     preview = dragPreviewFor(item);
     preview.removeAttribute("id");
     preview.setAttribute("data-drag-preview", "true");
@@ -118,13 +119,19 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     preview.style.boxSizing = "border-box";
     preview.style.setProperty("--rocket-source-width", `${rect.width}px`);
     preview.style.setProperty("--rocket-source-height", `${rect.height}px`);
-    if (!item.querySelector(":scope > template[data-rocket-preview]")) {
+    if (!customPreview) {
       preview.style.width = `${rect.width}px`;
       preview.style.height = `${rect.height}px`;
     }
     preview.style.pointerEvents = "none";
     preview.style.zIndex = "1000";
     document.body.append(preview);
+    if (customPreview) {
+      previewOffset = {
+        x: Math.min(1, Math.max(0, previewOffset.x / rect.width)) * preview.offsetWidth,
+        y: Math.min(1, Math.max(0, previewOffset.y / rect.height)) * preview.offsetHeight,
+      };
+    }
     options.host.setPointerCapture?.(pointer.pointerId);
   };
   const onDown = (event: Event): void => {

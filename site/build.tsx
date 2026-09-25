@@ -41,10 +41,30 @@ if (!keyboardHelpBundle.success || !keyboardHelpBundle.outputs[0]) {
   throw new AggregateError(keyboardHelpBundle.logs, "rocket-kit: keyboard help build failed");
 }
 const keyboardHelp = await keyboardHelpBundle.outputs[0].text();
+const customAtmosphereBundle = await Bun.build({
+  entrypoints: [join(import.meta.dir, "custom-atmosphere.ts")],
+  target: "browser",
+  minify: true,
+});
+if (!customAtmosphereBundle.success || !customAtmosphereBundle.outputs[0]) {
+  throw new AggregateError(customAtmosphereBundle.logs, "rocket-kit: custom atmosphere build failed");
+}
+const customAtmosphere = await customAtmosphereBundle.outputs[0].text();
+const trashSparksBundle = await Bun.build({
+  entrypoints: [join(import.meta.dir, "trash-sparks.ts")],
+  target: "browser",
+  minify: true,
+});
+if (!trashSparksBundle.success || !trashSparksBundle.outputs[0]) {
+  throw new AggregateError(trashSparksBundle.logs, "rocket-kit: trash sparks build failed");
+}
+const trashSparks = await trashSparksBundle.outputs[0].text();
 const assetVersion = createHash("sha256")
   .update(bundle)
   .update(backendBundle)
   .update(keyboardHelp)
+  .update(customAtmosphere)
+  .update(trashSparks)
   .update(await readFile(join(import.meta.dir, "site.css")))
   .update(await readFile(join(root, "examples/hono-datastar/demo.css")))
   .digest("hex")
@@ -57,6 +77,88 @@ const kanbanMove: DatastarEventBinding = {
       "$cardId = evt.detail?.['cardId'] ?? null; $col = evt.detail?.['col'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./move')",
   },
 };
+
+const customKanbanMove: DatastarEventBinding = {
+  event: kanbanContract.events.move,
+  attrs: {
+    "data-on:rocket-kanban-move":
+      "$cardId = evt.detail?.['cardId'] ?? null; $col = evt.detail?.['col'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./custom-move')",
+  },
+};
+
+const transmissions = [
+  { id: "signal-01", label: "Chart the quiet sector", code: "MAP / 01", lane: 0, symbol: "✦" },
+  { id: "signal-02", label: "Tune the night antenna", code: "AUDIO / 02", lane: 0, symbol: "◌" },
+  { id: "signal-03", label: "Collect the blue hour", code: "FIELD / 03", lane: 1, symbol: "◈" },
+  { id: "signal-04", label: "Send a postcard to orbit", code: "POST / 04", lane: 1, symbol: "↗" },
+  { id: "signal-05", label: "Leave a light on", code: "BEACON / 05", lane: 2, symbol: "✳" },
+] as const;
+
+function CustomKanban() {
+  const lanes = [
+    { title: "Uncharted", code: "01 / DISCOVER", glyph: "◎" },
+    { title: "In orbit", code: "02 / IN MOTION", glyph: "◐" },
+    { title: "Transmitted", code: "03 / COMPLETE", glyph: "✳" },
+  ];
+  return (
+    <rocket-kanban-board {...customKanbanMove.attrs} aria-label="Signal station task board">
+      <template data-rocket-target="before">
+        <span class="signal-drop-cue">
+          <span>↳</span> TRANSMIT HERE
+        </span>
+      </template>
+      <template data-rocket-target="end">
+        <span class="signal-drop-cue">
+          <span>↳</span> ADD TO CHANNEL
+        </span>
+      </template>
+      {lanes.map((lane, index) => (
+        <section data-kanban-lane="" data-col={index} aria-label={lane.title}>
+          <div class="signal-lane-head">
+            <span class="signal-lane-glyph" aria-hidden="true">
+              {lane.glyph}
+            </span>
+            <div>
+              <span class="signal-lane-code">{lane.code}</span>
+              <h3>{lane.title}</h3>
+            </div>
+            <span class="signal-lane-count">
+              {String(transmissions.filter((card) => card.lane === index).length).padStart(2, "0")}
+            </span>
+          </div>
+          <div data-kanban-lane-cards="">
+            {transmissions
+              .filter((card) => card.lane === index)
+              .map((card) => (
+                <article class="signal-card" data-kanban-card={card.id} tabindex={0}>
+                  <span class="signal-card-top">
+                    <span>{card.code}</span>
+                    <span aria-hidden="true">{card.symbol}</span>
+                  </span>
+                  <button type="button" data-kanban-card-main="" tabindex={-1}>
+                    {card.label}
+                  </button>
+                  <span class="signal-card-foot" aria-hidden="true">
+                    <span>●</span> READY TO ROUTE <span>↗</span>
+                  </span>
+                  <template data-rocket-preview="" class="signal-preview">
+                    <span class="signal-preview-badge">◈ IN TRANSIT</span>
+                    <strong>{card.label}</strong>
+                    <span class="signal-preview-trace" aria-hidden="true">
+                      ·················· ↗
+                    </span>
+                  </template>
+                </article>
+              ))}
+          </div>
+          <p class="signal-lane-tail">
+            END OF CHANNEL <span aria-hidden="true">───</span>
+          </p>
+        </section>
+      ))}
+    </rocket-kanban-board>
+  );
+}
 
 const sortableMove: DatastarEventBinding = {
   event: sortableListContract.events.move,
@@ -100,6 +202,22 @@ const nestedListMove: DatastarEventBinding = {
       "$itemId = evt.detail?.['itemId'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./nested-list-move')",
   },
 };
+
+const trashMove: DatastarEventBinding = {
+  event: dragGroupContract.events.move,
+  attrs: {
+    "data-on:rocket-drag-group-move":
+      "$itemId = evt.detail?.['itemId'] ?? null; $fromList = evt.detail?.['fromList'] ?? null; $toList = evt.detail?.['toList'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./trash-move')",
+  },
+};
+
+const tropes = [
+  { id: "trope-skeleton", label: "A skeleton for one word", stamp: "ALMOST READY", glyph: "▤" },
+  { id: "trope-loading", label: "A loader that never resolves", stamp: "STILL LOADING", glyph: "◌" },
+  { id: "trope-sync", label: "Duplicated logic that drifts", stamp: "OUT OF SYNC", glyph: "≋" },
+  { id: "trope-bundle", label: "Megabytes of JavaScript", stamp: "BUNDLE: HUGE", glyph: "▥" },
+  { id: "trope-browser", label: "Rebuilding the browser in JS", stamp: "DIY PLATFORM", glyph: "▣" },
+] as const;
 
 type Shortcut = { keys: string; action: string };
 
@@ -704,6 +822,115 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                   properties for colors, spacing, and shape; Rocket’s <code>data-*</code> attributes expose the
                   interaction states. There is no mandatory theme or token set.
                 </p>
+                <div class="signal-stage">
+                  <canvas class="signal-atmosphere" aria-hidden="true"></canvas>
+                  <div id="custom-demo" class="signal-content">
+                    <div class="signal-masthead">
+                      <div>
+                        <span class="signal-overline">
+                          ◈ &nbsp; PD / SIGNAL STATION &nbsp; · &nbsp; LIVE EXPERIMENT 008
+                        </span>
+                        <h3>
+                          Make some <em>waves.</em>
+                        </h3>
+                        <p>
+                          Same Kanban Rocket. A different universe. Drag a transmission or move it with the keyboard.
+                        </p>
+                      </div>
+                      <div class="signal-coordinates" aria-hidden="true">
+                        51° / 03′
+                        <br />
+                        STATION ONLINE<span>●</span>
+                      </div>
+                    </div>
+                    <CustomKanban />
+                    <div class="signal-footer">
+                      <span>◉ &nbsp; HTML + CSS / SERVER-RENDERED CARDS</span>
+                      <span>CANVAS ATMOSPHERE · TEMPLATE OUTLETS</span>
+                      <KeyboardHelp
+                        id="keys-custom"
+                        title="Signal station"
+                        shortcuts={[
+                          { keys: "↑ ↓ ← → / h j k l", action: "Focus transmissions" },
+                          { keys: "Alt + ↑ ↓ ← → / h j k l", action: "Stage a move" },
+                          { keys: "Release Alt / Esc", action: "Commit / cancel the move" },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <p>
+                  Move a card between channels: the demo’s page-owned handler updates its model and morphs confirmed
+                  markup over SSE. The moving hologram and destination label are rendered from the two template outlets
+                  below. The animated backdrop is a decorative canvas; cards, focus, and drag targets remain HTML. See
+                  the <a href="./source/site/custom-atmosphere.ts.txt">canvas source ↗</a> and{" "}
+                  <a href="./source/site/site.css.txt">theme CSS ↗</a>.
+                </p>
+                <div class="trash-stage">
+                  <div class="trash-intro">
+                    <div>
+                      <span class="trash-eyebrow">MINI EXPERIMENT / 002</span>
+                      <h3>Delete the clichés.</h3>
+                    </div>
+                    <p>Some SPA tropes deserve the bin. Drag one across, or focus it and use Alt + →.</p>
+                    <KeyboardHelp
+                      id="keys-trash"
+                      title="Trope disposal"
+                      shortcuts={[
+                        { keys: "↑ ↓ / j k", action: "Focus a trope" },
+                        { keys: "Alt + → / l", action: "Stage a move into the bin" },
+                        { keys: "Release Alt / Esc", action: "Dispose / cancel" },
+                      ]}
+                    />
+                  </div>
+                  <canvas class="trash-sparks" aria-hidden="true"></canvas>
+                  <div class="trash-poof" aria-hidden="true"></div>
+                  <div id="trash-demo">
+                    <rocket-drag-group {...trashMove.attrs} aria-label="SPA trope disposal">
+                      <section data-drop-list="tropes" aria-label="SPA tropes">
+                        <span class="trash-region-label">
+                          THE BACKLOG / <span data-trope-count="">05</span> LEFT
+                        </span>
+                        {tropes.map((trope) => (
+                          <article data-drag-item={trope.id} tabindex={0} class="trope-card">
+                            <span class="trope-glyph" aria-hidden="true">
+                              {trope.glyph}
+                            </span>
+                            <span class="trope-copy">
+                              <strong>{trope.label}</strong>
+                              <small>{trope.stamp}</small>
+                            </span>
+                            <span class="trope-handle" aria-hidden="true">
+                              ⠿
+                            </span>
+                            <template data-rocket-preview="" class="trope-preview">
+                              <strong>{trope.label}</strong>
+                              <span>GOOD RIDDANCE ↗</span>
+                            </template>
+                          </article>
+                        ))}
+                      </section>
+                      <section data-drop-list="bin" aria-label="Trash can">
+                        <span class="trash-region-label">THE BETTER WAY / 00 SAVED</span>
+                        <span class="trash-icon" aria-hidden="true">
+                          ⌫
+                        </span>
+                        <strong>Drop the baggage.</strong>
+                        <span>Release to remove it from the model.</span>
+                      </section>
+                      <template data-rocket-target="end">
+                        <span class="trash-target">✳ &nbsp; LET IT GO</span>
+                      </template>
+                    </rocket-drag-group>
+                  </div>
+                </div>
+                <p>
+                  This is a <code>rocket-drag-group</code> with a playful destination. The page handler interprets a
+                  move to <code>bin</code> as deletion, then returns the remaining HTML over SSE. The poof is
+                  decoration; the model change is confirmed by the morph. A short canvas particle burst celebrates the
+                  bin without adding anything to the Rocket core.{" "}
+                  <a href="./source/site/trash-sparks.ts.txt">Particle source ↗</a>
+                </p>
                 <h3>Set shortcuts on the host</h3>
                 <p>
                   This sortable list keeps arrow keys and replaces Vim <kbd>j</kbd>/<kbd>k</kbd> with <kbd>n</kbd>/
@@ -1262,6 +1489,8 @@ cd examples/go && go run .`}</code>
       <script type="module" src={`./fake-backend.js?v=${assetVersion}`}></script>
       <script type="module" src={`./rocket-kit.js?v=${assetVersion}`}></script>
       <script type="module" src={`./keyboard-help.js?v=${assetVersion}`}></script>
+      <script type="module" src={`./custom-atmosphere.js?v=${assetVersion}`}></script>
+      <script type="module" src={`./trash-sparks.js?v=${assetVersion}`}></script>
     </body>
   </html>,
 );
@@ -1287,5 +1516,7 @@ for (const { file } of browserBundles) {
 
 await writeFile(join(output, "fake-backend.js"), backendBundle);
 await writeFile(join(output, "keyboard-help.js"), keyboardHelp);
+await writeFile(join(output, "custom-atmosphere.js"), customAtmosphere);
+await writeFile(join(output, "trash-sparks.js"), trashSparks);
 
 console.error(`built ${join(output, "index.html")}`);

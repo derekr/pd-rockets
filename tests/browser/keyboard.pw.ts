@@ -316,6 +316,13 @@ test("server-rendered template outlets customize pointer preview and target indi
   await page.mouse.move(destination!.x + destination!.width / 2, destination!.y + 2, { steps: 6 });
   await expect(page.locator("body > .custom-preview[data-drag-preview] .preview-content")).toHaveText("Floating task");
   await expect(page.locator("body > .custom-preview[data-drag-preview]")).toHaveCSS("width", "31px");
+  const floating = await page.locator("body > .custom-preview[data-drag-preview]").boundingBox();
+  const pointer = { x: destination!.x + destination!.width / 2, y: destination!.y + 2 };
+  expect(floating).not.toBeNull();
+  expect(pointer.x).toBeGreaterThan(floating!.x);
+  expect(pointer.x).toBeLessThan(floating!.x + floating!.width);
+  expect(pointer.y).toBeGreaterThan(floating!.y);
+  expect(pointer.y).toBeLessThan(floating!.y + floating!.height);
   await expect(page.locator("#list [data-sortable-item=list-c] [data-rocket-target-indicator=before]")).toContainText(
     "before",
   );
