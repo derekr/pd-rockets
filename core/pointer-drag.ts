@@ -94,7 +94,9 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     preview.style.position = "fixed";
     preview.style.left = `${rect.left}px`;
     preview.style.top = `${rect.top}px`;
+    preview.style.boxSizing = "border-box";
     preview.style.width = `${rect.width}px`;
+    preview.style.height = `${rect.height}px`;
     preview.style.pointerEvents = "none";
     preview.style.zIndex = "1000";
     document.body.append(preview);
