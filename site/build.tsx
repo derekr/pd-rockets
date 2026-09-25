@@ -147,7 +147,7 @@ const page = renderHTML(
       <title>PD rockets · guide and reference</title>
       <meta
         name="description"
-        content="PD rockets: reusable Rocket components, starting with drag-and-drop for Kanban and sortable lists."
+        content="PD rockets: vendorable Rocket drag-and-drop components for Kanban boards, sortable lists, drag groups, bento grids, and file trees."
       />
       <link rel="stylesheet" href={`./demo.css?v=${assetVersion}`} />
       <link rel="stylesheet" href={`./site.css?v=${assetVersion}`} />
