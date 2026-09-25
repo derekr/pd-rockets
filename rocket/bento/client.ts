@@ -187,7 +187,7 @@ rocket(bentoContract.tag, {
       mark,
       retainPreviewOnCommit: true,
       canStart: (event) => !(event.target as HTMLElement).closest(resizeSelector),
-      beforeCommit: flip.prepare,
+      beforeCommit: (id, rect) => flip.prepare({ itemId: id, rect }),
       commit: emitMove,
     });
 

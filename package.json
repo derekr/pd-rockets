@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "build:client": "bun run build-client.ts",
+    "runtime:fetch": "bun run scripts/fetch-datastar-rocket.ts",
     "bundle:browser": "bun run build:client && bun run scripts/package-browser.ts",
-    "demo": "bun run build:client && bun run examples/hono-datastar/server.tsx",
+    "demo": "bun run runtime:fetch && bun run build:client && bun run examples/hono-datastar/server.tsx",
     "build:site": "bun run build:client && bun run site/build.tsx",
     "serve:site": "bun run build:site && bun run site/serve.ts",
     "format": "oxfmt .",

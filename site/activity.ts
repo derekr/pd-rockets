@@ -24,6 +24,7 @@ for (const name of [
   "rocket-drag-group-move",
   "rocket-bento-move",
   "rocket-bento-resize",
+  "rocket-tree-move",
 ]) {
   document.addEventListener(name, () => showActivity("Rocket", name), { capture: true });
 }

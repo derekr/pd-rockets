@@ -144,7 +144,7 @@ rocket(kanbanContract.tag, {
       itemId: (card) => card.dataset.kanbanCard ?? null,
       targetAt,
       mark: markTarget,
-      beforeCommit: flip.prepare,
+      beforeCommit: (id, rect) => flip.prepare({ itemId: id, rect }),
       commit: emitMove,
     });
     const onKeyDown = (event: Event) => {

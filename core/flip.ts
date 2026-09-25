@@ -5,6 +5,7 @@ export type FlipOptions = {
 };
 
 type Rect = { left: number; top: number };
+export type FlipOrigin = { itemId: string; rect: Rect };
 
 function capture(options: FlipOptions): Map<string, Rect> {
   const result = new Map<string, Rect>();
@@ -35,7 +36,7 @@ function play(options: FlipOptions, before: Map<string, Rect>): void {
 }
 
 /** Watches a host for the DOM change caused by a semantic move, including a later SSE morph. */
-export function installFlip(options: FlipOptions): { prepare: () => void; dispose: () => void } {
+export function installFlip(options: FlipOptions): { prepare: (origin?: FlipOrigin) => void; dispose: () => void } {
   let before: Map<string, Rect> | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let frame: number | null = null;
@@ -62,9 +63,10 @@ export function installFlip(options: FlipOptions): { prepare: () => void; dispos
   observer.observe(options.host, { childList: true, subtree: true });
 
   return {
-    prepare: () => {
+    prepare: (origin) => {
       clearPending();
       before = capture(options);
+      if (origin) before.set(origin.itemId, origin.rect);
       timer = setTimeout(clearPending, 2000);
     },
     dispose: () => {

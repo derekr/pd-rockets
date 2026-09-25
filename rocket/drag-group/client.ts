@@ -158,7 +158,7 @@ rocket(dragGroupContract.tag, {
       itemId,
       targetAt,
       mark,
-      beforeCommit: flip.prepare,
+      beforeCommit: (id, rect) => flip.prepare({ itemId: id, rect }),
       commit: emitMove,
     });
     host.addEventListener("keydown", onKeyDown);

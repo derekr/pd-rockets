@@ -1,8 +1,8 @@
 # PD rockets
 
 PD rockets is a collection of vendorable components built with [Rocket](https://data-star.dev/reference/rocket),
-Datastar's open-source web component API. Drag-and-drop is the first family: a multi-list drag group, Kanban, and
-sortable-list and bento-grid surfaces are working examples, with a sortable-tree layout as a future pressure test. A server
+Datastar's open-source web component API. Drag-and-drop is the first family: a multi-list drag group, Kanban,
+sortable-list, bento-grid and file-tree surfaces are working examples. A server
 renders light DOM; Rocket owns browser interaction and emits semantic events; the page connects those events to its
 Datastar actions and backend handlers.
 
@@ -24,6 +24,10 @@ all changed positions on move or resize. The backend applies those positions and
 in-browser SSE fixture demonstrates that handoff without duplicating placement logic. The consuming page provides CSS
 Grid tracks (`grid-template-columns` and a fixed `grid-auto-rows`) for pointer-to-cell geometry.
 
+`rocket-sortable-tree` is a folder/file list with between-sibling insertion and drops into folders. Its
+`rocket-tree-move` detail carries `{ itemId, fromParent, toParent, before }`; the backend applies that change and sends
+rendered HTML over SSE. Pointer drops animate the dragged row from the floating preview's final position.
+
 The reusable client does not know about application actions, persistence, permissions, or transport policy. Rocket
 provides the component boundary and lifecycle for local browser mechanics, while Datastar handles actions and HTML
 updates. See the [Rocket reference](https://data-star.dev/reference/rocket) for the upstream API.
@@ -37,8 +41,9 @@ bun run serve:site
 ```
 
 Open `http://localhost:4173`. `dist/rocket-kit.js` is the vendorable client bundle. It imports Rocket from
-`/js/datastar-rocket.js`; the repo includes the pinned open-source Datastar + Rocket bundle under `public/js/` with its
-MIT notice. Serve both files from the same origin in a consuming application.
+`/js/datastar-rocket.js`. The site build fetches the pinned open-source runtime into ignored `public/js/`, verifies its
+SHA-256 and publishes it alongside the tracked upstream MIT notice. Serve both files from the same origin in a consuming
+application.
 
 For a tagged release, GitHub Actions publishes `pd-rockets-browser.tar.gz` with `rocket-kit.js` and its license. Replace
 `<owner>/<repo>` with the published GitHub repository to vendor PD rockets in one line:
@@ -50,8 +55,8 @@ mkdir -p public/js && curl -fsSL "https://github.com/<owner>/<repo>/releases/lat
 Run `bun run bundle:browser` to produce the same archive locally. Separately obtain the open-source
 [`datastar-rocket.js` bundle](https://data-star.dev/reference/rocket#bundle) using the official Rocket bundle instructions
 and serve it at `/js/datastar-rocket.js`. This bundle includes Datastar and Rocket; it replaces a separate `datastar.js`
-on the page. Keep its upstream MIT notice with the runtime. The repository pins a copy with the notice in `public/js/`
-for its local examples and generated site; the PD rockets release archive does not include it.
+on the page. Keep its upstream MIT notice with the runtime. `bun run runtime:fetch` obtains the checked version for
+the local examples and site; the PD rockets release archive does not include it.
 
 The site build writes `dist/site`, a relative-path static artifact suitable for GitHub Pages. Its in-browser fixture
 intercepts the demo actions and returns `datastar-patch-elements` SSE responses, exercising the same morph path
@@ -68,7 +73,7 @@ bun run demo
 
 Then open `http://localhost:3025`. Its local event listener demonstrates the semantic boundary without a backend.
 
-To run the Go demo after `bun run build:client`:
+To run the Go demo after `bun run runtime:fetch && bun run build:client`:
 
 ```sh
 cd examples/go

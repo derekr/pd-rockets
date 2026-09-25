@@ -32,6 +32,27 @@
     },
     { "id": "later", "label": "Later", "items": [{ "id": "note-c", "label": "Share the update" }] }
   ],
+  "tree": [
+    {
+      "id": "src",
+      "name": "src",
+      "kind": "folder",
+      "children": [
+        {
+          "id": "components",
+          "name": "components",
+          "kind": "folder",
+          "children": [
+            { "id": "button", "name": "button.ts", "kind": "file" },
+            { "id": "panel", "name": "panel.ts", "kind": "file" }
+          ]
+        },
+        { "id": "entry", "name": "index.ts", "kind": "file" }
+      ]
+    },
+    { "id": "docs", "name": "docs", "kind": "folder", "children": [] },
+    { "id": "readme", "name": "README.md", "kind": "file" }
+  ],
   "bento": [
     {
       "id": "overview",

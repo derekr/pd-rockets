@@ -7,15 +7,19 @@ import { BentoWorkspace } from "../examples/hono-datastar/adapter/bento";
 import type { DatastarEventBinding } from "../examples/hono-datastar/adapter/event-binding";
 import { renderHTML } from "../examples/hono-datastar/adapter/render";
 import { SortableList } from "../examples/hono-datastar/adapter/sortable-list";
+import { SortableTree, type FileNode } from "../examples/hono-datastar/adapter/sortable-tree";
 import { kanbanContract } from "../contracts/kanban";
 import { sortableListContract } from "../contracts/sortable-list";
 import { dragGroupContract } from "../contracts/drag-group";
 import { bentoContract } from "../contracts/bento";
+import { sortableTreeContract } from "../contracts/sortable-tree";
 import fixture from "../examples/hono-datastar/fixture.json";
 import { buildSourceIndex } from "./build-source";
+import { ensureRuntime } from "../scripts/fetch-datastar-rocket";
 
 const root = join(import.meta.dir, "..");
 const output = join(root, "dist/site");
+await ensureRuntime();
 const bundle = await readFile(join(root, "dist/rocket-kit.js"), "utf8");
 const fakeBackend = await Bun.build({ entrypoints: [join(import.meta.dir, "fake-backend.ts")], target: "browser" });
 if (!fakeBackend.success || fakeBackend.outputs.length !== 1 || !fakeBackend.outputs[0]) {
@@ -62,6 +66,10 @@ const bentoResize: DatastarEventBinding = {
   event: bentoContract.events.resize,
   attrs: { "data-on:rocket-bento-resize": "$bento = evt.detail; @post('./bento-resize')" },
 };
+const treeMove: DatastarEventBinding = {
+  event: sortableTreeContract.events.move,
+  attrs: { "data-on:rocket-tree-move": "$tree = evt.detail; @post('./tree-move')" },
+};
 
 const page = renderHTML(
   <html lang="en">
@@ -76,7 +84,7 @@ const page = renderHTML(
       <link rel="stylesheet" href={`./demo.css?v=${assetVersion}`} />
       <link rel="stylesheet" href={`./site.css?v=${assetVersion}`} />
     </head>
-    <body data-signals='{"cardId":"","col":0,"before":"","itemId":"","fromList":"","toList":"","bento":{}}'>
+    <body data-signals='{"cardId":"","col":0,"before":"","itemId":"","fromList":"","toList":"","bento":{},"tree":{}}'>
       <div class="site-frame">
         <header class="site-header">
           <a class="brand" href="#top" aria-label="PD rockets, back to top">
@@ -143,11 +151,11 @@ const page = renderHTML(
                 <a href="#sortable">03 · Sortable list</a>
                 <a href="#drag-group">04 · Drag group</a>
                 <a href="#bento">05 · Bento grids</a>
-                <a href="#server">06 · Wire a backend</a>
+                <a href="#tree">06 · File tree</a>
+                <a href="#server">07 · Wire a backend</a>
                 <a href="#reference">Reference</a>
                 <a href="#keyboard">Keyboard inputs</a>
                 <a href="#events">Events &amp; DOM</a>
-                <a href="#next">What's next</a>
                 <a href="#examples">Examples</a>
                 <a href="#try-it">Run locally</a>
               </nav>
@@ -212,21 +220,15 @@ const page = renderHTML(
                 <pre>
                   <code>{`bun install
 bun run build:client
+bun run runtime:fetch
 # copy dist/rocket-kit.js into your application
 # serve public/js/datastar-rocket.js at /js/datastar-rocket.js`}</code>
                 </pre>
                 <p>
                   <a href="./source/build-client.ts.txt">Client build source ↗</a> ·{" "}
+                  <a href="./source/scripts/fetch-datastar-rocket.ts.txt">Pinned runtime fetch ↗</a> ·{" "}
                   <a href="./rocket-kit.js">Built client bundle ↗</a> ·{" "}
                   <a href="./js/DATASTAR-LICENSE.md">Upstream MIT notice ↗</a>
-                </p>
-                <p class="callout">
-                  The included{" "}
-                  <a href="./js/datastar-rocket.js">
-                    <code>datastar-rocket.js</code>
-                  </a>{" "}
-                  bundle contains both Datastar and Rocket. Load it once; there is no separate Pro runtime. See the{" "}
-                  <a href="https://data-star.dev/reference/rocket">official Rocket reference</a> for its API.
                 </p>
               </section>
 
@@ -376,8 +378,44 @@ rocket-bento-resize → { itemId, grid, updates: [{ itemId, grid, col, row, widt
                 </p>
               </section>
 
+              <section id="tree" class="docs-section" aria-labelledby="tree-title">
+                <p class="section-kicker">STEP 06 / LIVE EXAMPLE</p>
+                <h2 id="tree-title">File tree</h2>
+                <p>
+                  Reorder files and folders, or drop onto a folder to move an entry inside it—even when it is empty.
+                  Nested entries move with their folder. Focus a row: Alt + up/down reorders among siblings, Alt + right
+                  moves it into the preceding folder, and Alt + left moves it out. Release Alt to commit; Escape
+                  cancels.
+                </p>
+                <div class="example-frame tree-frame">
+                  <div class="example-head">
+                    <span class="live-dot" aria-hidden="true"></span> LIVE / FILE TREE{" "}
+                    <span>drag between directories</span>
+                  </div>
+                  <div id="tree-demo" class="example-body">
+                    <SortableTree nodes={fixture.tree as FileNode[]} move={treeMove} />
+                  </div>
+                </div>
+                <pre>
+                  <code>{`<rocket-sortable-tree>
+  <div data-tree-children data-tree-parent="">
+    <div data-tree-node="src" data-tree-kind="folder">
+      <div data-tree-row tabindex="0">src</div>
+      <div data-tree-children data-tree-parent="src">…files…</div>
+    </div>
+  </div>
+</rocket-sortable-tree>
+
+rocket-tree-move → { itemId, fromParent, toParent, before }`}</code>
+                </pre>
+                <p>
+                  <a href="./source/rocket/sortable-tree/client.ts.txt">Tree Rocket source ↗</a> ·{" "}
+                  <a href="./source/examples/hono-datastar/adapter/sortable-tree.tsx.txt">JSX template ↗</a>
+                </p>
+              </section>
+
               <section id="server" class="docs-section" aria-labelledby="server-title">
-                <p class="section-kicker">STEP 06 / SERVER HANDOFF</p>
+                <p class="section-kicker">STEP 07 / SERVER HANDOFF</p>
                 <h2 id="server-title">Server round trip</h2>
                 <p>
                   Bind each semantic event to a Datastar action in your page. Your server handler validates the target,
@@ -624,6 +662,24 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                           </a>
                         </td>
                       </tr>
+                      <tr>
+                        <td>
+                          <a href="./source/rocket/sortable-tree/client.ts.txt">
+                            <code>rocket-sortable-tree</code>
+                          </a>
+                        </td>
+                        <td>
+                          <a href="./source/contracts/sortable-tree.ts.txt">
+                            <code>[data-tree-node]</code> + <code>[data-tree-children]</code>
+                          </a>
+                        </td>
+                        <td>
+                          <a href="./source/contracts/sortable-tree.ts.txt">
+                            <code>rocket-tree-move</code>
+                          </a>{" "}
+                          <small>{`{ itemId, fromParent, toParent, before }`}</small>
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -634,28 +690,6 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                   </a>{" "}
                   means append. Keep IDs stable across renders so morph and FLIP can match items.
                 </p>
-              </section>
-
-              <section id="next" class="docs-section" aria-labelledby="next-title">
-                <p class="section-kicker">ON THE HORIZON / 03</p>
-                <h2 id="next-title">What's next</h2>
-                <p>
-                  Drag groups, Kanban, sortable lists and bento grids now exercise different target geometry. A sortable
-                  tree is a useful next pressure test for nested targets. Each surface can share core mechanics without
-                  pretending every layout is the same component.
-                </p>
-                <div class="layer-strip future-strip" aria-label="Other drag-and-drop surfaces">
-                  <span>
-                    <b>
-                      <a href="#bento">Bento grid</a>
-                    </b>
-                    <small>two-dimensional placement · live example</small>
-                  </span>
-                  <span>
-                    <b>Sortable tree</b>
-                    <small>nested targets · planned</small>
-                  </span>
-                </div>
               </section>
 
               <section id="examples" class="docs-section" aria-labelledby="examples-title">

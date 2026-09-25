@@ -1,4 +1,5 @@
 import type { BentoMoveDetail, BentoPosition, BentoResizeDetail } from "../contracts/bento";
+import type { TreeMoveDetail } from "../contracts/sortable-tree";
 import { showActivity } from "./activity";
 
 type BoardTarget = { cardId: string; col: number; before: string };
@@ -9,12 +10,15 @@ const kanbanRoot = document.querySelector<HTMLElement>("#kanban-demo");
 const sortableRoot = document.querySelector<HTMLElement>("#sortable-demo");
 const groupRoot = document.querySelector<HTMLElement>("#group-demo");
 const bentoRoot = document.querySelector<HTMLElement>("#bento-demo");
-if (!kanbanRoot || !sortableRoot || !groupRoot || !bentoRoot) throw new Error("rocket kit site: missing example root");
+const treeRoot = document.querySelector<HTMLElement>("#tree-demo");
+if (!kanbanRoot || !sortableRoot || !groupRoot || !bentoRoot || !treeRoot)
+  throw new Error("rocket kit site: missing example root");
 
 const kanbanModel = kanbanRoot.cloneNode(true) as HTMLElement;
 const sortableModel = sortableRoot.cloneNode(true) as HTMLElement;
 const groupModel = groupRoot.cloneNode(true) as HTMLElement;
 const bentoModel = bentoRoot.cloneNode(true) as HTMLElement;
+const treeModel = treeRoot.cloneNode(true) as HTMLElement;
 
 function signalPayload(body: string): Record<string, unknown> {
   const payload = JSON.parse(body) as Record<string, unknown>;
@@ -53,6 +57,22 @@ function moveGroupItem(target: GroupTarget): void {
     ? list.querySelector<HTMLElement>(`[data-drag-item="${CSS.escape(target.before)}"]`)
     : null;
   list.insertBefore(item, before);
+}
+
+function moveTreeNode(target: TreeMoveDetail): void {
+  const node = treeModel.querySelector<HTMLElement>(`[data-tree-node="${CSS.escape(target.itemId)}"]`);
+  const list = [...treeModel.querySelectorAll<HTMLElement>("[data-tree-children]")].find(
+    (candidate) => candidate.dataset.treeParent === target.toParent,
+  );
+  const from = node?.parentElement;
+  if (!node || !list || node.contains(list) || from?.dataset.treeParent !== target.fromParent) return;
+  const before = target.before
+    ? ([...list.children].find(
+        (candidate) => candidate instanceof HTMLElement && candidate.dataset.treeNode === target.before,
+      ) ?? null)
+    : null;
+  if (target.before && !before) return;
+  list.insertBefore(node, before);
 }
 
 function bentoGrid(id: string): HTMLElement | null {
@@ -114,6 +134,12 @@ const interceptFetch = async (input: RequestInfo | URL, init?: RequestInit): Pro
   const request = new Request(input, init);
   const url = new URL(request.url);
   if (request.method !== "POST") return originalFetch(input, init);
+
+  if (url.pathname.endsWith("/tree-move")) {
+    showActivity("Datastar", "@post('./tree-move')");
+    moveTreeNode(signalPayload(await request.text()).tree as TreeMoveDetail);
+    return patchResponse("#tree-demo", treeModel);
+  }
 
   if (url.pathname.endsWith("/bento-move")) {
     showActivity("Datastar", "@post('./bento-move')");

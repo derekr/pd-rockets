@@ -2,7 +2,7 @@ import { copyFile, mkdir, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { renderHTML } from "../examples/hono-datastar/adapter/render";
 
-const directories = ["contracts", "core", "rocket", "examples", "site"];
+const directories = ["contracts", "core", "rocket", "examples", "site", "scripts"];
 const rootFiles = ["README.md", "build-client.ts", "client-entry.ts", "package.json"];
 const sourceFile = /\.(?:ts|tsx|go|json|css|md)$|\.mod$/;
 

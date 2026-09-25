@@ -33,7 +33,7 @@ rocket(sortableListContract.tag, {
       itemId,
       targetAt,
       mark,
-      beforeCommit: flip.prepare,
+      beforeCommit: (id, rect) => flip.prepare({ itemId: id, rect }),
       commit: (itemId, target) => {
         host.dispatchEvent(
           new CustomEvent<SortableMoveDetail>(sortableListContract.events.move, {

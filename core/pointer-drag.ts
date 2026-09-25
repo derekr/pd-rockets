@@ -8,7 +8,7 @@ export type PointerDragOptions<ItemId, Target> = {
   targetAt: (x: number, y: number, itemId: ItemId) => Target | null;
   mark: (target: Target | null, itemId?: ItemId) => void;
   retainPreviewOnCommit?: boolean;
-  beforeCommit?: () => void;
+  beforeCommit?: (itemId: ItemId, rect: { left: number; top: number }) => void;
   commit: (itemId: ItemId, target: Target) => void;
 };
 
@@ -32,6 +32,7 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
 
   const finish = (target: Target | null, cancelled: boolean): void => {
     const current = active;
+    const previewPosition = preview && { left: parseFloat(preview.style.left), top: parseFloat(preview.style.top) };
     active = null;
     if (!target || cancelled || !options.retainPreviewOnCommit) options.mark(null, current?.itemId);
     clearPreview();
@@ -52,7 +53,7 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     if (target) {
       state.send({ type: "preview", target });
       state.send({ type: "commit", target });
-      options.beforeCommit?.();
+      if (previewPosition) options.beforeCommit?.(current.itemId, previewPosition);
       options.commit(current.itemId, target);
     } else {
       state.send({ type: "cancel" });
@@ -70,6 +71,7 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
   const onUp = (event: Event): void => {
     if (!active || (event as PointerEvent).pointerId !== active.pointerId) return;
     const pointer = event as PointerEvent;
+    movePreview(pointer);
     finish(options.targetAt(pointer.clientX, pointer.clientY, active.itemId), false);
   };
   const onCancel = (event: Event): void => {

@@ -47,6 +47,60 @@ rocket-bento-workspace {
   gap: 1rem;
 }
 
+rocket-sortable-tree {
+  display: block;
+}
+
+[data-tree-children] {
+  min-height: 28px;
+  padding-left: 20px;
+  border-left: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+rocket-sortable-tree > [data-tree-children] {
+  padding-left: 0;
+  border-left: 0;
+}
+
+[data-tree-node] {
+  margin-block: 4px;
+}
+
+[data-tree-row] {
+  position: relative;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 5px;
+  background: Canvas;
+  cursor: grab;
+  touch-action: none;
+}
+
+[data-tree-row] span {
+  display: inline-block;
+  min-width: 20px;
+}
+[data-tree-node][data-tree-kind="folder"] > [data-tree-row] {
+  font-weight: 700;
+}
+[data-tree-row][data-tree-into] {
+  background: color-mix(in srgb, Highlight 13%, Canvas);
+  outline: 2px solid Highlight;
+}
+[data-tree-row][data-tree-before]::before,
+[data-tree-children][data-tree-end]::after {
+  content: "";
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background: Highlight;
+}
+
+[data-tree-row][data-tree-before]::before {
+  position: absolute;
+  inset: -5px 0 auto;
+}
+
 [data-bento-grid] {
   display: grid;
   grid-template-columns: repeat(var(--bento-columns, 4), minmax(0, 1fr));

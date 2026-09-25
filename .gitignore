@@ -1,5 +1,6 @@
 node_modules/
 dist/
+public/js/datastar-rocket.js
 *.tsbuildinfo
 .DS_Store
 
