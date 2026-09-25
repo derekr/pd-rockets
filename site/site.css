@@ -379,6 +379,26 @@ pre {
     monospace;
 }
 
+.layer-strip b a {
+  color: var(--text);
+}
+
+.source-index {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: clamp(24px, 5vw, 70px);
+}
+
+.source-index ul {
+  padding: 0;
+  list-style: none;
+}
+
+.source-index li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
 .layer-strip small {
   color: var(--text-2);
 }

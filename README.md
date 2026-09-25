@@ -49,7 +49,8 @@ for its local examples and generated site; the PD rockets release archive does n
 
 The site build writes `dist/site`, a relative-path static artifact suitable for GitHub Pages. Its in-browser fixture
 intercepts the two demo actions and returns `datastar-patch-elements` SSE responses, exercising the same morph path
-without an application server.
+without an application server. The Pages workflow publishes this artifact on pushes to `main`; the guide's source links
+use a generated, browsable copy of the public project files that also works when served locally.
 
 To run the Hono JSX demo instead:
 

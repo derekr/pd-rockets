@@ -9,6 +9,7 @@ import { kanbanContract } from "../contracts/kanban";
 import { sortableListContract } from "../contracts/sortable-list";
 import { dragGroupContract } from "../contracts/drag-group";
 import fixture from "../examples/hono-datastar/fixture.json";
+import { buildSourceIndex } from "./build-source";
 
 const root = join(import.meta.dir, "..");
 const output = join(root, "dist/site");
@@ -131,9 +132,13 @@ const page = renderHTML(
                 <p class="section-kicker">FIELD GUIDE / 01</p>
                 <h2 id="guide-title">How it works</h2>
                 <p>
-                  The public contracts live in <code>contracts/</code>. Core owns pointer capture, the detached preview,
-                  target marking and post-move FLIP. The Rocket hosts own DOM lookup and event emission. Neither layer
-                  knows which Datastar action your page will invoke or how your backend stores changes.
+                  The public contracts live in{" "}
+                  <a href="./source/contracts/index.html">
+                    <code>contracts/</code>
+                  </a>
+                  . Core owns pointer capture, the detached preview, target marking and post-move FLIP. The Rocket hosts
+                  own DOM lookup and event emission. Neither layer knows which Datastar action your page will invoke or
+                  how your backend stores changes.
                 </p>
                 <h3>Why Rocket?</h3>
                 <p>
@@ -145,19 +150,27 @@ const page = renderHTML(
                 </p>
                 <div class="layer-strip" aria-label="Library layers">
                   <span>
-                    <b>contracts/</b>
+                    <b>
+                      <a href="./source/contracts/index.html">contracts/</a>
+                    </b>
                     <small>inputs &amp; outputs</small>
                   </span>
                   <span>
-                    <b>core/</b>
+                    <b>
+                      <a href="./source/core/index.html">core/</a>
+                    </b>
                     <small>gesture &amp; motion</small>
                   </span>
                   <span>
-                    <b>rocket/</b>
+                    <b>
+                      <a href="./source/rocket/index.html">rocket/</a>
+                    </b>
                     <small>host lifecycle</small>
                   </span>
                   <span>
-                    <b>examples/</b>
+                    <b>
+                      <a href="./source/examples/index.html">examples/</a>
+                    </b>
                     <small>server adapters</small>
                   </span>
                 </div>
@@ -176,9 +189,17 @@ bun run build:client
 # copy dist/rocket-kit.js into your application
 # serve public/js/datastar-rocket.js at /js/datastar-rocket.js`}</code>
                 </pre>
+                <p>
+                  <a href="./source/build-client.ts.txt">Client build source ↗</a> ·{" "}
+                  <a href="./rocket-kit.js">Built client bundle ↗</a> ·{" "}
+                  <a href="./js/DATASTAR-LICENSE.md">Upstream MIT notice ↗</a>
+                </p>
                 <p class="callout">
-                  The included <code>datastar-rocket.js</code> bundle contains both Datastar and Rocket. Load it once;
-                  there is no separate Pro runtime. See the{" "}
+                  The included{" "}
+                  <a href="./js/datastar-rocket.js">
+                    <code>datastar-rocket.js</code>
+                  </a>{" "}
+                  bundle contains both Datastar and Rocket. Load it once; there is no separate Pro runtime. See the{" "}
                   <a href="https://data-star.dev/reference/rocket">official Rocket reference</a> for its API.
                 </p>
               </section>
@@ -187,10 +208,14 @@ bun run build:client
                 <p class="section-kicker">STEP 02 / LIVE EXAMPLE</p>
                 <h2 id="kanban-title">Kanban board</h2>
                 <p>
-                  Each lane carries a numeric <code>data-col</code>; cards carry stable IDs. Drag a card into another
-                  lane, or focus a card and press <kbd>Alt</kbd>+<kbd>→</kbd>. The emitted event describes the target
-                  lane and the card to insert before; it does not perform a mutation. Use <kbd>Alt</kbd>+<kbd>h</kbd>/
-                  <kbd>j</kbd>/<kbd>k</kbd>/<kbd>l</kbd> to stage keyboard moves, then release Alt to commit.
+                  Each lane carries a numeric{" "}
+                  <a href="./source/contracts/kanban.ts.txt">
+                    <code>data-col</code>
+                  </a>
+                  ; cards carry stable IDs. Drag a card into another lane, or focus a card and press <kbd>Alt</kbd>+
+                  <kbd>→</kbd>. The emitted event describes the target lane and the card to insert before; it does not
+                  perform a mutation. Use <kbd>Alt</kbd>+<kbd>h</kbd>/<kbd>j</kbd>/<kbd>k</kbd>/<kbd>l</kbd> to stage
+                  keyboard moves, then release Alt to commit.
                 </p>
                 <div class="example-frame">
                   <div class="example-head">
@@ -216,6 +241,10 @@ bun run build:client
 
 rocket-kanban-move → { cardId, col, before }`}</code>
                 </pre>
+                <p>
+                  <a href="./source/rocket/kanban/client.ts.txt">Kanban Rocket source ↗</a> ·{" "}
+                  <a href="./source/examples/hono-datastar/adapter/kanban.tsx.txt">JSX template ↗</a>
+                </p>
               </section>
 
               <section id="sortable" class="docs-section" aria-labelledby="sortable-title">
@@ -242,6 +271,10 @@ rocket-kanban-move → { cardId, col, before }`}</code>
 
 rocket-sortable-move → { itemId, before }`}</code>
                 </pre>
+                <p>
+                  <a href="./source/rocket/sortable-list/client.ts.txt">Sortable Rocket source ↗</a> ·{" "}
+                  <a href="./source/examples/hono-datastar/adapter/sortable-list.tsx.txt">JSX template ↗</a>
+                </p>
               </section>
 
               <section id="drag-group" class="docs-section" aria-labelledby="drag-group-title">
@@ -271,6 +304,10 @@ rocket-sortable-move → { itemId, before }`}</code>
 
 rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                 </pre>
+                <p>
+                  <a href="./source/rocket/drag-group/client.ts.txt">Drag group Rocket source ↗</a> ·{" "}
+                  <a href="./source/examples/hono-datastar/adapter/drag-group.tsx.txt">JSX template ↗</a>
+                </p>
               </section>
 
               <section id="server" class="docs-section" aria-labelledby="server-title">
@@ -279,8 +316,11 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                 <p>
                   Bind each semantic event to a Datastar action in your page. Your server handler validates the target,
                   updates authoritative state, and sends complete HTML over SSE. On this page, a site-only fetch shim
-                  stands in for that handler and returns a <code>datastar-patch-elements</code> event. Datastar performs
-                  the morph; Rocket animates items from their prior positions to the new ones.
+                  stands in for that handler and returns a{" "}
+                  <a href="./source/site/fake-backend.ts.txt">
+                    <code>datastar-patch-elements</code>
+                  </a>{" "}
+                  event. Datastar performs the morph; Rocket animates items from their prior positions to the new ones.
                 </p>
                 <pre>
                   <code>{`event: datastar-patch-elements
@@ -288,6 +328,10 @@ data: selector #kanban-demo
 data: mode outer
 data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                 </pre>
+                <p>
+                  <a href="./source/site/fake-backend.ts.txt">Browser fixture source ↗</a> ·{" "}
+                  <a href="./source/examples/go/main.go.txt">Go SSE handler ↗</a>
+                </p>
                 <p class="callout">
                   The page seeds only move-detail signals. Board and list content live in rendered DOM, not signals.
                 </p>
@@ -313,7 +357,9 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                     <tbody>
                       <tr>
                         <td>
-                          <code>data-key-select-next</code>
+                          <a href="./source/contracts/kanban.ts.txt">
+                            <code>data-key-select-next</code>
+                          </a>
                         </td>
                         <td>
                           <kbd>↓</kbd> / <kbd>j</kbd>
@@ -322,7 +368,9 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                       </tr>
                       <tr>
                         <td>
-                          <code>data-key-select-previous</code>
+                          <a href="./source/contracts/kanban.ts.txt">
+                            <code>data-key-select-previous</code>
+                          </a>
                         </td>
                         <td>
                           <kbd>↑</kbd> / <kbd>k</kbd>
@@ -331,7 +379,9 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                       </tr>
                       <tr>
                         <td>
-                          <code>data-key-select-left</code>
+                          <a href="./source/contracts/kanban.ts.txt">
+                            <code>data-key-select-left</code>
+                          </a>
                         </td>
                         <td>
                           <kbd>←</kbd> / <kbd>h</kbd>
@@ -340,7 +390,9 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                       </tr>
                       <tr>
                         <td>
-                          <code>data-key-select-right</code>
+                          <a href="./source/contracts/kanban.ts.txt">
+                            <code>data-key-select-right</code>
+                          </a>
                         </td>
                         <td>
                           <kbd>→</kbd> / <kbd>l</kbd>
@@ -349,7 +401,9 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                       </tr>
                       <tr>
                         <td>
-                          <code>data-key-move-up</code>
+                          <a href="./source/contracts/kanban.ts.txt">
+                            <code>data-key-move-up</code>
+                          </a>
                         </td>
                         <td>
                           Alt + <kbd>↑</kbd> / <kbd>k</kbd>
@@ -358,7 +412,9 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                       </tr>
                       <tr>
                         <td>
-                          <code>data-key-move-down</code>
+                          <a href="./source/contracts/kanban.ts.txt">
+                            <code>data-key-move-down</code>
+                          </a>
                         </td>
                         <td>
                           Alt + <kbd>↓</kbd> / <kbd>j</kbd>
@@ -367,7 +423,9 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                       </tr>
                       <tr>
                         <td>
-                          <code>data-key-move-left</code>
+                          <a href="./source/contracts/kanban.ts.txt">
+                            <code>data-key-move-left</code>
+                          </a>
                         </td>
                         <td>
                           Alt + <kbd>←</kbd> / <kbd>h</kbd>
@@ -376,7 +434,9 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                       </tr>
                       <tr>
                         <td>
-                          <code>data-key-move-right</code>
+                          <a href="./source/contracts/kanban.ts.txt">
+                            <code>data-key-move-right</code>
+                          </a>
                         </td>
                         <td>
                           Alt + <kbd>→</kbd> / <kbd>l</kbd>
@@ -385,7 +445,9 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                       </tr>
                       <tr>
                         <td>
-                          <code>data-key-cancel</code>
+                          <a href="./source/contracts/kanban.ts.txt">
+                            <code>data-key-cancel</code>
+                          </a>
                         </td>
                         <td>
                           <kbd>Esc</kbd>
@@ -396,8 +458,15 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                   </table>
                 </div>
                 <p>
-                  Override a slot with space-separated key tokens, e.g. <code>data-key-select-next="ArrowDown j"</code>.
-                  Defaults come from <code>contracts/kanban.ts</code>.
+                  Override a slot with space-separated key tokens, e.g.{" "}
+                  <a href="./source/contracts/kanban.ts.txt">
+                    <code>data-key-select-next="ArrowDown j"</code>
+                  </a>
+                  . Defaults come from{" "}
+                  <a href="./source/contracts/kanban.ts.txt">
+                    <code>contracts/kanban.ts</code>
+                  </a>
+                  .
                 </p>
                 <h3 id="events">DOM and events</h3>
                 <div class="table-scroll">
@@ -412,45 +481,72 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                     <tbody>
                       <tr>
                         <td>
-                          <code>rocket-kanban-board</code>
+                          <a href="./source/rocket/kanban/client.ts.txt">
+                            <code>rocket-kanban-board</code>
+                          </a>
                         </td>
                         <td>
-                          <code>[data-kanban-lane][data-col]</code>, <code>[data-kanban-card]</code>
+                          <a href="./source/contracts/kanban.ts.txt">
+                            <code>[data-kanban-lane][data-col]</code>, <code>[data-kanban-card]</code>
+                          </a>
                         </td>
                         <td>
-                          <code>rocket-kanban-move</code> <small>{`{ cardId, col, before }`}</small>
+                          <a href="./source/contracts/kanban.ts.txt">
+                            <code>rocket-kanban-move</code>
+                          </a>{" "}
+                          <small>{`{ cardId, col, before }`}</small>
                           <br />
-                          <code>rocket-kanban-select</code> <small>{`{ cardId }`}</small>
+                          <a href="./source/contracts/kanban.ts.txt">
+                            <code>rocket-kanban-select</code>
+                          </a>{" "}
+                          <small>{`{ cardId }`}</small>
                         </td>
                       </tr>
                       <tr>
                         <td>
-                          <code>rocket-sortable-list</code>
+                          <a href="./source/rocket/sortable-list/client.ts.txt">
+                            <code>rocket-sortable-list</code>
+                          </a>
                         </td>
                         <td>
-                          <code>[data-sortable-item]</code>
+                          <a href="./source/contracts/sortable-list.ts.txt">
+                            <code>[data-sortable-item]</code>
+                          </a>
                         </td>
                         <td>
-                          <code>rocket-sortable-move</code> <small>{`{ itemId, before }`}</small>
+                          <a href="./source/contracts/sortable-list.ts.txt">
+                            <code>rocket-sortable-move</code>
+                          </a>{" "}
+                          <small>{`{ itemId, before }`}</small>
                         </td>
                       </tr>
                       <tr>
                         <td>
-                          <code>rocket-drag-group</code>
+                          <a href="./source/rocket/drag-group/client.ts.txt">
+                            <code>rocket-drag-group</code>
+                          </a>
                         </td>
                         <td>
-                          <code>[data-drop-list]</code> + <code>[data-drag-item]</code>
+                          <a href="./source/contracts/drag-group.ts.txt">
+                            <code>[data-drop-list]</code> + <code>[data-drag-item]</code>
+                          </a>
                         </td>
                         <td>
-                          <code>rocket-drag-group-move</code> <small>{`{ itemId, fromList, toList, before }`}</small>
+                          <a href="./source/contracts/drag-group.ts.txt">
+                            <code>rocket-drag-group-move</code>
+                          </a>{" "}
+                          <small>{`{ itemId, fromList, toList, before }`}</small>
                         </td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
                 <p>
-                  Events bubble and cross the custom-element boundary. <code>before: ""</code> means append. Keep IDs
-                  stable across renders so morph and FLIP can match items.
+                  Events bubble and cross the custom-element boundary.{" "}
+                  <a href="./source/core/insertion-target.ts.txt">
+                    <code>before: ""</code>
+                  </a>{" "}
+                  means append. Keep IDs stable across renders so morph and FLIP can match items.
                 </p>
               </section>
 
@@ -480,8 +576,10 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                 <p>
                   The Hono JSX adapter packages the required markup and event binding into a component; this guide uses
                   it to send moves to its in-browser fixture. The Go example writes the same DOM with
-                  <code>html/template</code> and handles moves on the server. Your page chooses the Datastar action that
-                  receives each event.
+                  <a href="./source/examples/go/main.go.txt">
+                    <code>html/template</code>
+                  </a>{" "}
+                  and handles moves on the server. Your page chooses the Datastar action that receives each event.
                 </p>
                 <h3>Hono JSX</h3>
                 <pre>
@@ -498,7 +596,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
 <KanbanBoard id="kanban-board" columns={columns} move={move} />`}</code>
                 </pre>
                 <p>
-                  <a href="./examples/hono-datastar/adapter/kanban.tsx.txt">View the JSX adapter source ↗</a>
+                  <a href="./source/examples/hono-datastar/adapter/kanban.tsx.txt">View the JSX adapter source ↗</a>
                 </p>
                 <h3>Go template</h3>
                 <pre>
@@ -518,7 +616,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
 </rocket-kanban-board>`}</code>
                 </pre>
                 <p>
-                  <a href="./examples/go/main.go.txt">View the Go server source ↗</a>
+                  <a href="./source/examples/go/main.go.txt">View the Go server source ↗</a>
                 </p>
               </section>
 
@@ -539,6 +637,11 @@ bun run demo
 # Go demo (after bun run build:client)
 cd examples/go && go run .`}</code>
                 </pre>
+                <p>
+                  <a href="./source/site/serve.ts.txt">Site server source ↗</a> ·{" "}
+                  <a href="./source/examples/hono-datastar/server.tsx.txt">Hono server source ↗</a> ·{" "}
+                  <a href="./source/examples/go/main.go.txt">Go server source ↗</a>
+                </p>
               </section>
             </div>
           </div>
@@ -563,13 +666,7 @@ await mkdir(join(output, "js"), { recursive: true });
 await copyFile(join(root, "public/js/datastar-rocket.js"), join(output, "js/datastar-rocket.js"));
 await copyFile(join(root, "public/js/DATASTAR-LICENSE.md"), join(output, "js/DATASTAR-LICENSE.md"));
 await copyFile(join(root, "LICENSE"), join(output, "LICENSE"));
-await mkdir(join(output, "examples/hono-datastar/adapter"), { recursive: true });
-await mkdir(join(output, "examples/go"), { recursive: true });
-await copyFile(
-  join(root, "examples/hono-datastar/adapter/kanban.tsx"),
-  join(output, "examples/hono-datastar/adapter/kanban.tsx.txt"),
-);
-await copyFile(join(root, "examples/go/main.go"), join(output, "examples/go/main.go.txt"));
+await buildSourceIndex(root, output);
 
 const bundle = await readFile(join(root, "dist/rocket-kit.js"), "utf8");
 await writeFile(
