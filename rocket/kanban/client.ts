@@ -7,6 +7,7 @@ import { focusKeys, keyboardBindings, keyboardItem } from "../../core/keyboard";
 import { installKeyboardStaging } from "../../core/keyboard-staging";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
+import { installTargetIndicator } from "../../core/visual-outlets";
 import { kanbanContract, defaultKanbanKeyboard, type KanbanMoveDetail } from "../../contracts/kanban";
 
 type Target = { col: number; before: string; lane: HTMLElement };
@@ -48,7 +49,9 @@ rocket(kanbanContract.tag, {
       itemSelector: kanbanContract.selectors.card,
       itemId: (card) => (owns(card) ? (card.dataset.kanbanCard ?? null) : null),
     });
+    const indicator = installTargetIndicator(host);
     const clearMarks = () => {
+      indicator.clear();
       cards().forEach((card) => card.removeAttribute("data-drop-before"));
       lanes().forEach((lane) => {
         lane.removeAttribute("data-drop-active");
@@ -61,11 +64,13 @@ rocket(kanbanContract.tag, {
       if (!target) return;
       target.lane.setAttribute("data-drop-active", "true");
       if (target.before) {
-        cardsIn(target.lane)
-          .find((card) => card.dataset.kanbanCard === target.before)
-          ?.setAttribute("data-drop-before", "");
+        const beforeCard = cardsIn(target.lane).find((card) => card.dataset.kanbanCard === target.before);
+        beforeCard?.setAttribute("data-drop-before", "");
+        indicator.show(beforeCard ?? null, "before");
       } else {
-        target.lane.querySelector("[data-kanban-lane-cards]")?.setAttribute("data-drop-end", "");
+        const end = target.lane.querySelector<HTMLElement>("[data-kanban-lane-cards]");
+        end?.setAttribute("data-drop-end", "");
+        indicator.show(end ?? null, "end");
       }
     };
     const select = (card: HTMLElement | undefined): void => {
@@ -125,6 +130,7 @@ rocket(kanbanContract.tag, {
       interactiveHandle: kanbanContract.selectors.cardMain,
       itemId: (card) => (owns(card) ? (card.dataset.kanbanCard ?? null) : null),
       targetAt,
+      sameTarget: (a, b) => a?.lane === b?.lane && a?.before === b?.before,
       mark: markTarget,
       beforeCommit: (id, rect) => flip.prepare({ itemId: id, rect }),
       commit: emitMove,

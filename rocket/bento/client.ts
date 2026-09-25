@@ -15,6 +15,7 @@ import {
 import { installKeyboardStaging } from "../../core/keyboard-staging";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
+import { installTargetIndicator } from "../../core/visual-outlets";
 import { nextBentoColumn, projectBentoLayout, type Cell, type GridLayout } from "./placement";
 
 type Target = Cell & { grid: HTMLElement; gridId: string };
@@ -59,6 +60,7 @@ rocket(bentoContract.tag, {
       };
     };
     const flip = installFlip({ host, itemSelector, itemId });
+    const indicator = installTargetIndicator(host);
     let marker: HTMLElement | null = null;
     let previewKey = "";
     let previewUpdates: BentoPosition[] = [];
@@ -76,6 +78,7 @@ rocket(bentoContract.tag, {
         })),
       }));
     const clearProjection = () => {
+      indicator.clear();
       if (pendingTimer) clearTimeout(pendingTimer);
       pendingTimer = null;
       marker?.remove();
@@ -101,14 +104,19 @@ rocket(bentoContract.tag, {
       previewUpdates = projectBentoLayout(layout(), id, target.gridId, target);
       marker = document.createElement("div");
       marker.setAttribute("data-bento-target", "");
+      marker.style.position = "relative";
       marker.style.gridColumn = `${target.col} / span ${target.width}`;
       marker.style.gridRow = `${target.row} / span ${target.height}`;
       target.grid.append(marker);
+      indicator.show(marker, "cell");
       const { cellWidth, cellHeight, gapX, gapY } = metrics(target.grid);
+      const itemsById = new Map(
+        [...host.querySelectorAll<HTMLElement>(itemSelector)]
+          .filter(owns)
+          .map((item) => [item.dataset.bentoItem, item]),
+      );
       for (const update of previewUpdates) {
-        const item = [...host.querySelectorAll<HTMLElement>(itemSelector)].find(
-          (candidate) => itemId(candidate) === update.itemId,
-        );
+        const item = itemsById.get(update.itemId);
         if (!item) continue;
         if (update.itemId === id) {
           item.setAttribute("data-bento-projecting", "");
@@ -198,6 +206,12 @@ rocket(bentoContract.tag, {
       itemSelector,
       itemId,
       targetAt,
+      sameTarget: (a, b) =>
+        a?.grid === b?.grid &&
+        a?.col === b?.col &&
+        a?.row === b?.row &&
+        a?.width === b?.width &&
+        a?.height === b?.height,
       mark,
       retainPreviewOnCommit: true,
       canStart: (event) => !(event.target as HTMLElement).closest(resizeSelector),

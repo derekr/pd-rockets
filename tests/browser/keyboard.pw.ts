@@ -230,3 +230,149 @@ test("pointer drag emits a semantic move and staging is cancelled by a pointer g
   expect(events).toHaveLength(1);
   expect(events[0]).toMatchObject({ name: "rocket-sortable-move", detail: { itemId: "list-a", before: "list-c" } });
 });
+
+test("tree pointer preview updates only the active marker as the target changes", async ({ page }) => {
+  await ready(page);
+  const source = page.locator("#tree [data-tree-node=button] > [data-tree-row]");
+  const folder = page.locator("#tree [data-tree-node=docs] > [data-tree-row]");
+  const file = page.locator("#tree [data-tree-node=readme] > [data-tree-row]");
+  await source.scrollIntoViewIfNeeded();
+  const start = await source.boundingBox(),
+    into = await folder.boundingBox(),
+    before = await file.boundingBox();
+  expect(start && into && before).toBeTruthy();
+  await page.mouse.move(start!.x + start!.width / 2, start!.y + start!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(into!.x + into!.width / 2, into!.y + into!.height / 2, { steps: 6 });
+  await expect(folder).toHaveAttribute("data-tree-into", "");
+  await page.mouse.move(before!.x + before!.width / 2, before!.y + 2, { steps: 6 });
+  await expect(folder).not.toHaveAttribute("data-tree-into", "");
+  await expect(file).toHaveAttribute("data-tree-before", "");
+  await page.mouse.up();
+  await expect(file).not.toHaveAttribute("data-tree-before", "");
+  expect((await moves(page)).at(-1)?.detail).toMatchObject({ itemId: "button", toParent: "", before: "readme" });
+});
+
+test("pointer targets update across Kanban lanes, group lists, and bento grids", async ({ page }) => {
+  await ready(page);
+  for (const { source, destination, marked } of [
+    {
+      source: "#kanban [data-kanban-card=card-a]",
+      destination: "#kanban [data-kanban-card=card-b]",
+      marked: "#kanban [data-kanban-lane][data-col='1'][data-drop-active]",
+    },
+    {
+      source: "#group [data-drag-item=note-a]",
+      destination: "#group [data-drag-item=note-c]",
+      marked: "#group [data-drop-list=later][data-drop-active]",
+    },
+    {
+      source: "#bento [data-bento-item=tile-b]",
+      destination: "#bento [data-bento-item=tile-d]",
+      marked: "#bento [data-bento-grid=scratchpad] [data-bento-target]",
+    },
+  ]) {
+    await page.locator(source).scrollIntoViewIfNeeded();
+    const start = await page.locator(source).boundingBox();
+    const target = await page.locator(destination).boundingBox();
+    expect(start && target).toBeTruthy();
+    await page.mouse.move(start!.x + start!.width / 2, start!.y + start!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(target!.x + target!.width / 2, target!.y + target!.height / 2, { steps: 8 });
+    await expect(page.locator(marked)).toBeVisible();
+    await page.mouse.up();
+  }
+  expect((await moves(page)).map(({ name }) => name)).toEqual([
+    "rocket-kanban-move",
+    "rocket-drag-group-move",
+    "rocket-bento-move",
+  ]);
+});
+
+test("server-rendered template outlets customize pointer preview and target indicators", async ({ page }) => {
+  await ready(page);
+  await page.evaluate(() => {
+    const host = document.querySelector("#list rocket-sortable-list")!;
+    const preview = document.createElement("template");
+    preview.dataset.rocketPreview = "";
+    preview.className = "custom-preview";
+    preview.innerHTML = '<strong class="preview-content">Floating task</strong>';
+    host.querySelector("[data-sortable-item=list-a]")!.append(preview);
+    const style = document.createElement("style");
+    style.textContent = ".custom-preview[data-drag-preview] { width: 31px; height: 19px; }";
+    document.head.append(style);
+    for (const kind of ["before", "end"]) {
+      const target = document.createElement("template");
+      target.dataset.rocketTarget = kind;
+      target.innerHTML = `<span class="custom-target">${kind}</span>`;
+      host.append(target);
+    }
+  });
+  const source = await page.locator("#list [data-sortable-item=list-a]").boundingBox();
+  const destination = await page.locator("#list [data-sortable-item=list-c]").boundingBox();
+  expect(source && destination).toBeTruthy();
+  await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(destination!.x + destination!.width / 2, destination!.y + 2, { steps: 6 });
+  await expect(page.locator("body > .custom-preview[data-drag-preview] .preview-content")).toHaveText("Floating task");
+  await expect(page.locator("body > .custom-preview[data-drag-preview]")).toHaveCSS("width", "31px");
+  await expect(page.locator("#list [data-sortable-item=list-c] [data-rocket-target-indicator=before]")).toContainText(
+    "before",
+  );
+  await page.mouse.up();
+  await expect(page.locator("body > [data-drag-preview]")).toHaveCount(0);
+  await expect(page.locator("#list [data-rocket-target-indicator]")).toHaveCount(0);
+
+  await page.locator('#list template[data-rocket-target="end"]').evaluate((template) => template.remove());
+  await page.locator("#list [data-sortable-item=list-a]").focus();
+  await page.keyboard.down("Alt");
+  await page.keyboard.press("j");
+  await page.keyboard.press("j");
+  await expect(page.locator("#list [data-rocket-target-indicator]")).toHaveCount(0);
+  await page.evaluate(() => {
+    const template = document.createElement("template");
+    template.dataset.rocketTarget = "";
+    template.innerHTML = '<span class="custom-target">end</span>';
+    document.querySelector("#list rocket-sortable-list")!.append(template);
+  });
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("j");
+  await page.keyboard.press("j");
+  await expect(page.locator("#list rocket-sortable-list > [data-rocket-target-indicator=end]")).toContainText("end");
+  await page.keyboard.press("Escape");
+  await page.keyboard.up("Alt");
+  await expect(page.locator("#list [data-rocket-target-indicator]")).toHaveCount(0);
+});
+
+test("tree and bento expose their layout-specific target outlets", async ({ page }) => {
+  await ready(page);
+  await page.evaluate(() => {
+    for (const [selector, kind] of [
+      ["#tree rocket-sortable-tree", "into"],
+      ["#bento rocket-bento-workspace", "cell"],
+    ]) {
+      const template = document.createElement("template");
+      template.dataset.rocketTarget = kind;
+      template.innerHTML = `<span class="custom-target">${kind}</span>`;
+      document.querySelector(selector)!.append(template);
+    }
+  });
+  await page.locator("#tree [data-tree-node=button] > [data-tree-row]").scrollIntoViewIfNeeded();
+  const source = await page.locator("#tree [data-tree-node=button] > [data-tree-row]").boundingBox();
+  const folder = await page.locator("#tree [data-tree-node=docs] > [data-tree-row]").boundingBox();
+  expect(source && folder).toBeTruthy();
+  await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(folder!.x + folder!.width / 2, folder!.y + folder!.height / 2, { steps: 6 });
+  await expect(page.locator("#tree [data-tree-node=docs] > [data-tree-row]")).toHaveAttribute("data-tree-into", "");
+  await expect(
+    page.locator("#tree [data-tree-node=docs] > [data-tree-row] [data-rocket-target-indicator=into]"),
+  ).toContainText("into");
+  await page.mouse.up();
+  await page.locator("#bento [data-bento-item=tile-b]").focus();
+  await page.keyboard.down("Alt");
+  await page.keyboard.press("j");
+  await expect(page.locator("#bento [data-bento-target] [data-rocket-target-indicator=cell]")).toContainText("cell");
+  await page.keyboard.press("Escape");
+  await page.keyboard.up("Alt");
+});

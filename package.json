@@ -15,6 +15,7 @@
     "test": "bun test",
     "test:browser": "playwright test",
     "test:browser:ui": "playwright test --ui",
+    "test:perf": "PERF=1 playwright test tests/browser/performance.pw.ts --workers=1 --reporter=list",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

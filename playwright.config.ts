@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests/browser",
   testMatch: "**/*.pw.ts",
+  testIgnore: process.env.PERF ? [] : ["**/performance.pw.ts"],
   fullyParallel: true,
   workers: 4,
   reporter: process.env.CI ? "list" : "line",

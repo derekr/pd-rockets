@@ -8,6 +8,7 @@ import { cancelKeys, focusKeys, keyboardBindings, keyboardItem, moveKeys } from 
 import { installKeyboardStaging } from "../../core/keyboard-staging";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
+import { installTargetIndicator } from "../../core/visual-outlets";
 
 type Target = { list: HTMLElement; toList: string; before: string };
 
@@ -27,6 +28,7 @@ rocket(dragGroupContract.tag, {
         (item) => owns(item) && item.closest(listSelector) === list,
       );
     const flip = installFlip({ host, itemSelector, itemId });
+    const indicator = installTargetIndicator(host);
 
     const targetAt = (x: number, y: number, sourceId: string): Target | null => {
       const hit = document.elementFromPoint(x, y);
@@ -41,6 +43,7 @@ rocket(dragGroupContract.tag, {
       return { list, toList: list.dataset.dropList, before: insertionBefore(candidates, y) };
     };
     const mark = (target: Target | null): void => {
+      indicator.clear();
       lists().forEach((list) => {
         itemsIn(list).forEach((item) => item.removeAttribute("data-drop-before"));
         list.removeAttribute("data-drop-active");
@@ -49,11 +52,12 @@ rocket(dragGroupContract.tag, {
       if (!target) return;
       target.list.setAttribute("data-drop-active", "");
       if (target.before) {
-        itemsIn(target.list)
-          .find((item) => item.dataset.dragItem === target.before)
-          ?.setAttribute("data-drop-before", "");
+        const beforeItem = itemsIn(target.list).find((item) => item.dataset.dragItem === target.before);
+        beforeItem?.setAttribute("data-drop-before", "");
+        indicator.show(beforeItem ?? null, "before");
       } else {
         target.list.setAttribute("data-drop-end", "");
+        indicator.show(target.list, "end");
       }
     };
     const emitMove = (id: string, target: Target) => {
@@ -157,6 +161,7 @@ rocket(dragGroupContract.tag, {
       itemSelector,
       itemId,
       targetAt,
+      sameTarget: (a, b) => a?.list === b?.list && a?.before === b?.before,
       mark,
       beforeCommit: (id, rect) => flip.prepare({ itemId: id, rect }),
       commit: emitMove,
@@ -168,6 +173,7 @@ rocket(dragGroupContract.tag, {
       host.removeEventListener("keydown", onKeyDown);
       dispose();
       flip.dispose();
+      indicator.clear();
     });
   },
 });

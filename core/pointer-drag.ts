@@ -1,5 +1,6 @@
 import { createDragState } from "./drag-state";
 import { ownsRocketElement } from "./ownership";
+import { dragPreviewFor } from "./visual-outlets";
 
 export type PointerDragOptions<ItemId, Target> = {
   host: HTMLElement;
@@ -8,6 +9,7 @@ export type PointerDragOptions<ItemId, Target> = {
   interactiveHandle?: string;
   canStart?: (event: PointerEvent, item: HTMLElement) => boolean;
   targetAt: (x: number, y: number, itemId: ItemId) => Target | null;
+  sameTarget?: (previous: Target | null, next: Target | null) => boolean;
   mark: (target: Target | null, itemId?: ItemId) => void;
   retainPreviewOnCommit?: boolean;
   beforeCommit?: (itemId: ItemId, rect: { left: number; top: number }) => void;
@@ -22,6 +24,8 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
   let previewOffset = { x: 0, y: 0 };
   let start: { x: number; y: number; item: HTMLElement } | null = null;
   let dragging = false;
+  let previewTarget: Target | null = null;
+  let hasPreviewTarget = false;
 
   const movePreview = (event: PointerEvent): void => {
     if (!preview) return;
@@ -40,6 +44,8 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     active = null;
     start = null;
     dragging = false;
+    previewTarget = null;
+    hasPreviewTarget = false;
     if (!target || cancelled || !options.retainPreviewOnCommit) options.mark(null, current?.itemId);
     clearPreview();
     options.host.removeAttribute("data-drag-active");
@@ -76,6 +82,9 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     }
     movePreview(pointer);
     const target = options.targetAt(pointer.clientX, pointer.clientY, active.itemId);
+    if (hasPreviewTarget && options.sameTarget?.(previewTarget, target)) return;
+    previewTarget = target;
+    hasPreviewTarget = true;
     state.send({ type: "preview", target });
     options.mark(target, active.itemId);
   };
@@ -98,15 +107,21 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     item.setAttribute("data-dragging", "true");
     const rect = item.getBoundingClientRect();
     previewOffset = { x: start!.x - rect.left, y: start!.y - rect.top };
-    preview = item.cloneNode(true) as HTMLElement;
+    preview = dragPreviewFor(item);
     preview.removeAttribute("id");
     preview.setAttribute("data-drag-preview", "true");
+    preview.setAttribute("aria-hidden", "true");
+    preview.inert = true;
     preview.style.position = "fixed";
     preview.style.left = `${rect.left}px`;
     preview.style.top = `${rect.top}px`;
     preview.style.boxSizing = "border-box";
-    preview.style.width = `${rect.width}px`;
-    preview.style.height = `${rect.height}px`;
+    preview.style.setProperty("--rocket-source-width", `${rect.width}px`);
+    preview.style.setProperty("--rocket-source-height", `${rect.height}px`);
+    if (!item.querySelector(":scope > template[data-rocket-preview]")) {
+      preview.style.width = `${rect.width}px`;
+      preview.style.height = `${rect.height}px`;
+    }
     preview.style.pointerEvents = "none";
     preview.style.zIndex = "1000";
     document.body.append(preview);

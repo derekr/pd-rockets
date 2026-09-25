@@ -226,6 +226,7 @@ const page = renderHTML(
                 <a href="#bento">05 · Bento grids</a>
                 <a href="#tree">06 · File tree</a>
                 <a href="#server">07 · Wire a backend</a>
+                <a href="#customize">08 · Make it yours</a>
                 <a href="#reference">Reference</a>
                 <a href="#keyboard">Keyboard inputs</a>
                 <a href="#events">Events &amp; DOM</a>
@@ -686,6 +687,219 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                 <p class="callout">
                   The page seeds only interaction-detail signals. Board, list and grid content live in rendered DOM, not
                   signals.
+                </p>
+              </section>
+
+              <section id="customize" class="docs-section" aria-labelledby="customize-title">
+                <p class="section-kicker">STEP 08 / YOUR DESIGN SYSTEM</p>
+                <h2 id="customize-title">Make it yours</h2>
+                <p>
+                  Pick the <a href="#install">surface bundle</a> you need and render its light-DOM contract with your
+                  own components, classes, and content. PD rockets supplies interaction behavior, not a required
+                  stylesheet. Keep the host tag, stable item IDs, focusable items, and the <code>data-*</code> hooks;
+                  style everything around them to fit your product.
+                </p>
+                <p class="callout">
+                  Your server-rendered markup is the design surface. Use your own component classes and CSS custom
+                  properties for colors, spacing, and shape; Rocket’s <code>data-*</code> attributes expose the
+                  interaction states. There is no mandatory theme or token set.
+                </p>
+                <h3>Set shortcuts on the host</h3>
+                <p>
+                  This sortable list keeps arrow keys and replaces Vim <kbd>j</kbd>/<kbd>k</kbd> with <kbd>n</kbd>/
+                  <kbd>p</kbd>. It stages reorders with Alt + those same keys. Render the attributes with the host;
+                  bindings are resolved when the component connects. The event is an intent: your page applies it and
+                  patches the confirmed HTML from its backend.
+                </p>
+                <pre>
+                  <code>{`<section class="project-queue" aria-labelledby="queue-title">
+  <h2 id="queue-title">Queue</h2>
+  <rocket-sortable-list
+    data-key-focus-next="ArrowDown n"
+    data-key-focus-previous="ArrowUp p"
+    data-key-move-down="Alt+ArrowDown Alt+n"
+    data-key-move-up="Alt+ArrowUp Alt+p"
+    data-on:rocket-sortable-move="
+      $itemId = evt.detail?.['itemId'] ?? null;
+      $before = evt.detail?.['before'] ?? null;
+      @post('/queue/move')">
+    <article class="queue-item" data-sortable-item="item-a" tabindex="0">First task</article>
+    <article class="queue-item" data-sortable-item="item-b" tabindex="0">Next task</article>
+  </rocket-sortable-list>
+</section>`}</code>
+                </pre>
+                <p>
+                  The <code>rocket-sortable-move</code> detail is <code>{`{ itemId, before }`}</code>; an empty{" "}
+                  <code>before</code> appends. The example route and signals belong to the page, not the bundle. Set a
+                  shortcut attribute to an empty string to disable that intent; see the{" "}
+                  <a href="#keyboard">keyboard reference</a> for the other surfaces and Kanban’s legacy aliases.
+                </p>
+                <h3>Style the states, not the internals</h3>
+                <p>
+                  Scope styles under your component class. The host and items are ordinary light-DOM elements; preview
+                  and target attributes are styling hooks. By default the floating preview is a clone attached to the
+                  document body, so an item class lets it keep your theme outside the host. Give pointer items{" "}
+                  <code>touch-action: none</code> and a visible keyboard focus state:
+                </p>
+                <pre>
+                  <code>{`.project-queue, .queue-item[data-drag-preview] {
+  --queue-accent: var(--color-accent, #256c62);
+  --queue-surface: var(--color-surface, #fff);
+}
+.project-queue rocket-sortable-list {
+  display: grid;
+  gap: .5rem;
+  position: relative;
+}
+:is(.project-queue [data-sortable-item], .queue-item[data-drag-preview]) {
+  position: relative;
+  padding: .75rem 1rem;
+  border: 1px solid var(--queue-accent);
+  border-radius: var(--radius-card, .5rem);
+  background: var(--queue-surface);
+  cursor: grab;
+  touch-action: none;
+}
+.project-queue [data-sortable-item]:focus-visible {
+  outline: 2px solid var(--queue-accent);
+  outline-offset: 2px;
+}
+.project-queue [data-dragging] { opacity: .45; }
+.queue-item[data-drag-preview] { box-shadow: 0 12px 24px #0003; }
+.project-queue [data-drop-before]::before,
+.project-queue rocket-sortable-list[data-drop-end]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--queue-accent);
+  pointer-events: none;
+}
+.project-queue [data-drop-before]::before { top: -5px; }
+.project-queue rocket-sortable-list[data-drop-end]::after { bottom: -5px; }`}</code>
+                </pre>
+                <h3>Replace the preview or target markup</h3>
+                <p>
+                  For richer affordances, render inert <code>&lt;template&gt;</code> fragments with your items and host.
+                  A direct-child <code>data-rocket-preview</code> template on an item replaces that item’s floating
+                  clone; its class is copied onto the preview wrapper, which moves under <code>document.body</code>. Its
+                  size is yours to style; <code>--rocket-source-width</code> and <code>--rocket-source-height</code>
+                  expose the original dimensions if useful. Direct-child <code>data-rocket-target</code> templates on
+                  the host supply target decorations. Rocket inserts their content into a noninteractive{" "}
+                  <code>[data-rocket-target-indicator]</code> wrapper at the active target for both pointer and keyboard
+                  staging. Give target items and containers <code>position: relative</code> so you can position the
+                  indicator inside them:
+                </p>
+                <pre>
+                  <code>{`<!-- Inside a server-rendered [data-sortable-item] -->
+<template data-rocket-preview class="queue-preview">
+  <strong>Moving: First task</strong>
+</template>
+
+<!-- Direct children of the rocket-sortable-list host -->
+<template data-rocket-target="before">
+  <span class="queue-target">Place above</span>
+</template>
+<template data-rocket-target="end">
+  <span class="queue-target">Place at end</span>
+</template>`}</code>
+                </pre>
+                <pre>
+                  <code>{`.queue-preview[data-drag-preview] {
+  display: grid;
+  place-items: center;
+  width: max-content;
+  min-height: var(--rocket-source-height);
+  border: 2px solid var(--color-accent, #256c62);
+  border-radius: var(--radius-card, .5rem);
+  background: var(--color-surface, #fff);
+}
+.project-queue [data-rocket-target-indicator] {
+  left: 0;
+  right: 0;
+  color: var(--queue-accent);
+}
+.project-queue [data-rocket-target-indicator="before"] { top: -1.5rem; }
+.project-queue [data-rocket-target-indicator="end"] { bottom: -1.5rem; }
+.project-queue .queue-target { display: block; }`}</code>
+                </pre>
+                <p>
+                  Without a preview template Rocket clones the source item. Without a target template the existing{" "}
+                  <code>data-drop-*</code> states remain available for CSS-only markers like those above. When using a
+                  template indicator, replace those pseudo-element marker rules with your indicator styles. Other target
+                  kinds are <code>into</code> for tree folders and <code>cell</code> for bento grids; a bare{" "}
+                  <code>data-rocket-target</code> template can serve every kind on a host. Geometry and the semantic
+                  move event still belong to the surface.
+                </p>
+                <h3>Match the affordance to the layout</h3>
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Surface</th>
+                        <th>Your markup &amp; layout</th>
+                        <th>Rocket styling hooks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Kanban</td>
+                        <td>
+                          <code>[data-kanban-lane]</code> and <code>[data-kanban-lane-cards]</code> set lane geometry.
+                        </td>
+                        <td>
+                          <code>[data-drop-active]</code>, <code>[data-drop-before]</code>, <code>[data-drop-end]</code>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Sortable list</td>
+                        <td>
+                          Style the host and <code>[data-sortable-item]</code> rows.
+                        </td>
+                        <td>
+                          <code>[data-drop-before]</code> on an item; <code>[data-drop-end]</code> on the host
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Drag group</td>
+                        <td>
+                          <code>[data-drop-list]</code> regions contain <code>[data-drag-item]</code>.
+                        </td>
+                        <td>
+                          <code>[data-drop-active]</code>, <code>[data-drop-before]</code>, <code>[data-drop-end]</code>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Bento</td>
+                        <td>
+                          <code>[data-bento-grid]</code> provides tracks and rows; tile positions come from your model.
+                        </td>
+                        <td>
+                          <code>[data-bento-target]</code>, <code>[data-bento-projecting]</code>,{" "}
+                          <code>[data-bento-resizing]</code>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>File tree</td>
+                        <td>
+                          <code>[data-tree-children]</code> nests rows; honor <code>[hidden]</code> on collapsed
+                          folders.
+                        </td>
+                        <td>
+                          <code>[data-tree-before]</code>, <code>[data-tree-into]</code>, <code>[data-tree-end]</code>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p>
+                  All surfaces expose <code>[data-dragging]</code> on the source, <code>[data-drag-preview]</code> on
+                  the detached clone, and <code>[data-key-staging]</code> on the host during keyboard moves. Bento also
+                  needs <code>data-columns</code> to match its CSS grid tracks, a fixed <code>grid-auto-rows</code>, and
+                  tile <code>grid-column</code>/<code>grid-row</code> styles that match their rendered position data.
+                  See the <a href="./source/examples/hono-datastar/demo.css.txt">example CSS ↗</a> for complete layout
+                  and state rules.
                 </p>
               </section>
 

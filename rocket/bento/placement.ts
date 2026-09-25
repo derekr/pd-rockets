@@ -46,8 +46,9 @@ export function projectBentoLayout(
   const destination = grids.find((grid) => grid.id === targetGrid);
   if (!source || !destination) return [];
   const projected = placeWithPush(destination.items, { id: itemId, ...target }, destination.columns);
+  const previousById = new Map(destination.items.map((item) => [item.id, item]));
   return projected.flatMap((item) => {
-    const previous = destination.items.find((candidate) => candidate.id === item.id);
+    const previous = previousById.get(item.id);
     if (
       previous &&
       previous.col === item.col &&

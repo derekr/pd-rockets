@@ -7,6 +7,7 @@ import { cancelKeys, focusKeys, keyboardBindings, keyboardItem, moveKeys } from 
 import { installKeyboardStaging } from "../../core/keyboard-staging";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
+import { installTargetIndicator } from "../../core/visual-outlets";
 
 type Target = { list: HTMLElement; parentId: string; before: string; into: boolean };
 
@@ -20,7 +21,6 @@ rocket(sortableTreeContract.tag, {
     const focus = installFocusRecovery(host);
     const nodeFor = (row: HTMLElement) => row.closest<HTMLElement>(nodeSelector);
     const rowId = (row: HTMLElement) => (owns(row) ? (nodeFor(row)?.dataset.treeNode ?? null) : null);
-    const lists = () => [...host.querySelectorAll<HTMLElement>(childrenSelector)].filter(owns);
     const childrenOf = (list: HTMLElement) =>
       [...list.children].filter(
         (child): child is HTMLElement => child instanceof HTMLElement && child.matches(nodeSelector),
@@ -50,6 +50,7 @@ rocket(sortableTreeContract.tag, {
     const observer = new MutationObserver(syncExpanded);
     observer.observe(host, { childList: true, subtree: true });
     const flip = installFlip({ host, itemSelector: rowSelector, itemId: rowId });
+    const indicator = installTargetIndicator(host);
 
     const valid = (sourceId: string, target: Target): boolean => {
       const source = nodeById(sourceId);
@@ -81,23 +82,27 @@ rocket(sortableTreeContract.tag, {
       const target = { list, parentId: list.dataset.treeParent ?? "", before: "", into: !!list.dataset.treeParent };
       return valid(id, target) ? target : null;
     };
+    let marked: { element: HTMLElement; attribute: string } | null = null;
     const mark = (target: Target | null) => {
-      lists().forEach((list) => {
-        list.removeAttribute("data-tree-end");
-        [...list.querySelectorAll<HTMLElement>(rowSelector)].filter(owns).forEach((row) => {
-          row.removeAttribute("data-tree-before");
-          row.removeAttribute("data-tree-into");
-        });
-      });
-      if (!target) return;
+      if (marked) marked.element.removeAttribute(marked.attribute);
+      marked = null;
+      if (!target) {
+        indicator.clear();
+        return;
+      }
       if (target.into) {
         const parent = nodeById(target.parentId);
         const row = parent && rowOf(parent);
-        row?.setAttribute("data-tree-into", "");
+        if (row) marked = { element: row, attribute: "data-tree-into" };
       } else if (target.before) {
         const node = childrenOf(target.list).find((candidate) => candidate.dataset.treeNode === target.before);
-        if (node) rowOf(node)?.setAttribute("data-tree-before", "");
-      } else target.list.setAttribute("data-tree-end", "");
+        const row = node && rowOf(node);
+        if (row) marked = { element: row, attribute: "data-tree-before" };
+      } else marked = { element: target.list, attribute: "data-tree-end" };
+      if (marked) {
+        marked.element.setAttribute(marked.attribute, "");
+        indicator.show(marked.element, target.into ? "into" : target.before ? "before" : "end");
+      }
     };
     const emitMove = (id: string, target: Target) => {
       const node = nodeById(id);
@@ -267,6 +272,7 @@ rocket(sortableTreeContract.tag, {
       itemSelector: rowSelector,
       itemId: rowId,
       targetAt,
+      sameTarget: (a, b) => a?.list === b?.list && a?.before === b?.before && a?.into === b?.into,
       mark,
       beforeCommit: (id, rect) => flip.prepare({ itemId: id, rect }),
       commit: emitMove,
@@ -280,6 +286,7 @@ rocket(sortableTreeContract.tag, {
       host.removeEventListener("keydown", onKeyDown);
       dispose();
       flip.dispose();
+      indicator.clear();
     });
   },
 });

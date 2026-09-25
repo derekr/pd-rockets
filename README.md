@@ -110,6 +110,11 @@ For a quick Chromium interaction run, install Playwright's browser once with `bu
 run `bun run test:browser`. Playwright starts a small synthetic fixture server, bundles the source once per run, and uses
 four workers. Run a focused case with `bunx playwright test -g 'nested'`; `bun run test` retains the Bun unit tests.
 
+Run `bun run test:perf` for an informational Chromium benchmark of all five surfaces. It adds synthetic items to the
+browser fixture, warms each interaction, and prints p50/p95 handler times (milliseconds) for focus navigation, staged
+moves, stationary pointer previews, and changing pointer targets. The timings cover synchronous event dispatch; they
+exclude network, animation, and browser painting, and are not CI pass/fail thresholds.
+
 To run the Hono JSX demo instead:
 
 ```sh

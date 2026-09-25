@@ -7,6 +7,7 @@ import { cancelKeys, focusKeys, keyboardBindings, keyboardItem, moveKeys } from 
 import { installKeyboardStaging } from "../../core/keyboard-staging";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
+import { installTargetIndicator } from "../../core/visual-outlets";
 import { sortableListContract, type SortableMoveDetail } from "../../contracts/sortable-list";
 
 rocket(sortableListContract.tag, {
@@ -27,6 +28,7 @@ rocket(sortableListContract.tag, {
     const focus = installFocusRecovery(host);
     const items = () => [...host.querySelectorAll<HTMLElement>(sortableListContract.selectors.item)].filter(owns);
     const flip = installFlip({ host, itemSelector: sortableListContract.selectors.item, itemId });
+    const indicator = installTargetIndicator(host);
     const targetAt = (x: number, y: number, sourceId: string) => {
       const hit = document.elementFromPoint(x, y);
       if (!hit || !owns(hit as HTMLElement)) return null;
@@ -39,10 +41,13 @@ rocket(sortableListContract.tag, {
       return { before: insertionBefore(candidates, y) };
     };
     const mark = (target: { before: string } | null) => {
+      let beforeItem: HTMLElement | null = null;
       items().forEach((item) => {
         item.toggleAttribute("data-drop-before", target?.before !== "" && item.dataset.sortableItem === target?.before);
+        if (target?.before === item.dataset.sortableItem) beforeItem = item;
       });
       host.toggleAttribute("data-drop-end", target !== null && target.before === "");
+      indicator.show(target ? (target.before ? beforeItem : host) : null, target?.before ? "before" : "end");
     };
     const emitMove = (id: string, target: { before: string }) => {
       host.dispatchEvent(
@@ -75,6 +80,7 @@ rocket(sortableListContract.tag, {
       itemSelector: sortableListContract.selectors.item,
       itemId,
       targetAt,
+      sameTarget: (a, b) => a?.before === b?.before,
       mark,
       beforeCommit: (id, rect) => flip.prepare({ itemId: id, rect }),
       commit: emitMove,
@@ -134,6 +140,7 @@ rocket(sortableListContract.tag, {
       host.removeEventListener("keydown", onKeyDown);
       dispose();
       flip.dispose();
+      indicator.clear();
     });
   },
 });
