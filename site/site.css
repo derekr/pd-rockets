@@ -56,6 +56,52 @@ a {
   margin: 0 auto;
 }
 
+.demo-activity {
+  position: fixed;
+  z-index: 1100;
+  right: clamp(12px, 2vw, 28px);
+  bottom: clamp(12px, 2vw, 28px);
+  width: min(330px, calc(100vw - 24px));
+  pointer-events: none;
+}
+
+.demo-activity ol {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-toast {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 9px 12px;
+  border: 1px solid var(--text);
+  border-left: 4px solid var(--blue);
+  border-radius: 4px;
+  background: var(--raised);
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--text) 22%, transparent);
+  color: var(--text);
+  font:
+    12px/1.4 ui-monospace,
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+  overflow-wrap: anywhere;
+}
+
+.activity-toast[data-kind="Datastar"] {
+  border-left-color: var(--yellow);
+}
+.activity-toast[data-kind="SSE"] {
+  border-left-color: var(--text-3);
+}
+.activity-toast b {
+  min-width: 62px;
+}
+
 .site-header {
   display: flex;
   align-items: center;

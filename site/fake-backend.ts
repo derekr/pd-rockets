@@ -1,4 +1,5 @@
 import type { BentoMoveDetail, BentoPosition, BentoResizeDetail } from "../contracts/bento";
+import { showActivity } from "./activity";
 
 type BoardTarget = { cardId: string; col: number; before: string };
 type ListTarget = { itemId: string; before: string };
@@ -96,6 +97,7 @@ function applyBentoPositions(updates: BentoPosition[]): void {
 }
 
 function patchResponse(selector: string, model: HTMLElement): Response {
+  showActivity("SSE", `patch ${selector}`);
   const lines = ["event: datastar-patch-elements", `data: selector ${selector}`, "data: mode outer"];
   for (const line of model.outerHTML.split("\n")) lines.push(`data: elements ${line}`);
   lines.push("", "");
@@ -114,26 +116,31 @@ const interceptFetch = async (input: RequestInfo | URL, init?: RequestInit): Pro
   if (request.method !== "POST") return originalFetch(input, init);
 
   if (url.pathname.endsWith("/bento-move")) {
+    showActivity("Datastar", "@post('./bento-move')");
     applyBentoPositions((signalPayload(await request.text()).bento as BentoMoveDetail).updates);
     return patchResponse("#bento-demo", bentoModel);
   }
 
   if (url.pathname.endsWith("/bento-resize")) {
+    showActivity("Datastar", "@post('./bento-resize')");
     applyBentoPositions((signalPayload(await request.text()).bento as BentoResizeDetail).updates);
     return patchResponse("#bento-demo", bentoModel);
   }
 
   if (url.pathname.endsWith("/group-move")) {
+    showActivity("Datastar", "@post('./group-move')");
     moveGroupItem(signalPayload(await request.text()) as unknown as GroupTarget);
     return patchResponse("#group-demo", groupModel);
   }
 
   if (url.pathname.endsWith("/list-move")) {
+    showActivity("Datastar", "@post('./list-move')");
     moveListItem(signalPayload(await request.text()) as unknown as ListTarget);
     return patchResponse("#sortable-demo", sortableModel);
   }
 
   if (url.pathname.endsWith("/move")) {
+    showActivity("Datastar", "@post('./move')");
     moveCard(signalPayload(await request.text()) as unknown as BoardTarget);
     return patchResponse("#kanban-demo", kanbanModel);
   }

@@ -17,9 +17,14 @@ import { buildSourceIndex } from "./build-source";
 const root = join(import.meta.dir, "..");
 const output = join(root, "dist/site");
 const bundle = await readFile(join(root, "dist/rocket-kit.js"), "utf8");
+const fakeBackend = await Bun.build({ entrypoints: [join(import.meta.dir, "fake-backend.ts")], target: "browser" });
+if (!fakeBackend.success || fakeBackend.outputs.length !== 1 || !fakeBackend.outputs[0]) {
+  throw new AggregateError(fakeBackend.logs, "rocket-kit: site fake backend build failed");
+}
+const backendBundle = await fakeBackend.outputs[0].text();
 const assetVersion = createHash("sha256")
   .update(bundle)
-  .update(await readFile(join(import.meta.dir, "fake-backend.ts")))
+  .update(backendBundle)
   .update(await readFile(join(import.meta.dir, "site.css")))
   .update(await readFile(join(root, "examples/hono-datastar/demo.css")))
   .digest("hex")
@@ -382,6 +387,8 @@ rocket-bento-resize → { itemId, grid, updates: [{ itemId, grid, col, row, widt
                     <code>datastar-patch-elements</code>
                   </a>{" "}
                   event. Datastar performs the morph; Rocket animates items from their prior positions to the new ones.
+                  Try a demo gesture: the small activity queue shows the Rocket event, the Datastar POST and the SSE
+                  patch returned by the fixture, without recording item text or request content.
                 </p>
                 <pre>
                   <code>{`event: datastar-patch-elements
@@ -394,7 +401,8 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                   <a href="./source/examples/go/main.go.txt">Go SSE handler ↗</a>
                 </p>
                 <p class="callout">
-                  The page seeds only move-detail signals. Board and list content live in rendered DOM, not signals.
+                  The page seeds only interaction-detail signals. Board, list and grid content live in rendered DOM, not
+                  signals.
                 </p>
               </section>
 
@@ -731,6 +739,15 @@ cd examples/go && go run .`}</code>
           <a href="#top">Back to top ↑</a>
         </footer>
       </div>
+      <aside
+        id="demo-activity"
+        class="demo-activity"
+        aria-label="Demo activity"
+        aria-live="polite"
+        aria-relevant="additions"
+      >
+        <ol data-activity-queue=""></ol>
+      </aside>
       <script type="module" src={`./fake-backend.js?v=${assetVersion}`}></script>
       <script type="module" src={`./rocket-kit.js?v=${assetVersion}`}></script>
     </body>
@@ -753,10 +770,6 @@ await writeFile(
   bundle.replaceAll('"/js/datastar-rocket.js"', '"./js/datastar-rocket.js"'),
 );
 
-const fakeBackend = await Bun.build({ entrypoints: [join(import.meta.dir, "fake-backend.ts")], target: "browser" });
-if (!fakeBackend.success || fakeBackend.outputs.length !== 1 || !fakeBackend.outputs[0]) {
-  throw new AggregateError(fakeBackend.logs, "rocket-kit: site fake backend build failed");
-}
-await Bun.write(join(output, "fake-backend.js"), fakeBackend.outputs[0]);
+await writeFile(join(output, "fake-backend.js"), backendBundle);
 
 console.error(`built ${join(output, "index.html")}`);
