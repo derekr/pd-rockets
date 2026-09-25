@@ -1011,11 +1011,15 @@ kbd {
 }
 
 .trash-intro {
-  display: flex;
-  align-items: end;
-  flex-wrap: wrap;
-  gap: 12px 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px 24px;
   margin-bottom: 20px;
+}
+.trash-intro > div:first-child {
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .trash-eyebrow,
@@ -1041,13 +1045,17 @@ kbd {
   letter-spacing: -0.055em;
 }
 .docs-section .trash-intro p {
-  flex: 1;
-  margin: 0 0 3px;
+  grid-column: 1;
+  grid-row: 2;
+  margin: 0;
   color: #656568;
   font-size: 0.85rem;
   line-height: 1.4;
 }
 .trash-intro .keyboard-help-trigger {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
   border-color: #bd8f7c;
   background: #fffdfa;
 }
@@ -1253,21 +1261,6 @@ kbd {
   }
   .trash-stage [data-drop-list="bin"] {
     min-height: 170px;
-  }
-  .trash-intro {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
-  }
-  .trash-intro > div:first-child {
-    grid-column: 1 / -1;
-  }
-  .trash-intro p {
-    grid-column: 1;
-  }
-  .trash-intro .keyboard-help-trigger {
-    grid-column: 2;
-    grid-row: 2;
   }
   .trash-poof {
     top: auto;
