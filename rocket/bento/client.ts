@@ -1,9 +1,18 @@
-// @ts-ignore — the browser bundle resolves the vendored Rocket module at this URL.
-import { rocket } from "/js/datastar-rocket.js";
+// @ts-ignore — the consuming page resolves this external Rocket module through an import map.
+import { rocket } from "pd-rockets/rocket";
 import { bentoContract, type BentoMoveDetail, type BentoPosition, type BentoResizeDetail } from "../../contracts/bento";
 import { installFlip } from "../../core/flip";
 import { installFocusRecovery } from "../../core/focus-recovery";
-import { keyMatches } from "../../core/keyboard";
+import {
+  cancelKeys,
+  focusKeys,
+  gridKeys,
+  keyboardBindings,
+  keyboardItem,
+  moveKeys,
+  resizeKeys,
+} from "../../core/keyboard";
+import { installKeyboardStaging } from "../../core/keyboard-staging";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
 import { nextBentoColumn, projectBentoLayout, type Cell, type GridLayout } from "./placement";
@@ -16,6 +25,7 @@ rocket(bentoContract.tag, {
     cleanup(markRocketHost(host));
     const { grid: gridSelector, item: itemSelector, resize: resizeSelector } = bentoContract.selectors;
     const owns = (element: HTMLElement) => ownsRocketElement(host, element);
+    const keyboard = keyboardBindings(host, { ...focusKeys, ...moveKeys, ...resizeKeys, ...gridKeys, ...cancelKeys });
     const focus = installFocusRecovery(host);
     const grids = () => [...host.querySelectorAll<HTMLElement>(gridSelector)].filter(owns);
     const itemId = (item: HTMLElement) => (owns(item) ? (item.dataset.bentoItem ?? null) : null);
@@ -218,7 +228,7 @@ rocket(bentoContract.tag, {
     };
     const onPointerDown = (event: PointerEvent) => {
       if (!owns(event.target as HTMLElement)) return;
-      if (staged) clearStage();
+      if (staging.current) staging.cancel();
       const handle = (event.target as HTMLElement).closest<HTMLElement>(resizeSelector);
       const item = handle?.closest<HTMLElement>(itemSelector);
       const grid = item && gridFor(item);
@@ -272,60 +282,66 @@ rocket(bentoContract.tag, {
       if (resizing?.pointerId === event.pointerId) clearResize();
     };
 
-    let staged: { id: string; target: Target; kind: "move" | "resize" } | null = null;
-    const clearStage = () => {
-      staged = null;
-      host.removeAttribute("data-key-staging");
-      mark(null);
-    };
-    const commitStage = () => {
-      if (!staged) return;
-      const { id, target, kind } = staged;
-      staged = null;
-      host.removeAttribute("data-key-staging");
-      const source = [...host.querySelectorAll<HTMLElement>(itemSelector)].find(
-        (candidate) => itemId(candidate) === id,
-      );
-      if (source)
-        focus.expect(source, () => {
-          const item = [...host.querySelectorAll<HTMLElement>(itemSelector)].find(
-            (candidate) => itemId(candidate) === id,
-          );
-          if (!item || gridFor(item)?.dataset.bentoGrid !== target.gridId) return null;
-          const position = cells(item);
-          return position.col === target.col &&
-            position.row === target.row &&
-            position.width === target.width &&
-            position.height === target.height
-            ? item
-            : null;
-        });
-      flip.prepare();
-      if (kind === "move") emitMove(id, target);
-      else emitResize(id, target);
-    };
+    const staging = installKeyboardStaging<{ id: string; target: Target; kind: "move" | "resize" }>({
+      host,
+      owns,
+      onCancel: () => mark(null),
+      onCommit: ({ id, target, kind }) => {
+        const source = [...host.querySelectorAll<HTMLElement>(itemSelector)].find(
+          (candidate) => itemId(candidate) === id,
+        );
+        if (source)
+          focus.expect(source, () => {
+            const item = [...host.querySelectorAll<HTMLElement>(itemSelector)].find(
+              (candidate) => itemId(candidate) === id,
+            );
+            if (!item || gridFor(item)?.dataset.bentoGrid !== target.gridId) return null;
+            const position = cells(item);
+            return position.col === target.col &&
+              position.row === target.row &&
+              position.width === target.width &&
+              position.height === target.height
+              ? item
+              : null;
+          });
+        flip.prepare();
+        if (kind === "move") emitMove(id, target);
+        else emitResize(id, target);
+      },
+    });
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!owns(event.target as HTMLElement)) return;
-      const item = (event.target as HTMLElement).closest<HTMLElement>(itemSelector);
+      const item = keyboardItem(event, itemSelector, owns);
       const id = item && itemId(item);
-      if (!item || !id || !owns(item)) return;
-      if (event.key === "Escape") {
-        if (staged) event.preventDefault();
-        clearStage();
+      if (!item || !id) return;
+      if (keyboard.matches("cancel", event)) {
+        if (staging.current) {
+          event.preventDefault();
+          staging.cancel();
+        }
         return;
       }
-      if (!event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
+      const focusDirection = keyboard.direction(event, "focus");
+      if (
+        focusDirection.x ||
+        focusDirection.y ||
+        keyboard.matches("focusFirst", event) ||
+        keyboard.matches("focusLast", event)
+      ) {
         if (event.target !== item) return;
         const items = [...host.querySelectorAll<HTMLElement>(itemSelector)].filter(owns);
-        let next = event.key === "Home" ? items[0] : event.key === "End" ? items.at(-1) : null;
+        let next = keyboard.matches("focusFirst", event)
+          ? items[0]
+          : keyboard.matches("focusLast", event)
+            ? items.at(-1)
+            : null;
         const direction =
-          keyMatches("ArrowLeft", event) || keyMatches("h", event)
+          focusDirection.x < 0
             ? { x: -1, y: 0 }
-            : keyMatches("ArrowRight", event) || keyMatches("l", event)
+            : focusDirection.x > 0
               ? { x: 1, y: 0 }
-              : keyMatches("ArrowUp", event) || keyMatches("k", event)
+              : focusDirection.y < 0
                 ? { x: 0, y: -1 }
-                : keyMatches("ArrowDown", event) || keyMatches("j", event)
+                : focusDirection.y > 0
                   ? { x: 0, y: 1 }
                   : null;
         if (direction) {
@@ -363,26 +379,19 @@ rocket(bentoContract.tag, {
         }
         return;
       }
-      const move = event.altKey && !event.shiftKey;
-      const resize = event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey;
+      const moveDirection = keyboard.direction(event, "move");
+      const resizeDirection = keyboard.direction(event, "resize");
+      const gridDirection = keyboard.matches("gridPrevious", event) ? -1 : keyboard.matches("gridNext", event) ? 1 : 0;
+      const move = !!(moveDirection.x || moveDirection.y || gridDirection);
+      const resize = !!(resizeDirection.x || resizeDirection.y);
       if (!move && !resize) return;
-      const dx =
-        keyMatches(move ? "Alt+ArrowLeft" : "Shift+ArrowLeft", event) || (move && keyMatches("Alt+h", event))
-          ? -1
-          : keyMatches(move ? "Alt+ArrowRight" : "Shift+ArrowRight", event) || (move && keyMatches("Alt+l", event))
-            ? 1
-            : 0;
-      const dy =
-        keyMatches(move ? "Alt+ArrowUp" : "Shift+ArrowUp", event) || (move && keyMatches("Alt+k", event))
-          ? -1
-          : keyMatches(move ? "Alt+ArrowDown" : "Shift+ArrowDown", event) || (move && keyMatches("Alt+j", event))
-            ? 1
-            : 0;
-      const gridDirection = move && event.key === "PageUp" ? -1 : move && event.key === "PageDown" ? 1 : 0;
+      const { x: dx, y: dy } = move ? moveDirection : resizeDirection;
       if (!dx && !dy && !gridDirection) return;
-      event.preventDefault();
       const sourceGrid = gridFor(item);
-      const current = staged?.id === id && staged.kind === (move ? "move" : "resize") ? staged.target : null;
+      const current =
+        staging.current?.id === id && staging.current.kind === (move ? "move" : "resize")
+          ? staging.current.target
+          : null;
       const currentGrid = current?.grid ?? sourceGrid;
       const allGrids = grids();
       let targetGrid = currentGrid && allGrids[allGrids.indexOf(currentGrid) + gridDirection];
@@ -426,23 +435,17 @@ rocket(bentoContract.tag, {
         target.height === origin.height
       )
         return;
-      staged = { id, target, kind: move ? "move" : "resize" };
-      host.setAttribute("data-key-staging", "");
+      event.preventDefault();
+      staging.set(item, { id, target, kind: move ? "move" : "resize" }, event);
       mark(target, id);
-    };
-    const onKeyUp = (event: KeyboardEvent) => {
-      if ((staged?.kind === "move" && event.key === "Alt") || (staged?.kind === "resize" && event.key === "Shift"))
-        commitStage();
     };
     host.addEventListener("pointerdown", onPointerDown);
     host.addEventListener("pointermove", onPointerMove);
     host.addEventListener("pointerup", onPointerUp);
     host.addEventListener("pointercancel", onPointerCancel);
     host.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("blur", commitStage);
     cleanup(() => {
-      clearStage();
+      staging.dispose();
       clearResize();
       clearProjection();
       pointerDispose();
@@ -453,8 +456,6 @@ rocket(bentoContract.tag, {
       host.removeEventListener("pointerup", onPointerUp);
       host.removeEventListener("pointercancel", onPointerCancel);
       host.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("blur", commitStage);
     });
   },
 });

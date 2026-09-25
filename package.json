@@ -13,12 +13,15 @@
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "test": "bun test",
+    "test:browser": "playwright test",
+    "test:browser:ui": "playwright test --ui",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "hono": "^4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "bun-types": "^1.4.2",
     "oxfmt": "0.68.0",
     "typescript": "^5"

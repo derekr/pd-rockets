@@ -1,9 +1,10 @@
-// @ts-ignore — the browser bundle resolves the vendored Rocket module at this URL.
-import { rocket } from "/js/datastar-rocket.js";
+// @ts-ignore — the consuming page resolves this external Rocket module through an import map.
+import { rocket } from "pd-rockets/rocket";
 import { sortableTreeContract, type TreeMoveDetail } from "../../contracts/sortable-tree";
 import { installFlip } from "../../core/flip";
 import { installFocusRecovery } from "../../core/focus-recovery";
-import { keyMatches } from "../../core/keyboard";
+import { cancelKeys, focusKeys, keyboardBindings, keyboardItem, moveKeys } from "../../core/keyboard";
+import { installKeyboardStaging } from "../../core/keyboard-staging";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
 
@@ -15,6 +16,7 @@ rocket(sortableTreeContract.tag, {
     cleanup(markRocketHost(host));
     const { node: nodeSelector, row: rowSelector, children: childrenSelector } = sortableTreeContract.selectors;
     const owns = (element: HTMLElement) => ownsRocketElement(host, element);
+    const keyboard = keyboardBindings(host, { ...focusKeys, ...moveKeys, ...cancelKeys });
     const focus = installFocusRecovery(host);
     const nodeFor = (row: HTMLElement) => row.closest<HTMLElement>(nodeSelector);
     const rowId = (row: HTMLElement) => (owns(row) ? (nodeFor(row)?.dataset.treeNode ?? null) : null);
@@ -114,48 +116,52 @@ rocket(sortableTreeContract.tag, {
       );
     };
 
-    let staged: { id: string; target: Target } | null = null;
-    const clearStage = () => {
-      staged = null;
-      mark(null);
-      host.removeAttribute("data-key-staging");
-    };
-    const commitStage = () => {
-      if (!staged) return;
-      const { id, target } = staged;
-      clearStage();
-      const source = nodeById(id);
-      const sourceRow = source && rowOf(source);
-      if (sourceRow)
-        focus.expect(sourceRow, () => {
-          const node = nodeById(id);
-          if (!node || listFor(node)?.dataset.treeParent !== target.parentId) return null;
-          if ((node.nextElementSibling?.getAttribute("data-tree-node") ?? "") !== target.before) return null;
-          const destination = listFor(node);
-          if (destination?.closest(`${childrenSelector}[hidden]`)) {
-            // A confirmed move into a closed folder should remain keyboard-reachable.
-            const parent = nodeById(target.parentId);
-            if (parent) {
-              collapsed.delete(target.parentId);
-              syncExpanded();
+    const staging = installKeyboardStaging<{ id: string; target: Target }>({
+      host,
+      owns,
+      onCancel: () => mark(null),
+      onCommit: ({ id, target }) => {
+        mark(null);
+        const source = nodeById(id);
+        const sourceRow = source && rowOf(source);
+        if (sourceRow)
+          focus.expect(sourceRow, () => {
+            const node = nodeById(id);
+            if (!node || listFor(node)?.dataset.treeParent !== target.parentId) return null;
+            if ((node.nextElementSibling?.getAttribute("data-tree-node") ?? "") !== target.before) return null;
+            const destination = listFor(node);
+            if (destination?.closest(`${childrenSelector}[hidden]`)) {
+              // A confirmed move into a closed folder should remain keyboard-reachable.
+              const parent = nodeById(target.parentId);
+              if (parent) {
+                collapsed.delete(target.parentId);
+                syncExpanded();
+              }
             }
-          }
-          return rowOf(node);
-        });
-      flip.prepare();
-      emitMove(id, target);
-    };
+            return rowOf(node);
+          });
+        flip.prepare();
+        emitMove(id, target);
+      },
+    });
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!owns(event.target as HTMLElement)) return;
-      const row = (event.target as HTMLElement).closest<HTMLElement>(rowSelector);
+      const row = keyboardItem(event, rowSelector, owns);
       const id = row && rowId(row);
       if (!id) return;
-      if (event.key === "Escape") {
-        if (staged) event.preventDefault();
-        clearStage();
+      if (keyboard.matches("cancel", event)) {
+        if (staging.current) {
+          event.preventDefault();
+          staging.cancel();
+        }
         return;
       }
-      if (!event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
+      const focusDirection = keyboard.direction(event, "focus");
+      if (
+        focusDirection.x ||
+        focusDirection.y ||
+        keyboard.matches("focusFirst", event) ||
+        keyboard.matches("focusLast", event)
+      ) {
         const rows = [...host.querySelectorAll<HTMLElement>(rowSelector)].filter(
           (candidate) => owns(candidate) && !candidate.closest(`${childrenSelector}[hidden]`),
         );
@@ -164,31 +170,30 @@ rocket(sortableTreeContract.tag, {
         const childList = node?.querySelector<HTMLElement>(`:scope > ${childrenSelector}`);
         const firstChild = childList && childrenOf(childList)[0];
         const parent = node?.parentElement?.closest<HTMLElement>(nodeSelector);
-        const key = event.key === "j" ? "ArrowDown" : event.key === "k" ? "ArrowUp" : event.key;
-        if (childList && key === "ArrowLeft" && !childList.hidden) {
+        if (childList && focusDirection.x < 0 && !childList.hidden) {
           event.preventDefault();
           collapsed.add(id);
           syncExpanded();
           return;
         }
-        if (childList?.hidden && key === "ArrowRight") {
+        if (childList?.hidden && focusDirection.x > 0) {
           event.preventDefault();
           collapsed.delete(id);
           syncExpanded();
           return;
         }
         const next =
-          key === "ArrowUp"
+          focusDirection.y < 0
             ? rows[index - 1]
-            : key === "ArrowDown"
+            : focusDirection.y > 0
               ? rows[index + 1]
-              : key === "Home"
+              : keyboard.matches("focusFirst", event)
                 ? rows[0]
-                : key === "End"
+                : keyboard.matches("focusLast", event)
                   ? rows.at(-1)
-                  : key === "ArrowRight" && firstChild
+                  : focusDirection.x > 0 && firstChild
                     ? rowOf(firstChild)
-                    : key === "ArrowLeft" && parent
+                    : focusDirection.x < 0 && parent
                       ? rowOf(parent)
                       : null;
         if (next) {
@@ -197,26 +202,16 @@ rocket(sortableTreeContract.tag, {
         }
         return;
       }
-      const dx =
-        keyMatches("Alt+ArrowLeft", event) || keyMatches("Alt+h", event)
-          ? -1
-          : keyMatches("Alt+ArrowRight", event) || keyMatches("Alt+l", event)
-            ? 1
-            : 0;
-      const dy =
-        keyMatches("Alt+ArrowUp", event) || keyMatches("Alt+k", event)
-          ? -1
-          : keyMatches("Alt+ArrowDown", event) || keyMatches("Alt+j", event)
-            ? 1
-            : 0;
+      const { x: dx, y: dy } = keyboard.direction(event, "move");
       if (!dx && !dy) return;
-      event.preventDefault();
       const node = nodeById(id);
-      const list = staged?.id === id ? staged.target.list : node && listFor(node);
+      const list = staging.current?.id === id ? staging.current.target.list : node && listFor(node);
       if (!node || !list) return;
       const siblings = childrenOf(list).filter((candidate) => candidate !== node);
       const currentBefore =
-        staged?.id === id ? staged.target.before : (node.nextElementSibling?.getAttribute("data-tree-node") ?? "");
+        staging.current?.id === id
+          ? staging.current.target.before
+          : (node.nextElementSibling?.getAttribute("data-tree-node") ?? "");
       const position = currentBefore
         ? siblings.findIndex((candidate) => candidate.dataset.treeNode === currentBefore)
         : siblings.length;
@@ -263,15 +258,9 @@ rocket(sortableTreeContract.tag, {
           };
       }
       if (!target || !valid(id, target)) return;
-      staged = { id, target };
-      host.setAttribute("data-key-staging", "");
+      event.preventDefault();
+      staging.set(row, { id, target }, event);
       mark(target);
-    };
-    const onKeyUp = (event: KeyboardEvent) => {
-      if (event.key === "Alt") commitStage();
-    };
-    const onPointerDown = (event: PointerEvent) => {
-      if (owns(event.target as HTMLElement)) clearStage();
     };
     const dispose = installPointerDrag({
       host,
@@ -283,18 +272,12 @@ rocket(sortableTreeContract.tag, {
       commit: emitMove,
     });
     host.addEventListener("keydown", onKeyDown);
-    host.addEventListener("pointerdown", onPointerDown);
-    window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("blur", commitStage);
     cleanup(() => {
       observer.disconnect();
       pendingExpansion = null;
-      clearStage();
+      staging.dispose();
       focus.dispose();
       host.removeEventListener("keydown", onKeyDown);
-      host.removeEventListener("pointerdown", onPointerDown);
-      window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("blur", commitStage);
       dispose();
       flip.dispose();
     });

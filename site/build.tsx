@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { KanbanBoard } from "../examples/hono-datastar/adapter/kanban";
@@ -16,20 +16,35 @@ import { sortableTreeContract } from "../contracts/sortable-tree";
 import fixture from "../examples/hono-datastar/fixture.json";
 import { buildSourceIndex } from "./build-source";
 import { ensureRuntime } from "../scripts/fetch-datastar-rocket";
-import { browserBundles } from "../browser-bundles";
+import { browserBundles, rocketModule } from "../browser-bundles";
 
 const root = join(import.meta.dir, "..");
 const output = join(root, "dist/site");
 await ensureRuntime();
 const bundle = await readFile(join(root, "dist/rocket-kit.js"), "utf8");
+const bundleSizes = new Map(
+  await Promise.all(
+    browserBundles.map(async ({ file }) => [file, (await stat(join(root, "dist", `${file}.br`))).size] as const),
+  ),
+);
 const fakeBackend = await Bun.build({ entrypoints: [join(import.meta.dir, "fake-backend.ts")], target: "browser" });
 if (!fakeBackend.success || fakeBackend.outputs.length !== 1 || !fakeBackend.outputs[0]) {
   throw new AggregateError(fakeBackend.logs, "rocket-kit: site fake backend build failed");
 }
 const backendBundle = await fakeBackend.outputs[0].text();
+const keyboardHelpBundle = await Bun.build({
+  entrypoints: [join(import.meta.dir, "keyboard-help.ts")],
+  target: "browser",
+  minify: true,
+});
+if (!keyboardHelpBundle.success || !keyboardHelpBundle.outputs[0]) {
+  throw new AggregateError(keyboardHelpBundle.logs, "rocket-kit: keyboard help build failed");
+}
+const keyboardHelp = await keyboardHelpBundle.outputs[0].text();
 const assetVersion = createHash("sha256")
   .update(bundle)
   .update(backendBundle)
+  .update(keyboardHelp)
   .update(await readFile(join(import.meta.dir, "site.css")))
   .update(await readFile(join(root, "examples/hono-datastar/demo.css")))
   .digest("hex")
@@ -86,6 +101,44 @@ const nestedListMove: DatastarEventBinding = {
   },
 };
 
+type Shortcut = { keys: string; action: string };
+
+function KeyboardHelp({ id, title, shortcuts }: { id: string; title: string; shortcuts: readonly Shortcut[] }) {
+  return (
+    <>
+      <button
+        class="keyboard-help-trigger"
+        type="button"
+        popovertarget={id}
+        aria-label={`Keyboard shortcuts for ${title}`}
+        style={`anchor-name: --${id}`}
+      >
+        ?
+      </button>
+      <div
+        id={id}
+        class="keyboard-help-popover"
+        popover="auto"
+        style={`position-anchor: --${id}`}
+        aria-labelledby={`${id}-title`}
+      >
+        <h3 id={`${id}-title`}>{title} shortcuts</h3>
+        <p>Focus an item first.</p>
+        <dl>
+          {shortcuts.map(({ keys, action }) => (
+            <div>
+              <dt>
+                <kbd>{keys}</kbd>
+              </dt>
+              <dd>{action}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </>
+  );
+}
+
 const page = renderHTML(
   <html lang="en">
     <head>
@@ -98,6 +151,10 @@ const page = renderHTML(
       />
       <link rel="stylesheet" href={`./demo.css?v=${assetVersion}`} />
       <link rel="stylesheet" href={`./site.css?v=${assetVersion}`} />
+      <script
+        type="importmap"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({ imports: { [rocketModule]: "./js/datastar-rocket.js" } }) }}
+      />
     </head>
     <body data-signals='{"cardId":"","col":0,"before":"","itemId":"","fromList":"","toList":"","bento":{},"tree":{}}'>
       <div class="site-frame">
@@ -238,6 +295,7 @@ const page = renderHTML(
                   <code>{`mkdir -p public/js
 curl -fsSL "https://github.com/<owner>/<repo>/releases/latest/download/pd-rockets-browser.tar.gz" | tar -xz -C public/js
 # serve the upstream datastar-rocket.js at /js/datastar-rocket.js
+<script type="importmap">{"imports":{"pd-rockets/rocket":"/js/datastar-rocket.js"}}</script>
 # choose one of the following:
 <script type="module" src="/js/rocket-sortable-tree.js"></script>
 <script type="module" src="/js/rocket-kit.js"></script>`}</code>
@@ -246,15 +304,34 @@ curl -fsSL "https://github.com/<owner>/<repo>/releases/latest/download/pd-rocket
                   <a href="https://data-star.dev/reference/rocket#bundle">Get the Rocket runtime ↗</a> ·{" "}
                   <a href="./js/DATASTAR-LICENSE.md">Upstream MIT notice ↗</a>
                 </p>
+                <p>
+                  The import map resolves <code>pd-rockets/rocket</code> to the pinned upstream module. If your page
+                  supplies a separate Rocket ES module, map that specifier to its URL instead; it must export{" "}
+                  <code>rocket</code> and use the same Datastar instance as the page. The guide uses the latest pinned
+                  upstream Datastar + Rocket bundle (v1.0.4) with its MIT notice.
+                </p>
                 <ul class="bundle-links" aria-label="Prebuilt PD rockets bundles">
                   {browserBundles.map(({ file }) => (
                     <li>
                       <a href={`./downloads/${file}`} download={file}>
                         <code>{file}</code> ↓
+                      </a>{" "}
+                      <small>({(bundleSizes.get(file)! / 1000).toFixed(1)} kB br)</small>{" "}
+                      <a
+                        href={`./downloads/${file}.br`}
+                        download={`${file}.br`}
+                        aria-label={`Download ${file} precompressed with Brotli`}
+                      >
+                        .br ↓
                       </a>
                     </li>
                   ))}
                 </ul>
+                <p>
+                  Sizes are Brotli-compressed kilobytes (1 kB = 1,000 bytes). Use the regular <code>.js</code> file in
+                  script tags; the optional <code>.br</code> file is for servers configured to serve precompressed
+                  JavaScript with <code>Content-Encoding: br</code>.
+                </p>
                 <p>
                   <a href="./LICENSE" download="LICENSE">
                     PD rockets license ↓
@@ -278,7 +355,19 @@ curl -fsSL "https://github.com/<owner>/<repo>/releases/latest/download/pd-rocket
                 <div class="example-frame">
                   <div class="example-head">
                     <span class="live-dot" aria-hidden="true"></span> LIVE / KANBAN{" "}
-                    <span>drag or use Alt + arrows</span>
+                    <div class="example-tools">
+                      <span class="example-hint">drag or use Alt + arrows</span>
+                      <KeyboardHelp
+                        id="keys-kanban"
+                        title="Kanban"
+                        shortcuts={[
+                          { keys: "↑ ↓ ← → / h j k l", action: "Focus cards within and between lanes" },
+                          { keys: "Alt + ↑ ↓ ← → / h j k l", action: "Stage a card move" },
+                          { keys: "Release Alt", action: "Commit the move" },
+                          { keys: "Esc", action: "Cancel staging" },
+                        ]}
+                      />
+                    </div>
                   </div>
                   <div id="kanban-demo" class="example-body">
                     <div class="kanban">
@@ -316,7 +405,20 @@ rocket-kanban-move → { cardId, col, before }`}</code>
                 </p>
                 <div class="example-frame list-frame">
                   <div class="example-head">
-                    <span class="live-dot" aria-hidden="true"></span> LIVE / SORTABLE <span>drag onto an item</span>
+                    <span class="live-dot" aria-hidden="true"></span> LIVE / SORTABLE
+                    <div class="example-tools">
+                      <span class="example-hint">drag onto an item</span>
+                      <KeyboardHelp
+                        id="keys-list"
+                        title="Sortable list"
+                        shortcuts={[
+                          { keys: "↑ ↓ / j k", action: "Focus previous or next item" },
+                          { keys: "Home / End", action: "Focus first or last item" },
+                          { keys: "Alt + ↑ ↓ / j k", action: "Stage a reorder" },
+                          { keys: "Release Alt / Esc", action: "Commit / cancel the move" },
+                        ]}
+                      />
+                    </div>
                   </div>
                   <div id="sortable-demo" class="example-body">
                     <SortableList items={fixture.list} move={sortableMove} />
@@ -348,7 +450,21 @@ rocket-sortable-move → { itemId, before }`}</code>
                 </p>
                 <div class="example-frame group-frame">
                   <div class="example-head">
-                    <span class="live-dot" aria-hidden="true"></span> LIVE / DRAG GROUP <span>drag between lists</span>
+                    <span class="live-dot" aria-hidden="true"></span> LIVE / DRAG GROUP
+                    <div class="example-tools">
+                      <span class="example-hint">drag between lists</span>
+                      <KeyboardHelp
+                        id="keys-group"
+                        title="Drag group"
+                        shortcuts={[
+                          { keys: "↑ ↓ / k j", action: "Focus within a list" },
+                          { keys: "← → / h l", action: "Focus a neighboring list" },
+                          { keys: "Home / End", action: "Focus first or last item in a list" },
+                          { keys: "Alt + ↑ ↓ ← → / h j k l", action: "Stage a move or change lists" },
+                          { keys: "Release Alt / Esc", action: "Commit / cancel the move" },
+                        ]}
+                      />
+                    </div>
                   </div>
                   <div id="group-demo" class="example-body">
                     <DragGroup lists={fixture.groups} move={groupMove} />
@@ -382,6 +498,20 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                 <div class="example-frame nested-frame">
                   <div class="example-head">
                     <span class="live-dot" aria-hidden="true"></span> LIVE / NESTED HOSTS
+                    <div class="example-tools">
+                      <KeyboardHelp
+                        id="keys-nested"
+                        title="Nested hosts"
+                        shortcuts={[
+                          { keys: "Tab", action: "Focus an outer item or an inner list item" },
+                          { keys: "Outer: ↑ ↓ ← → / h j k l", action: "Navigate items and regions" },
+                          { keys: "Outer: Alt + ↑ ↓ ← → / h j k l", action: "Move the whole outer item" },
+                          { keys: "Inner: ↑ ↓ / j k", action: "Navigate inside the sortable list" },
+                          { keys: "Inner: Alt + ↑ ↓ / j k", action: "Reorder only the inner list" },
+                          { keys: "Release Alt / Esc", action: "Commit / cancel the move" },
+                        ]}
+                      />
+                    </div>
                   </div>
                   <div id="nested-demo" class="example-body">
                     <rocket-drag-group {...nestedGroupMove.attrs}>
@@ -435,7 +565,21 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                 <div class="example-frame bento-frame">
                   <div class="example-head">
                     <span class="live-dot" aria-hidden="true"></span> LIVE / BENTO{" "}
-                    <span>drag between grids or resize ↘</span>
+                    <div class="example-tools">
+                      <span class="example-hint">drag between grids or resize ↘</span>
+                      <KeyboardHelp
+                        id="keys-bento"
+                        title="Bento grids"
+                        shortcuts={[
+                          { keys: "↑ ↓ ← → / h j k l", action: "Focus tiles, including across grids" },
+                          { keys: "Home / End", action: "Focus first or last tile" },
+                          { keys: "Alt + ↑ ↓ ← → / h j k l", action: "Stage a tile move; cross at an edge" },
+                          { keys: "Alt + Page Up / Down", action: "Move to the previous or next grid" },
+                          { keys: "Shift + ↑ ↓ ← →", action: "Stage a resize" },
+                          { keys: "Release modifier / Esc", action: "Commit / cancel the move" },
+                        ]}
+                      />
+                    </div>
                   </div>
                   <div id="bento-demo" class="example-body">
                     <BentoWorkspace grids={fixture.bento} move={bentoMove} resize={bentoResize} />
@@ -476,7 +620,22 @@ rocket-bento-resize → { itemId, grid, updates: [{ itemId, grid, col, row, widt
                 <div class="example-frame tree-frame">
                   <div class="example-head">
                     <span class="live-dot" aria-hidden="true"></span> LIVE / FILE TREE{" "}
-                    <span>drag between directories</span>
+                    <div class="example-tools">
+                      <span class="example-hint">drag between directories</span>
+                      <KeyboardHelp
+                        id="keys-tree"
+                        title="File tree"
+                        shortcuts={[
+                          { keys: "↑ ↓ / k j", action: "Focus visible rows" },
+                          { keys: "→ / l, ← / h", action: "Expand or enter / collapse or leave a folder" },
+                          { keys: "Home / End", action: "Focus first or last visible row" },
+                          { keys: "Alt + ↑ ↓ / k j", action: "Reorder; cross out at a folder boundary" },
+                          { keys: "Alt + → / l", action: "Move into the preceding folder" },
+                          { keys: "Alt + ← / h", action: "Move out after the parent folder" },
+                          { keys: "Release Alt / Esc", action: "Commit / cancel the move" },
+                        ]}
+                      />
+                    </div>
                   </div>
                   <div id="tree-demo" class="example-body">
                     <SortableTree nodes={fixture.tree as FileNode[]} move={treeMove} />
@@ -541,7 +700,21 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                   All surfaces support unmodified arrow-key focus navigation; list, group, grid and tree surfaces also
                   support Home/End. Alt + arrows stage moves, where supported, without changing focus until the morph.
                 </p>
-                <h3 id="keyboard">Kanban keyboard attributes</h3>
+                <h3 id="keyboard">Keyboard attributes</h3>
+                <p>
+                  Every host accepts space-separated <code>data-key-&lt;intent&gt;</code> bindings; an empty attribute
+                  disables that intent. Focus intents are <code>focus-next</code>, <code>focus-previous</code>,
+                  <code>focus-left</code>, <code>focus-right</code>, <code>focus-first</code> and{" "}
+                  <code>focus-last</code>; movement uses <code>move-up/down/left/right</code> and <code>cancel</code>.
+                  Each surface uses only its applicable directions. Bento also accepts{" "}
+                  <code>resize-up/down/left/right</code> and
+                  <code>grid-previous/next</code>. The shared defaults are in{" "}
+                  <a href="./source/core/keyboard.ts.txt">core/keyboard.ts</a>.
+                </p>
+                <p>
+                  Kanban also accepts the original <code>data-key-select-*</code> aliases below; a corresponding{" "}
+                  <code>data-key-focus-*</code> takes precedence.
+                </p>
                 <div class="table-scroll">
                   <table>
                     <thead>
@@ -659,7 +832,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                   <a href="./source/contracts/kanban.ts.txt">
                     <code>data-key-select-next="ArrowDown j"</code>
                   </a>
-                  . Defaults come from{" "}
+                  . Kanban compatibility defaults come from{" "}
                   <a href="./source/contracts/kanban.ts.txt">
                     <code>contracts/kanban.ts</code>
                   </a>
@@ -874,6 +1047,7 @@ cd examples/go && go run .`}</code>
       </aside>
       <script type="module" src={`./fake-backend.js?v=${assetVersion}`}></script>
       <script type="module" src={`./rocket-kit.js?v=${assetVersion}`}></script>
+      <script type="module" src={`./keyboard-help.js?v=${assetVersion}`}></script>
     </body>
   </html>,
 );
@@ -893,9 +1067,11 @@ await mkdir(join(output, "downloads"), { recursive: true });
 for (const { file } of browserBundles) {
   const content = file === "rocket-kit.js" ? bundle : await readFile(join(root, "dist", file), "utf8");
   await writeFile(join(output, "downloads", file), content);
-  await writeFile(join(output, file), content.replaceAll('"/js/datastar-rocket.js"', '"./js/datastar-rocket.js"'));
+  await copyFile(join(root, "dist", `${file}.br`), join(output, "downloads", `${file}.br`));
+  await writeFile(join(output, file), content);
 }
 
 await writeFile(join(output, "fake-backend.js"), backendBundle);
+await writeFile(join(output, "keyboard-help.js"), keyboardHelp);
 
 console.error(`built ${join(output, "index.html")}`);

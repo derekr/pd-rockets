@@ -1,4 +1,6 @@
 /** Public browser artifacts; surface bundles include their core dependencies. */
+export const rocketModule = "pd-rockets/rocket";
+
 export const browserBundles = [
   { file: "rocket-core.js", entry: "core/index.ts" },
   { file: "rocket-kanban.js", entry: "rocket/kanban/client.ts" },

@@ -1,10 +1,11 @@
-// @ts-ignore — the browser bundle resolves the vendored Rocket module at this URL.
-import { rocket } from "/js/datastar-rocket.js";
+// @ts-ignore — the consuming page resolves this external Rocket module through an import map.
+import { rocket } from "pd-rockets/rocket";
 import { dragGroupContract, type DragGroupMoveDetail } from "../../contracts/drag-group";
 import { installFlip } from "../../core/flip";
 import { installFocusRecovery } from "../../core/focus-recovery";
 import { insertionBefore } from "../../core/insertion-target";
-import { keyMatches } from "../../core/keyboard";
+import { cancelKeys, focusKeys, keyboardBindings, keyboardItem, moveKeys } from "../../core/keyboard";
+import { installKeyboardStaging } from "../../core/keyboard-staging";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
 
@@ -16,6 +17,7 @@ rocket(dragGroupContract.tag, {
     cleanup(markRocketHost(host));
     const { list: listSelector, item: itemSelector } = dragGroupContract.selectors;
     const owns = (element: HTMLElement): boolean => ownsRocketElement(host, element);
+    const keyboard = keyboardBindings(host, { ...focusKeys, ...moveKeys, ...cancelKeys });
     const focus = installFocusRecovery(host);
     const itemId = (item: HTMLElement): string | null =>
       owns(item) && item.closest(listSelector) ? (item.dataset.dragItem ?? null) : null;
@@ -66,58 +68,57 @@ rocket(dragGroupContract.tag, {
         }),
       );
     };
-    let staged: { itemId: string; target: Target } | null = null;
-    const cancelStaged = () => {
-      staged = null;
-      mark(null);
-      host.removeAttribute("data-key-staging");
-    };
-    const commitStaged = () => {
-      if (!staged) return;
-      const { itemId: id, target } = staged;
-      cancelStaged();
-      const source = [...host.querySelectorAll<HTMLElement>(itemSelector)].find((item) => itemId(item) === id);
-      if (source)
-        focus.expect(source, () => {
-          const destination = lists().find((list) => list.dataset.dropList === target.toList);
-          const items = destination ? itemsIn(destination) : [];
-          const index = items.findIndex((item) => itemId(item) === id);
-          return index >= 0 && (items[index + 1]?.dataset.dragItem ?? "") === target.before ? items[index]! : null;
-        });
-      flip.prepare();
-      emitMove(id, target);
-    };
+    const staging = installKeyboardStaging<{ itemId: string; target: Target }>({
+      host,
+      owns,
+      onCancel: () => mark(null),
+      onCommit: ({ itemId: id, target }) => {
+        mark(null);
+        const source = [...host.querySelectorAll<HTMLElement>(itemSelector)].find((item) => itemId(item) === id);
+        if (source)
+          focus.expect(source, () => {
+            const destination = lists().find((list) => list.dataset.dropList === target.toList);
+            const items = destination ? itemsIn(destination) : [];
+            const index = items.findIndex((item) => itemId(item) === id);
+            return index >= 0 && (items[index + 1]?.dataset.dragItem ?? "") === target.before ? items[index]! : null;
+          });
+        flip.prepare();
+        emitMove(id, target);
+      },
+    });
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!owns(event.target as HTMLElement)) return;
-      const item = (event.target as HTMLElement).closest<HTMLElement>(itemSelector);
+      const item = keyboardItem(event, itemSelector, owns);
       const id = item && itemId(item);
       if (!item || !id) return;
-      if (event.key === "Escape") {
-        if (staged) event.preventDefault();
-        cancelStaged();
+      if (keyboard.matches("cancel", event)) {
+        if (staging.current) {
+          event.preventDefault();
+          staging.cancel();
+        }
         return;
       }
-      if (!event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
+      const focusDirection = keyboard.direction(event, "focus");
+      if (
+        focusDirection.x ||
+        focusDirection.y ||
+        keyboard.matches("focusFirst", event) ||
+        keyboard.matches("focusLast", event)
+      ) {
         const source = item.closest<HTMLElement>(listSelector);
         const groupLists = lists();
         const siblings = source ? itemsIn(source) : [];
         const index = siblings.indexOf(item);
         const listIndex = source ? groupLists.indexOf(source) : -1;
-        const nextList =
-          event.key === "ArrowLeft"
-            ? groupLists[listIndex - 1]
-            : event.key === "ArrowRight"
-              ? groupLists[listIndex + 1]
-              : null;
+        const nextList = focusDirection.x ? groupLists[listIndex + focusDirection.x] : null;
         const neighbors = nextList ? itemsIn(nextList) : [];
         const next =
-          event.key === "ArrowUp"
+          focusDirection.y < 0
             ? siblings[index - 1]
-            : event.key === "ArrowDown"
+            : focusDirection.y > 0
               ? siblings[index + 1]
-              : event.key === "Home"
+              : keyboard.matches("focusFirst", event)
                 ? siblings[0]
-                : event.key === "End"
+                : keyboard.matches("focusLast", event)
                   ? siblings.at(-1)
                   : neighbors[Math.min(index, neighbors.length - 1)];
         if (next) {
@@ -126,22 +127,10 @@ rocket(dragGroupContract.tag, {
         }
         return;
       }
-      const horizontal =
-        keyMatches("Alt+ArrowLeft", event) || keyMatches("Alt+h", event)
-          ? -1
-          : keyMatches("Alt+ArrowRight", event) || keyMatches("Alt+l", event)
-            ? 1
-            : 0;
-      const vertical =
-        keyMatches("Alt+ArrowUp", event) || keyMatches("Alt+k", event)
-          ? -1
-          : keyMatches("Alt+ArrowDown", event) || keyMatches("Alt+j", event)
-            ? 1
-            : 0;
+      const { x: horizontal, y: vertical } = keyboard.direction(event, "move");
       if (!horizontal && !vertical) return;
-      event.preventDefault();
       const sourceList = item.closest<HTMLElement>(listSelector);
-      const stagedTarget = staged?.itemId === id ? staged.target : null;
+      const stagedTarget = staging.current?.itemId === id ? staging.current.target : null;
       const currentList = stagedTarget?.list ?? sourceList;
       const allLists = lists();
       const list = currentList && allLists[allLists.indexOf(currentList) + horizontal];
@@ -158,15 +147,10 @@ rocket(dragGroupContract.tag, {
         if (nextPosition === position) return;
         before = candidates[nextPosition]?.dataset.dragItem ?? "";
       }
-      staged = { itemId: id, target: { list, toList: list.dataset.dropList ?? "", before } };
-      mark(staged.target);
-      host.setAttribute("data-key-staging", "");
-    };
-    const onKeyUp = (event: KeyboardEvent) => {
-      if (event.key === "Alt") commitStaged();
-    };
-    const onPointerDown = (event: PointerEvent) => {
-      if (owns(event.target as HTMLElement)) cancelStaged();
+      const target = { list, toList: list.dataset.dropList ?? "", before };
+      event.preventDefault();
+      staging.set(item, { itemId: id, target }, event);
+      mark(target);
     };
     const dispose = installPointerDrag({
       host,
@@ -178,16 +162,10 @@ rocket(dragGroupContract.tag, {
       commit: emitMove,
     });
     host.addEventListener("keydown", onKeyDown);
-    host.addEventListener("pointerdown", onPointerDown);
-    window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("blur", commitStaged);
     cleanup(() => {
-      cancelStaged();
+      staging.dispose();
       focus.dispose();
       host.removeEventListener("keydown", onKeyDown);
-      host.removeEventListener("pointerdown", onPointerDown);
-      window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("blur", commitStaged);
       dispose();
       flip.dispose();
     });

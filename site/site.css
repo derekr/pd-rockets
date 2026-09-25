@@ -502,12 +502,91 @@ kbd {
   color: var(--text);
 }
 
-.example-head > span:last-child {
+.example-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-left: auto;
+}
+
+.example-hint {
   color: var(--text-2);
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
+}
+
+.keyboard-help-trigger {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--text);
+  border-radius: 50%;
+  background: var(--raised);
+  color: var(--text);
+  font:
+    800 0.9rem ui-monospace,
+    monospace;
+  cursor: pointer;
+}
+
+.keyboard-help-trigger:hover,
+.example-tools:has(.keyboard-help-popover:popover-open) .keyboard-help-trigger {
+  background: var(--text);
+  color: var(--raised);
+}
+
+.keyboard-help-popover {
+  position: fixed;
+  inset: auto;
+  top: anchor(bottom);
+  right: anchor(right);
+  margin: 8px 0 0;
+  width: max-content;
+  max-width: min(340px, calc(100vw - 24px));
+  max-height: min(520px, calc(100dvh - 24px));
+  overflow: auto;
+  padding: 18px;
+  border: 2px solid var(--text);
+  border-radius: 5px;
+  background: var(--raised);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  position-try-fallbacks: flip-block;
+}
+
+.keyboard-help-popover h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.keyboard-help-popover p {
+  margin: 3px 0 14px;
+  color: var(--text-2);
+  font-size: 0.85rem;
+}
+
+.keyboard-help-popover dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.keyboard-help-popover dl > div {
+  display: grid;
+  gap: 3px;
+}
+
+.keyboard-help-popover dt,
+.keyboard-help-popover dd {
+  margin: 0;
+}
+
+.keyboard-help-popover dd {
+  color: var(--text-2);
+  font-size: 0.85rem;
 }
 
 .live-dot {
@@ -672,7 +751,7 @@ td small {
     grid-template-columns: 1fr;
   }
 
-  .example-head > span:last-child {
+  .example-hint {
     display: none;
   }
 

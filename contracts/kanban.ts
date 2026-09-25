@@ -1,3 +1,5 @@
+import { cancelKeys, focusKeys, moveKeys } from "../core/keyboard";
+
 export const kanbanContract = {
   tag: "rocket-kanban-board",
   selectors: {
@@ -33,15 +35,12 @@ export type KanbanKeySlot =
 export type KanbanKeyboard = Partial<Record<KanbanKeySlot, readonly string[]>>;
 
 export const defaultKanbanKeyboard: Readonly<Record<KanbanKeySlot, readonly string[]>> = {
-  selectNext: ["ArrowDown", "j"],
-  selectPrevious: ["ArrowUp", "k"],
-  selectLeft: ["ArrowLeft", "h"],
-  selectRight: ["ArrowRight", "l"],
-  moveUp: ["Alt+ArrowUp", "Alt+k"],
-  moveDown: ["Alt+ArrowDown", "Alt+j"],
-  moveLeft: ["Alt+ArrowLeft", "Alt+h"],
-  moveRight: ["Alt+ArrowRight", "Alt+l"],
-  cancel: ["Escape"],
+  selectNext: focusKeys.focusNext,
+  selectPrevious: focusKeys.focusPrevious,
+  selectLeft: focusKeys.focusLeft,
+  selectRight: focusKeys.focusRight,
+  ...moveKeys,
+  ...cancelKeys,
 };
 
 export function kanbanKeyboardConfig(overrides: KanbanKeyboard = {}): Record<KanbanKeySlot, readonly string[]> {

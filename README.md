@@ -28,11 +28,20 @@ Grid tracks (`grid-template-columns` and a fixed `grid-auto-rows`) for pointer-t
 `rocket-tree-move` detail carries `{ itemId, fromParent, toParent, before }`; the backend applies that change and sends
 rendered HTML over SSE. Pointer drops animate the dragged row from the floating preview's final position.
 
-Every surface supports arrow-key focus navigation. Home/End navigate list, group, grid and tree items; Alt + arrows
-stage moves, and Escape cancels staging. The file tree presents compact explorer-style rows rather than cards.
+Every surface supports arrow-key and Vim-key focus navigation. Home/End navigate list, group, grid and tree items;
+Alt + arrows or Alt + h/j/k/l stage moves, and Escape cancels staging. Bento also supports Shift + arrows for resizing
+and Alt + PageUp/PageDown for switching grids. The file tree presents compact explorer-style rows rather than cards.
 Nested Rocket hosts are supported: the nearest host owns each pointer or keyboard gesture. The guide includes a live
 sortable list inside a drag-group item, with independent server-rendered move responses for each host. Semantic events
 still bubble; page handlers on nested hosts with the same event name should check the event target.
+
+Keyboard intents are configured on each host using `data-key-<intent>` attributes. Values are space-separated shortcuts
+such as `data-key-focus-next="ArrowDown n"`; an empty value disables that intent. The shared focus intents are
+`focus-next`, `focus-previous`, `focus-left`, `focus-right`, `focus-first`, and `focus-last`; moves use `move-up`,
+`move-down`, `move-left`, and `move-right`, plus `cancel`. Each surface exposes only the directions it supports.
+Bento also exposes `resize-up/down/left/right` and `grid-previous/next`. Kanban continues to accept its original
+`data-key-select-next/previous/left/right` names; the corresponding `data-key-focus-*` attribute takes precedence.
+All surface defaults live in `core/keyboard.ts`, with the Kanban compatibility defaults in `contracts/kanban.ts`.
 
 The reusable client does not know about application actions, persistence, permissions, or transport policy. Rocket
 provides the component boundary and lifecycle for local browser mechanics, while Datastar handles actions and HTML
@@ -40,7 +49,8 @@ updates. See the [Rocket reference](https://data-star.dev/reference/rocket) for 
 
 ## Install prebuilt browser bundles
 
-Tagged releases publish `pd-rockets-browser.tar.gz` with only PD rockets JavaScript bundles and their Beer-Ware license.
+Tagged releases publish `pd-rockets-browser.tar.gz` with minified PD rockets JavaScript bundles, matching Brotli
+`.js.br` files, and their Beer-Ware license. The guide lists the Brotli size beside each bundle download.
 Replace `<owner>/<repo>` with the published GitHub repository:
 
 ```sh
@@ -60,11 +70,23 @@ Choose a single surface or the full collection:
 | `rocket-kit.js`             | All surfaces.                                                           |
 
 Each surface bundle includes the core code it needs; `rocket-core.js` is for direct imports, not a required second
-script. Load your chosen surface as a module, for example
-`<script type="module" src="/js/rocket-sortable-tree.js"></script>`. Separately obtain the open-source
-[`datastar-rocket.js` bundle](https://data-star.dev/reference/rocket#bundle) using the official Rocket bundle instructions
-and serve it at `/js/datastar-rocket.js`. This bundle includes Datastar and Rocket; it replaces a separate `datastar.js`
-on the page. Keep its upstream MIT notice with the runtime; the PD rockets release archive does not include it.
+script. The surface bundles import `rocket` from the external `pd-rockets/rocket` specifier. Map it to the open-source
+[`datastar-rocket.js` bundle](https://data-star.dev/reference/rocket#bundle) before loading a surface:
+
+```html
+<script type="importmap">
+  { "imports": { "pd-rockets/rocket": "/js/datastar-rocket.js" } }
+</script>
+<script type="module" src="/js/rocket-sortable-tree.js"></script>
+```
+
+The pinned upstream bundle includes both Datastar and Rocket, so the guide loads it without a separate `datastar.js`.
+If an application uses separate scripts, map `pd-rockets/rocket` to a Rocket ES module exporting `rocket` that uses the
+same Datastar instance; a standalone Datastar script by itself does not provide Rocket. Upstream v1.0.4 currently
+publishes Rocket in the combined bundle. Keep its upstream MIT notice with the runtime; the PD rockets release archive
+does not include it.
+Serve the `.js` files normally; precompressed `.js.br` files are optional for servers configured to negotiate Brotli
+and send `Content-Encoding: br` with a JavaScript content type. Do not reference `.js.br` in a script tag.
 
 ## Build and run locally
 
@@ -83,6 +105,10 @@ without an application server. The Pages workflow publishes this artifact on pus
 use a generated, browsable copy of the public project files that also works when served locally. A bounded activity
 queue shows synthetic Rocket events, demo action POSTs and SSE patch responses without displaying item text or request
 bodies.
+
+For a quick Chromium interaction run, install Playwright's browser once with `bunx playwright install chromium`, then
+run `bun run test:browser`. Playwright starts a small synthetic fixture server, bundles the source once per run, and uses
+four workers. Run a focused case with `bunx playwright test -g 'nested'`; `bun run test` retains the Bun unit tests.
 
 To run the Hono JSX demo instead:
 

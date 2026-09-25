@@ -46,6 +46,7 @@ var (
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Rocket kit spike</title>
     <link rel="stylesheet" href="/demo.css">
+    <script type="importmap">{"imports":{"pd-rockets/rocket":"/js/datastar-rocket.js"}}</script>
   </head>
   <body data-signals='{"cardId":"","col":0,"before":"","itemId":""}'>
     <h1>Rocket kit spike</h1>
