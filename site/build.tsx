@@ -336,9 +336,10 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                 <h2 id="bento-title">Bento grids</h2>
                 <p>
                   Two CSS grids share one drag scope. Drop a tile on a cell in either grid, or use its ↘ handle to
-                  resize it. A two-dimensional placement rule pushes overlapping tiles down when the backend returns the
-                  new layout. Focus a tile: Alt + arrows move it by a cell, Alt + Page Up/Down switches grids, and Shift
-                  + arrows resize. Release the modifier to commit; Escape cancels.
+                  resize it. Displaced tiles preview their new cells while you drag or resize. Rocket sends every
+                  changed position on commit; the backend applies them and returns HTML. Focus a tile: Alt + arrows move
+                  it by a cell, Alt + Page Up/Down switches grids, and Shift + arrows resize. Release the modifier to
+                  commit; Escape cancels.
                 </p>
                 <div class="example-frame bento-frame">
                   <div class="example-head">
@@ -360,8 +361,8 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
   <div data-bento-grid="scratchpad" data-columns="4"></div>
 </rocket-bento-workspace>
 
-rocket-bento-move → { itemId, fromGrid, toGrid, col, row, width, height }
-rocket-bento-resize → { itemId, grid, width, height }`}</code>
+rocket-bento-move → { itemId, fromGrid, toGrid, updates: [{ itemId, grid, col, row, width, height }] }
+rocket-bento-resize → { itemId, grid, updates: [{ itemId, grid, col, row, width, height }] }`}</code>
                 </pre>
                 <p>
                   <a href="./source/rocket/bento/client.ts.txt">Bento Rocket source ↗</a> ·{" "}

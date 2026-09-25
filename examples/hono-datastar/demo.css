@@ -72,6 +72,20 @@ rocket-bento-workspace {
   touch-action: none;
 }
 
+[data-bento-item]:not([data-drag-preview]) {
+  transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+[data-bento-projecting]:not([data-dragging]) {
+  opacity: 0.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-bento-item] {
+    transition: none;
+  }
+}
+
 [data-bento-item] strong {
   max-width: 100%;
   overflow: hidden;

@@ -19,10 +19,10 @@ releasing Alt commits a keyboard move, and Escape cancels it. Groups are indepen
 card contract while sharing the insertion and pointer mechanics.
 
 `rocket-bento-workspace` is an experimental two-grid dashboard surface. It reuses the pointer and FLIP lifecycle, but
-uses cell coordinates and spans instead of list insertion targets. Its semantic move and resize events leave the
-confirmed layout to the backend; the guide's in-browser SSE fixture demonstrates a small collision-push rule. The
-consuming page provides CSS Grid tracks (`grid-template-columns` and a fixed `grid-auto-rows`) for pointer-to-cell
-geometry.
+uses cell coordinates and spans instead of list insertion targets. It calculates a transient, animated layout and emits
+all changed positions on move or resize. The backend applies those positions and returns the confirmed HTML; the guide's
+in-browser SSE fixture demonstrates that handoff without duplicating placement logic. The consuming page provides CSS
+Grid tracks (`grid-template-columns` and a fixed `grid-auto-rows`) for pointer-to-cell geometry.
 
 The reusable client does not know about application actions, persistence, permissions, or transport policy. Rocket
 provides the component boundary and lifecycle for local browser mechanics, while Datastar handles actions and HTML
@@ -54,7 +54,7 @@ on the page. Keep its upstream MIT notice with the runtime. The repository pins 
 for its local examples and generated site; the PD rockets release archive does not include it.
 
 The site build writes `dist/site`, a relative-path static artifact suitable for GitHub Pages. Its in-browser fixture
-intercepts the two demo actions and returns `datastar-patch-elements` SSE responses, exercising the same morph path
+intercepts the demo actions and returns `datastar-patch-elements` SSE responses, exercising the same morph path
 without an application server. The Pages workflow publishes this artifact on pushes to `main`; the guide's source links
 use a generated, browsable copy of the public project files that also works when served locally.
 

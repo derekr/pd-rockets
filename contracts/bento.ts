@@ -12,10 +12,9 @@ export type BentoMoveDetail = {
   itemId: string;
   fromGrid: string;
   toGrid: string;
-  col: number;
-  row: number;
-  width: number;
-  height: number;
+  updates: BentoPosition[];
 };
 
-export type BentoResizeDetail = { itemId: string; grid: string; width: number; height: number };
+export type BentoPosition = { itemId: string; grid: string; col: number; row: number; width: number; height: number };
+
+export type BentoResizeDetail = { itemId: string; grid: string; updates: BentoPosition[] };

@@ -6,7 +6,8 @@ export type PointerDragOptions<ItemId, Target> = {
   itemId: (item: HTMLElement) => ItemId | null;
   canStart?: (event: PointerEvent, item: HTMLElement) => boolean;
   targetAt: (x: number, y: number, itemId: ItemId) => Target | null;
-  mark: (target: Target | null) => void;
+  mark: (target: Target | null, itemId?: ItemId) => void;
+  retainPreviewOnCommit?: boolean;
   beforeCommit?: () => void;
   commit: (itemId: ItemId, target: Target) => void;
 };
@@ -32,7 +33,7 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
   const finish = (target: Target | null, cancelled: boolean): void => {
     const current = active;
     active = null;
-    options.mark(null);
+    if (!target || cancelled || !options.retainPreviewOnCommit) options.mark(null, current?.itemId);
     clearPreview();
     options.host.removeAttribute("data-drag-active");
     options.host
@@ -64,7 +65,7 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     movePreview(pointer);
     const target = options.targetAt(pointer.clientX, pointer.clientY, active.itemId);
     state.send({ type: "preview", target });
-    options.mark(target);
+    options.mark(target, active.itemId);
   };
   const onUp = (event: Event): void => {
     if (!active || (event as PointerEvent).pointerId !== active.pointerId) return;

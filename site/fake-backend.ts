@@ -1,18 +1,8 @@
-import { placeWithPush, type PlacedItem } from "../rocket/bento/placement";
+import type { BentoMoveDetail, BentoPosition, BentoResizeDetail } from "../contracts/bento";
 
 type BoardTarget = { cardId: string; col: number; before: string };
 type ListTarget = { itemId: string; before: string };
 type GroupTarget = { itemId: string; fromList: string; toList: string; before: string };
-type BentoMove = {
-  itemId: string;
-  fromGrid: string;
-  toGrid: string;
-  col: number;
-  row: number;
-  width: number;
-  height: number;
-};
-type BentoResize = { itemId: string; grid: string; width: number; height: number };
 
 const kanbanRoot = document.querySelector<HTMLElement>("#kanban-demo");
 const sortableRoot = document.querySelector<HTMLElement>("#sortable-demo");
@@ -68,55 +58,41 @@ function bentoGrid(id: string): HTMLElement | null {
   return bentoModel.querySelector<HTMLElement>(`[data-bento-grid="${CSS.escape(id)}"]`);
 }
 
-function bentoItems(grid: HTMLElement): PlacedItem[] {
-  return [...grid.querySelectorAll<HTMLElement>("[data-bento-item]")].map((item) => ({
-    id: item.dataset.bentoItem ?? "",
-    col: Number(item.dataset.bentoCol),
-    row: Number(item.dataset.bentoRow),
-    width: Number(item.dataset.bentoWidth),
-    height: Number(item.dataset.bentoHeight),
+function applyBentoPositions(updates: BentoPosition[]): void {
+  if (!Array.isArray(updates) || updates.length > 100) return;
+  if (updates.some((update) => !update || typeof update.itemId !== "string" || typeof update.grid !== "string")) return;
+  const resolved = updates.map((update) => ({
+    update,
+    grid: bentoGrid(update.grid),
+    item: bentoModel.querySelector<HTMLElement>(`[data-bento-item="${CSS.escape(update.itemId)}"]`),
   }));
-}
-
-function layoutBento(grid: HTMLElement, item: PlacedItem): void {
-  for (const placed of placeWithPush(bentoItems(grid), item, Number(grid.dataset.columns ?? 4))) {
-    const element = grid.querySelector<HTMLElement>(`[data-bento-item="${CSS.escape(placed.id)}"]`);
-    if (!element) continue;
-    element.dataset.bentoCol = String(placed.col);
-    element.dataset.bentoRow = String(placed.row);
-    element.dataset.bentoWidth = String(placed.width);
-    element.dataset.bentoHeight = String(placed.height);
-    element.style.gridColumn = `${placed.col} / span ${placed.width}`;
-    element.style.gridRow = `${placed.row} / span ${placed.height}`;
+  if (
+    new Set(updates.map((update) => update.itemId)).size !== updates.length ||
+    resolved.some(
+      ({ update, grid, item }) =>
+        !grid ||
+        !item ||
+        !Number.isInteger(update.col) ||
+        !Number.isInteger(update.row) ||
+        !Number.isInteger(update.width) ||
+        !Number.isInteger(update.height) ||
+        update.col < 1 ||
+        update.row < 1 ||
+        update.width < 1 ||
+        update.height < 1 ||
+        update.col + update.width - 1 > Number(grid?.dataset.columns ?? 0),
+    )
+  )
+    return;
+  for (const { update, grid, item } of resolved) {
+    grid!.append(item!);
+    item!.dataset.bentoCol = String(update.col);
+    item!.dataset.bentoRow = String(update.row);
+    item!.dataset.bentoWidth = String(update.width);
+    item!.dataset.bentoHeight = String(update.height);
+    item!.style.gridColumn = `${update.col} / span ${update.width}`;
+    item!.style.gridRow = `${update.row} / span ${update.height}`;
   }
-}
-
-function moveBento(target: BentoMove): void {
-  const source = bentoGrid(target.fromGrid);
-  const destination = bentoGrid(target.toGrid);
-  const tile = source?.querySelector<HTMLElement>(`[data-bento-item="${CSS.escape(target.itemId)}"]`);
-  if (!tile || !destination) return;
-  destination.append(tile);
-  layoutBento(destination, {
-    id: target.itemId,
-    col: target.col,
-    row: target.row,
-    width: target.width,
-    height: target.height,
-  });
-}
-
-function resizeBento(target: BentoResize): void {
-  const grid = bentoGrid(target.grid);
-  const tile = grid?.querySelector<HTMLElement>(`[data-bento-item="${CSS.escape(target.itemId)}"]`);
-  if (!grid || !tile) return;
-  layoutBento(grid, {
-    id: target.itemId,
-    col: Number(tile.dataset.bentoCol),
-    row: Number(tile.dataset.bentoRow),
-    width: target.width,
-    height: target.height,
-  });
 }
 
 function patchResponse(selector: string, model: HTMLElement): Response {
@@ -138,12 +114,12 @@ const interceptFetch = async (input: RequestInfo | URL, init?: RequestInit): Pro
   if (request.method !== "POST") return originalFetch(input, init);
 
   if (url.pathname.endsWith("/bento-move")) {
-    moveBento(signalPayload(await request.text()).bento as BentoMove);
+    applyBentoPositions((signalPayload(await request.text()).bento as BentoMoveDetail).updates);
     return patchResponse("#bento-demo", bentoModel);
   }
 
   if (url.pathname.endsWith("/bento-resize")) {
-    resizeBento(signalPayload(await request.text()).bento as BentoResize);
+    applyBentoPositions((signalPayload(await request.text()).bento as BentoResizeDetail).updates);
     return patchResponse("#bento-demo", bentoModel);
   }
 

@@ -1,5 +1,8 @@
+import type { BentoPosition } from "../../contracts/bento";
+
 export type Cell = { col: number; row: number; width: number; height: number };
 export type PlacedItem = Cell & { id: string };
+export type GridLayout = { id: string; columns: number; items: readonly PlacedItem[] };
 
 export function overlaps(a: Cell, b: Cell): boolean {
   return a.col < b.col + b.width && b.col < a.col + a.width && a.row < b.row + b.height && b.row < a.row + a.height;
@@ -24,4 +27,31 @@ export function placeWithPush(items: readonly PlacedItem[], moved: PlacedItem, c
     result.push(placed);
   }
   return result;
+}
+
+/** Project from confirmed positions, never from an earlier transient preview. */
+export function projectBentoLayout(
+  grids: readonly GridLayout[],
+  itemId: string,
+  targetGrid: string,
+  target: Cell,
+): BentoPosition[] {
+  const source = grids.find((grid) => grid.items.some((item) => item.id === itemId));
+  const destination = grids.find((grid) => grid.id === targetGrid);
+  if (!source || !destination) return [];
+  const projected = placeWithPush(destination.items, { id: itemId, ...target }, destination.columns);
+  return projected.flatMap((item) => {
+    const previous = destination.items.find((candidate) => candidate.id === item.id);
+    if (
+      previous &&
+      previous.col === item.col &&
+      previous.row === item.row &&
+      previous.width === item.width &&
+      previous.height === item.height
+    )
+      return [];
+    return [
+      { itemId: item.id, grid: destination.id, col: item.col, row: item.row, width: item.width, height: item.height },
+    ];
+  });
 }

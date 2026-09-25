@@ -1,10 +1,10 @@
 // @ts-ignore — the browser bundle resolves the vendored Rocket module at this URL.
 import { rocket } from "/js/datastar-rocket.js";
-import { bentoContract, type BentoMoveDetail, type BentoResizeDetail } from "../../contracts/bento";
+import { bentoContract, type BentoMoveDetail, type BentoPosition, type BentoResizeDetail } from "../../contracts/bento";
 import { installFlip } from "../../core/flip";
 import { keyMatches } from "../../core/keyboard";
 import { installPointerDrag } from "../../core/pointer-drag";
-import type { Cell } from "./placement";
+import { projectBentoLayout, type Cell, type GridLayout } from "./placement";
 
 type Target = Cell & { grid: HTMLElement; gridId: string };
 
@@ -46,15 +46,81 @@ rocket(bentoContract.tag, {
     };
     const flip = installFlip({ host, itemSelector, itemId });
     let marker: HTMLElement | null = null;
-    const mark = (target: Target | null) => {
+    let previewKey = "";
+    let previewUpdates: BentoPosition[] = [];
+    let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+    const originalTransforms = new Map<HTMLElement, string>();
+    let stretchedGrid: { element: HTMLElement; minHeight: string } | null = null;
+    let projectedItem: HTMLElement | null = null;
+    const layout = (): GridLayout[] =>
+      grids().map((grid) => ({
+        id: grid.dataset.bentoGrid ?? "",
+        columns: columns(grid),
+        items: [...grid.querySelectorAll<HTMLElement>(itemSelector)].filter(owns).map((item) => ({
+          id: item.dataset.bentoItem ?? "",
+          ...cells(item),
+        })),
+      }));
+    const clearProjection = () => {
+      if (pendingTimer) clearTimeout(pendingTimer);
+      pendingTimer = null;
       marker?.remove();
       marker = null;
-      if (!target) return;
+      previewKey = "";
+      previewUpdates = [];
+      for (const [item, transform] of originalTransforms) item.style.transform = transform;
+      originalTransforms.clear();
+      projectedItem?.removeAttribute("data-bento-projecting");
+      projectedItem = null;
+      if (stretchedGrid) stretchedGrid.element.style.minHeight = stretchedGrid.minHeight;
+      stretchedGrid = null;
+    };
+    const mark = (target: Target | null, id?: string) => {
+      if (!target || !id) {
+        clearProjection();
+        return;
+      }
+      const key = `${id}:${target.gridId}:${target.col}:${target.row}:${target.width}:${target.height}`;
+      if (key === previewKey) return;
+      clearProjection();
+      previewKey = key;
+      previewUpdates = projectBentoLayout(layout(), id, target.gridId, target);
       marker = document.createElement("div");
       marker.setAttribute("data-bento-target", "");
       marker.style.gridColumn = `${target.col} / span ${target.width}`;
       marker.style.gridRow = `${target.row} / span ${target.height}`;
       target.grid.append(marker);
+      const { cellWidth, cellHeight, gapX, gapY } = metrics(target.grid);
+      for (const update of previewUpdates) {
+        const item = [...host.querySelectorAll<HTMLElement>(itemSelector)].find(
+          (candidate) => itemId(candidate) === update.itemId,
+        );
+        if (!item) continue;
+        if (update.itemId === id) {
+          item.setAttribute("data-bento-projecting", "");
+          projectedItem = item;
+          continue;
+        }
+        const original = cells(item);
+        originalTransforms.set(item, item.style.transform);
+        item.style.transform =
+          `translate(${(update.col - original.col) * (cellWidth + gapX)}px, ${(update.row - original.row) * (cellHeight + gapY)}px) ${item.style.transform}`.trim();
+      }
+      const furthestRow = Math.max(
+        target.row + target.height - 1,
+        ...previewUpdates.map((update) => update.row + update.height - 1),
+      );
+      const style = getComputedStyle(target.grid);
+      stretchedGrid = { element: target.grid, minHeight: target.grid.style.minHeight };
+      target.grid.style.minHeight = `${Math.max(
+        parseFloat(style.minHeight) || 0,
+        furthestRow * (cellHeight + gapY) -
+          gapY +
+          (parseFloat(style.paddingTop) || 0) +
+          (parseFloat(style.paddingBottom) || 0) +
+          (parseFloat(style.borderTopWidth) || 0) +
+          (parseFloat(style.borderBottomWidth) || 0),
+      )}px`;
     };
     const gridFor = (item: HTMLElement) => item.closest<HTMLElement>(gridSelector);
     const targetAt = (x: number, y: number, id: string): Target | null => {
@@ -73,10 +139,18 @@ rocket(bentoContract.tag, {
         height: size.height,
       };
     };
+    const finishPreview = () => {
+      if (pendingTimer) clearTimeout(pendingTimer);
+      pendingTimer = setTimeout(clearProjection, 2000);
+    };
     const emitMove = (id: string, target: Target) => {
       const item = [...host.querySelectorAll<HTMLElement>(itemSelector)].find((candidate) => itemId(candidate) === id);
       const fromGrid = item && gridFor(item)?.dataset.bentoGrid;
       if (fromGrid === undefined) return;
+      if (!previewUpdates.length) {
+        clearProjection();
+        return;
+      }
       host.dispatchEvent(
         new CustomEvent<BentoMoveDetail>(bentoContract.events.move, {
           bubbles: true,
@@ -85,22 +159,25 @@ rocket(bentoContract.tag, {
             itemId: id,
             fromGrid,
             toGrid: target.gridId,
-            col: target.col,
-            row: target.row,
-            width: target.width,
-            height: target.height,
+            updates: previewUpdates,
           },
         }),
       );
+      finishPreview();
     };
     const emitResize = (id: string, target: Target) => {
+      if (!previewUpdates.length) {
+        clearProjection();
+        return;
+      }
       host.dispatchEvent(
         new CustomEvent<BentoResizeDetail>(bentoContract.events.resize, {
           bubbles: true,
           composed: true,
-          detail: { itemId: id, grid: target.gridId, width: target.width, height: target.height },
+          detail: { itemId: id, grid: target.gridId, updates: previewUpdates },
         }),
       );
+      finishPreview();
     };
     const pointerDispose = installPointerDrag({
       host,
@@ -108,6 +185,7 @@ rocket(bentoContract.tag, {
       itemId,
       targetAt,
       mark,
+      retainPreviewOnCommit: true,
       canStart: (event) => !(event.target as HTMLElement).closest(resizeSelector),
       beforeCommit: flip.prepare,
       commit: emitMove,
@@ -146,7 +224,7 @@ rocket(bentoContract.tag, {
       item.setAttribute("data-bento-resizing", "");
       host.setAttribute("data-resize-active", "");
       host.setPointerCapture?.(event.pointerId);
-      mark(target);
+      mark(target, item.dataset.bentoItem);
     };
     const onPointerMove = (event: PointerEvent) => {
       if (!resizing || resizing.pointerId !== event.pointerId) return;
@@ -165,13 +243,23 @@ rocket(bentoContract.tag, {
           Math.min(5, resizing.origin.height + Math.round((event.clientY - resizing.y) / (cellHeight + gapY))),
         ),
       };
-      mark(resizing.target);
+      mark(resizing.target, resizing.item.dataset.bentoItem);
     };
     const onPointerUp = (event: PointerEvent) => {
       if (!resizing || resizing.pointerId !== event.pointerId) return;
       const { item, origin, target } = resizing;
-      clearResize();
-      if (origin.width === target.width && origin.height === target.height) return;
+      if (origin.width === target.width && origin.height === target.height) {
+        clearResize();
+        return;
+      }
+      resizing.item.removeAttribute("data-bento-resizing");
+      try {
+        host.releasePointerCapture?.(resizing.pointerId);
+      } catch {
+        /* Already released. */
+      }
+      resizing = null;
+      host.removeAttribute("data-resize-active");
       flip.prepare();
       emitResize(item.dataset.bentoItem ?? "", target);
     };
@@ -191,7 +279,8 @@ rocket(bentoContract.tag, {
     const commitStage = () => {
       if (!staged) return;
       const { id, target, kind } = staged;
-      clearStage();
+      staged = null;
+      host.removeAttribute("data-key-staging");
       focusId = id;
       if (focusTimer) clearInterval(focusTimer);
       if (focusExpiry) clearTimeout(focusExpiry);
@@ -283,7 +372,7 @@ rocket(bentoContract.tag, {
         return;
       staged = { id, target, kind: move ? "move" : "resize" };
       host.setAttribute("data-key-staging", "");
-      mark(target);
+      mark(target, id);
     };
     const onKeyUp = (event: KeyboardEvent) => {
       if ((staged?.kind === "move" && event.key === "Alt") || (staged?.kind === "resize" && event.key === "Shift"))
@@ -299,6 +388,7 @@ rocket(bentoContract.tag, {
     cleanup(() => {
       clearStage();
       clearResize();
+      clearProjection();
       pointerDispose();
       flip.dispose();
       if (focusTimer) clearInterval(focusTimer);
