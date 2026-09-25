@@ -471,6 +471,7 @@ kbd {
 
 .example-body [data-kanban-lane],
 .example-body [data-drop-list],
+.example-body rocket-bento-workspace section,
 .example-body rocket-sortable-list {
   border: 1px solid var(--line);
   border-radius: 5px;
@@ -491,7 +492,8 @@ kbd {
 
 .example-body [data-kanban-card],
 .example-body [data-sortable-item],
-.example-body [data-drag-item] {
+.example-body [data-drag-item],
+.example-body [data-bento-item] {
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--card);
@@ -507,6 +509,11 @@ kbd {
 
 .example-body [data-drop-active] {
   background: color-mix(in srgb, var(--blue) 8%, var(--raised));
+}
+
+.example-body [data-bento-target] {
+  border-color: var(--blue);
+  background: color-mix(in srgb, var(--blue) 18%, transparent);
 }
 
 .list-frame rocket-sortable-list {
@@ -601,6 +608,10 @@ td small {
   }
 
   .example-body .kanban rocket-kanban-board {
+    grid-template-columns: 1fr;
+  }
+
+  .example-body rocket-bento-workspace {
     grid-template-columns: 1fr;
   }
 

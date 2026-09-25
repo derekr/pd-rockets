@@ -1,15 +1,29 @@
+import { placeWithPush, type PlacedItem } from "../rocket/bento/placement";
+
 type BoardTarget = { cardId: string; col: number; before: string };
 type ListTarget = { itemId: string; before: string };
 type GroupTarget = { itemId: string; fromList: string; toList: string; before: string };
+type BentoMove = {
+  itemId: string;
+  fromGrid: string;
+  toGrid: string;
+  col: number;
+  row: number;
+  width: number;
+  height: number;
+};
+type BentoResize = { itemId: string; grid: string; width: number; height: number };
 
 const kanbanRoot = document.querySelector<HTMLElement>("#kanban-demo");
 const sortableRoot = document.querySelector<HTMLElement>("#sortable-demo");
 const groupRoot = document.querySelector<HTMLElement>("#group-demo");
-if (!kanbanRoot || !sortableRoot || !groupRoot) throw new Error("rocket kit site: missing example root");
+const bentoRoot = document.querySelector<HTMLElement>("#bento-demo");
+if (!kanbanRoot || !sortableRoot || !groupRoot || !bentoRoot) throw new Error("rocket kit site: missing example root");
 
 const kanbanModel = kanbanRoot.cloneNode(true) as HTMLElement;
 const sortableModel = sortableRoot.cloneNode(true) as HTMLElement;
 const groupModel = groupRoot.cloneNode(true) as HTMLElement;
+const bentoModel = bentoRoot.cloneNode(true) as HTMLElement;
 
 function signalPayload(body: string): Record<string, unknown> {
   const payload = JSON.parse(body) as Record<string, unknown>;
@@ -50,6 +64,61 @@ function moveGroupItem(target: GroupTarget): void {
   list.insertBefore(item, before);
 }
 
+function bentoGrid(id: string): HTMLElement | null {
+  return bentoModel.querySelector<HTMLElement>(`[data-bento-grid="${CSS.escape(id)}"]`);
+}
+
+function bentoItems(grid: HTMLElement): PlacedItem[] {
+  return [...grid.querySelectorAll<HTMLElement>("[data-bento-item]")].map((item) => ({
+    id: item.dataset.bentoItem ?? "",
+    col: Number(item.dataset.bentoCol),
+    row: Number(item.dataset.bentoRow),
+    width: Number(item.dataset.bentoWidth),
+    height: Number(item.dataset.bentoHeight),
+  }));
+}
+
+function layoutBento(grid: HTMLElement, item: PlacedItem): void {
+  for (const placed of placeWithPush(bentoItems(grid), item, Number(grid.dataset.columns ?? 4))) {
+    const element = grid.querySelector<HTMLElement>(`[data-bento-item="${CSS.escape(placed.id)}"]`);
+    if (!element) continue;
+    element.dataset.bentoCol = String(placed.col);
+    element.dataset.bentoRow = String(placed.row);
+    element.dataset.bentoWidth = String(placed.width);
+    element.dataset.bentoHeight = String(placed.height);
+    element.style.gridColumn = `${placed.col} / span ${placed.width}`;
+    element.style.gridRow = `${placed.row} / span ${placed.height}`;
+  }
+}
+
+function moveBento(target: BentoMove): void {
+  const source = bentoGrid(target.fromGrid);
+  const destination = bentoGrid(target.toGrid);
+  const tile = source?.querySelector<HTMLElement>(`[data-bento-item="${CSS.escape(target.itemId)}"]`);
+  if (!tile || !destination) return;
+  destination.append(tile);
+  layoutBento(destination, {
+    id: target.itemId,
+    col: target.col,
+    row: target.row,
+    width: target.width,
+    height: target.height,
+  });
+}
+
+function resizeBento(target: BentoResize): void {
+  const grid = bentoGrid(target.grid);
+  const tile = grid?.querySelector<HTMLElement>(`[data-bento-item="${CSS.escape(target.itemId)}"]`);
+  if (!grid || !tile) return;
+  layoutBento(grid, {
+    id: target.itemId,
+    col: Number(tile.dataset.bentoCol),
+    row: Number(tile.dataset.bentoRow),
+    width: target.width,
+    height: target.height,
+  });
+}
+
 function patchResponse(selector: string, model: HTMLElement): Response {
   const lines = ["event: datastar-patch-elements", `data: selector ${selector}`, "data: mode outer"];
   for (const line of model.outerHTML.split("\n")) lines.push(`data: elements ${line}`);
@@ -67,6 +136,16 @@ const interceptFetch = async (input: RequestInfo | URL, init?: RequestInit): Pro
   const request = new Request(input, init);
   const url = new URL(request.url);
   if (request.method !== "POST") return originalFetch(input, init);
+
+  if (url.pathname.endsWith("/bento-move")) {
+    moveBento(signalPayload(await request.text()).bento as BentoMove);
+    return patchResponse("#bento-demo", bentoModel);
+  }
+
+  if (url.pathname.endsWith("/bento-resize")) {
+    resizeBento(signalPayload(await request.text()).bento as BentoResize);
+    return patchResponse("#bento-demo", bentoModel);
+  }
 
   if (url.pathname.endsWith("/group-move")) {
     moveGroupItem(signalPayload(await request.text()) as unknown as GroupTarget);

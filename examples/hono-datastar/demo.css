@@ -41,6 +41,66 @@ rocket-drag-group {
   gap: 1rem;
 }
 
+rocket-bento-workspace {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+[data-bento-grid] {
+  display: grid;
+  grid-template-columns: repeat(var(--bento-columns, 4), minmax(0, 1fr));
+  grid-auto-rows: 76px;
+  gap: 8px;
+  min-height: 330px;
+  padding: 8px;
+  border: 1px dashed color-mix(in srgb, currentColor 35%, transparent);
+  border-radius: 0.5rem;
+}
+
+[data-bento-item] {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0.5rem;
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-radius: 0.5rem;
+  background: Canvas;
+  cursor: grab;
+  touch-action: none;
+}
+
+[data-bento-item] strong {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-bento-resize] {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  border: 0;
+  background: transparent;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+[data-bento-target] {
+  z-index: 2;
+  border: 2px dashed Highlight;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, Highlight 18%, transparent);
+  pointer-events: none;
+}
+
+[data-bento-resizing] {
+  opacity: 0.7;
+}
+
 [data-drop-list] {
   min-height: 8rem;
 }
@@ -87,7 +147,7 @@ rocket-drag-group {
   transform: rotate(1deg) scale(1.02);
 }
 
-body:has([data-drag-active]) {
+body:has([data-drag-active], [data-resize-active]) {
   user-select: none;
   -webkit-user-select: none;
 }
@@ -182,7 +242,8 @@ pre {
 }
 
 @media (max-width: 700px) {
-  .docs-grid {
+  .docs-grid,
+  rocket-bento-workspace {
     grid-template-columns: 1fr;
   }
 }

@@ -4,6 +4,7 @@ export type PointerDragOptions<ItemId, Target> = {
   host: HTMLElement;
   itemSelector: string;
   itemId: (item: HTMLElement) => ItemId | null;
+  canStart?: (event: PointerEvent, item: HTMLElement) => boolean;
   targetAt: (x: number, y: number, itemId: ItemId) => Target | null;
   mark: (target: Target | null) => void;
   beforeCommit?: () => void;
@@ -79,7 +80,7 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     if (pointer.button !== 0 || active) return;
     const item = (pointer.target as HTMLElement).closest<HTMLElement>(options.itemSelector);
     const itemId = item && options.host.contains(item) ? options.itemId(item) : null;
-    if (!item || itemId === null) return;
+    if (!item || itemId === null || (options.canStart && !options.canStart(pointer, item))) return;
     active = { itemId, pointerId: pointer.pointerId };
     state.send({ type: "begin", itemId });
     options.host.setAttribute("data-drag-active", "");

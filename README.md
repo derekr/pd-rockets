@@ -2,7 +2,7 @@
 
 PD rockets is a collection of vendorable components built with [Rocket](https://data-star.dev/reference/rocket),
 Datastar's open-source web component API. Drag-and-drop is the first family: a multi-list drag group, Kanban, and
-sortable-list surfaces are working examples, with bento-grid and sortable-tree layouts as future pressure tests. A server
+sortable-list and bento-grid surfaces are working examples, with a sortable-tree layout as a future pressure test. A server
 renders light DOM; Rocket owns browser interaction and emits semantic events; the page connects those events to its
 Datastar actions and backend handlers.
 
@@ -17,6 +17,12 @@ Datastar actions and backend handlers.
 dragging or Alt + arrows (or h/j/k/l) emits `rocket-drag-group-move` with `{ itemId, fromList, toList, before }`;
 releasing Alt commits a keyboard move, and Escape cancels it. Groups are independent. Kanban keeps its own column and
 card contract while sharing the insertion and pointer mechanics.
+
+`rocket-bento-workspace` is an experimental two-grid dashboard surface. It reuses the pointer and FLIP lifecycle, but
+uses cell coordinates and spans instead of list insertion targets. Its semantic move and resize events leave the
+confirmed layout to the backend; the guide's in-browser SSE fixture demonstrates a small collision-push rule. The
+consuming page provides CSS Grid tracks (`grid-template-columns` and a fixed `grid-auto-rows`) for pointer-to-cell
+geometry.
 
 The reusable client does not know about application actions, persistence, permissions, or transport policy. Rocket
 provides the component boundary and lifecycle for local browser mechanics, while Datastar handles actions and HTML

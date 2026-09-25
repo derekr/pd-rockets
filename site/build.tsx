@@ -2,12 +2,14 @@ import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { KanbanBoard } from "../examples/hono-datastar/adapter/kanban";
 import { DragGroup } from "../examples/hono-datastar/adapter/drag-group";
+import { BentoWorkspace } from "../examples/hono-datastar/adapter/bento";
 import type { DatastarEventBinding } from "../examples/hono-datastar/adapter/event-binding";
 import { renderHTML } from "../examples/hono-datastar/adapter/render";
 import { SortableList } from "../examples/hono-datastar/adapter/sortable-list";
 import { kanbanContract } from "../contracts/kanban";
 import { sortableListContract } from "../contracts/sortable-list";
 import { dragGroupContract } from "../contracts/drag-group";
+import { bentoContract } from "../contracts/bento";
 import fixture from "../examples/hono-datastar/fixture.json";
 import { buildSourceIndex } from "./build-source";
 
@@ -38,6 +40,15 @@ const groupMove: DatastarEventBinding = {
   },
 };
 
+const bentoMove: DatastarEventBinding = {
+  event: bentoContract.events.move,
+  attrs: { "data-on:rocket-bento-move": "$bento = evt.detail; @post('./bento-move')" },
+};
+const bentoResize: DatastarEventBinding = {
+  event: bentoContract.events.resize,
+  attrs: { "data-on:rocket-bento-resize": "$bento = evt.detail; @post('./bento-resize')" },
+};
+
 const page = renderHTML(
   <html lang="en">
     <head>
@@ -51,7 +62,7 @@ const page = renderHTML(
       <link rel="stylesheet" href="./demo.css" />
       <link rel="stylesheet" href="./site.css" />
     </head>
-    <body data-signals='{"cardId":"","col":0,"before":"","itemId":"","fromList":"","toList":""}'>
+    <body data-signals='{"cardId":"","col":0,"before":"","itemId":"","fromList":"","toList":"","bento":{}}'>
       <div class="site-frame">
         <header class="site-header">
           <a class="brand" href="#top" aria-label="PD rockets, back to top">
@@ -117,7 +128,8 @@ const page = renderHTML(
                 <a href="#kanban">02 · Kanban board</a>
                 <a href="#sortable">03 · Sortable list</a>
                 <a href="#drag-group">04 · Drag group</a>
-                <a href="#server">05 · Wire a backend</a>
+                <a href="#bento">05 · Bento grids</a>
+                <a href="#server">06 · Wire a backend</a>
                 <a href="#reference">Reference</a>
                 <a href="#keyboard">Keyboard inputs</a>
                 <a href="#events">Events &amp; DOM</a>
@@ -310,8 +322,47 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                 </p>
               </section>
 
+              <section id="bento" class="docs-section" aria-labelledby="bento-title">
+                <p class="section-kicker">STEP 05 / LIVE EXAMPLE</p>
+                <h2 id="bento-title">Bento grids</h2>
+                <p>
+                  Two CSS grids share one drag scope. Drop a tile on a cell in either grid, or use its ↘ handle to
+                  resize it. A two-dimensional placement rule pushes overlapping tiles down when the backend returns the
+                  new layout. Focus a tile: Alt + arrows move it by a cell, Alt + Page Up/Down switches grids, and Shift
+                  + arrows resize. Release the modifier to commit; Escape cancels.
+                </p>
+                <div class="example-frame bento-frame">
+                  <div class="example-head">
+                    <span class="live-dot" aria-hidden="true"></span> LIVE / BENTO{" "}
+                    <span>drag between grids or resize ↘</span>
+                  </div>
+                  <div id="bento-demo" class="example-body">
+                    <BentoWorkspace grids={fixture.bento} move={bentoMove} resize={bentoResize} />
+                  </div>
+                </div>
+                <pre>
+                  <code>{`<rocket-bento-workspace>
+  <div data-bento-grid="overview" data-columns="4">
+    <article data-bento-item="tile-a" data-bento-col="1" data-bento-row="1"
+      data-bento-width="2" data-bento-height="2" tabindex="0">
+      Traffic <button data-bento-resize aria-label="Resize Traffic">↘</button>
+    </article>
+  </div>
+  <div data-bento-grid="scratchpad" data-columns="4"></div>
+</rocket-bento-workspace>
+
+rocket-bento-move → { itemId, fromGrid, toGrid, col, row, width, height }
+rocket-bento-resize → { itemId, grid, width, height }`}</code>
+                </pre>
+                <p>
+                  <a href="./source/rocket/bento/client.ts.txt">Bento Rocket source ↗</a> ·{" "}
+                  <a href="./source/rocket/bento/placement.ts.txt">Placement rule ↗</a> ·{" "}
+                  <a href="./source/examples/hono-datastar/adapter/bento.tsx.txt">JSX template ↗</a>
+                </p>
+              </section>
+
               <section id="server" class="docs-section" aria-labelledby="server-title">
-                <p class="section-kicker">STEP 05 / SERVER HANDOFF</p>
+                <p class="section-kicker">STEP 06 / SERVER HANDOFF</p>
                 <h2 id="server-title">Server round trip</h2>
                 <p>
                   Bind each semantic event to a Datastar action in your page. Your server handler validates the target,
@@ -538,6 +589,23 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                           <small>{`{ itemId, fromList, toList, before }`}</small>
                         </td>
                       </tr>
+                      <tr>
+                        <td>
+                          <a href="./source/rocket/bento/client.ts.txt">
+                            <code>rocket-bento-workspace</code>
+                          </a>
+                        </td>
+                        <td>
+                          <a href="./source/contracts/bento.ts.txt">
+                            <code>[data-bento-grid]</code> + <code>[data-bento-item]</code>
+                          </a>
+                        </td>
+                        <td>
+                          <a href="./source/contracts/bento.ts.txt">
+                            <code>rocket-bento-move</code> / <code>rocket-bento-resize</code>
+                          </a>
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -554,14 +622,16 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                 <p class="section-kicker">ON THE HORIZON / 03</p>
                 <h2 id="next-title">What's next</h2>
                 <p>
-                  Drag groups, Kanban and sortable lists are the first drag-and-drop examples. A bento grid and sortable
-                  tree are useful next pressure tests for different target geometry and keyboard behavior. Each surface
-                  can share core mechanics without pretending every layout is the same component.
+                  Drag groups, Kanban, sortable lists and bento grids now exercise different target geometry. A sortable
+                  tree is a useful next pressure test for nested targets. Each surface can share core mechanics without
+                  pretending every layout is the same component.
                 </p>
-                <div class="layer-strip future-strip" aria-label="Potential drag-and-drop surfaces">
+                <div class="layer-strip future-strip" aria-label="Other drag-and-drop surfaces">
                   <span>
-                    <b>Bento grid</b>
-                    <small>two-dimensional placement · planned</small>
+                    <b>
+                      <a href="#bento">Bento grid</a>
+                    </b>
+                    <small>two-dimensional placement · live example</small>
                   </span>
                   <span>
                     <b>Sortable tree</b>
