@@ -2,7 +2,9 @@
 import { rocket } from "/js/datastar-rocket.js";
 import { sortableTreeContract, type TreeMoveDetail } from "../../contracts/sortable-tree";
 import { installFlip } from "../../core/flip";
+import { installFocusRecovery } from "../../core/focus-recovery";
 import { keyMatches } from "../../core/keyboard";
+import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
 
 type Target = { list: HTMLElement; parentId: string; before: string; into: boolean };
@@ -10,8 +12,10 @@ type Target = { list: HTMLElement; parentId: string; before: string; into: boole
 rocket(sortableTreeContract.tag, {
   mode: "light",
   setup({ host, cleanup }: { host: HTMLElement; cleanup: (fn: () => void) => void }) {
+    cleanup(markRocketHost(host));
     const { node: nodeSelector, row: rowSelector, children: childrenSelector } = sortableTreeContract.selectors;
-    const owns = (element: HTMLElement) => element.closest(sortableTreeContract.tag) === host;
+    const owns = (element: HTMLElement) => ownsRocketElement(host, element);
+    const focus = installFocusRecovery(host);
     const nodeFor = (row: HTMLElement) => row.closest<HTMLElement>(nodeSelector);
     const rowId = (row: HTMLElement) => (owns(row) ? (nodeFor(row)?.dataset.treeNode ?? null) : null);
     const lists = () => [...host.querySelectorAll<HTMLElement>(childrenSelector)].filter(owns);
@@ -24,7 +28,13 @@ rocket(sortableTreeContract.tag, {
     const rowOf = (node: HTMLElement) => node.querySelector<HTMLElement>(`:scope > ${rowSelector}`);
     const listFor = (node: HTMLElement) => node.parentElement?.closest<HTMLElement>(childrenSelector);
     const collapsed = new Set<string>();
+    let pendingExpansion: { id: string; parentId: string } | null = null;
     const syncExpanded = () => {
+      const moved = pendingExpansion && nodeById(pendingExpansion.id);
+      if (moved && pendingExpansion && listFor(moved)?.dataset.treeParent === pendingExpansion.parentId) {
+        collapsed.delete(pendingExpansion.parentId);
+        pendingExpansion = null;
+      }
       host.querySelectorAll<HTMLElement>(nodeSelector).forEach((node) => {
         if (!owns(node) || node.dataset.treeKind !== "folder") return;
         const list = node.querySelector<HTMLElement>(`:scope > ${childrenSelector}`);
@@ -72,7 +82,7 @@ rocket(sortableTreeContract.tag, {
     const mark = (target: Target | null) => {
       lists().forEach((list) => {
         list.removeAttribute("data-tree-end");
-        list.querySelectorAll<HTMLElement>(rowSelector).forEach((row) => {
+        [...list.querySelectorAll<HTMLElement>(rowSelector)].filter(owns).forEach((row) => {
           row.removeAttribute("data-tree-before");
           row.removeAttribute("data-tree-into");
         });
@@ -94,6 +104,7 @@ rocket(sortableTreeContract.tag, {
       const fromParent = source.dataset.treeParent ?? "";
       if (source === target.list && (node.nextElementSibling?.getAttribute("data-tree-node") ?? "") === target.before)
         return;
+      if (collapsed.has(target.parentId)) pendingExpansion = { id, parentId: target.parentId };
       host.dispatchEvent(
         new CustomEvent<TreeMoveDetail>(sortableTreeContract.events.move, {
           bubbles: true,
@@ -104,25 +115,6 @@ rocket(sortableTreeContract.tag, {
     };
 
     let staged: { id: string; target: Target } | null = null;
-    let focusTarget: { id: string; target: Target } | null = null;
-    let focusInterval: ReturnType<typeof setInterval> | null = null;
-    let focusTimeout: ReturnType<typeof setTimeout> | null = null;
-    const restoreFocus = () => {
-      if (!focusTarget) return;
-      const { id, target } = focusTarget;
-      const node = nodeById(id);
-      if (!node || listFor(node) !== target.list) {
-        // A morph can replace the list node; compare its semantic parent instead.
-        if (!node || listFor(node)?.dataset.treeParent !== target.parentId) return;
-      }
-      if ((node.nextElementSibling?.getAttribute("data-tree-node") ?? "") !== target.before) return;
-      rowOf(node)?.focus({ preventScroll: true });
-      focusTarget = null;
-      if (focusInterval) clearInterval(focusInterval);
-      if (focusTimeout) clearTimeout(focusTimeout);
-      focusInterval = null;
-      focusTimeout = null;
-    };
     const clearStage = () => {
       staged = null;
       mark(null);
@@ -132,20 +124,29 @@ rocket(sortableTreeContract.tag, {
       if (!staged) return;
       const { id, target } = staged;
       clearStage();
-      focusTarget = { id, target };
-      if (focusInterval) clearInterval(focusInterval);
-      if (focusTimeout) clearTimeout(focusTimeout);
-      focusInterval = setInterval(restoreFocus, 30);
-      focusTimeout = setTimeout(() => {
-        focusTarget = null;
-        if (focusInterval) clearInterval(focusInterval);
-        focusInterval = null;
-        focusTimeout = null;
-      }, 2000);
+      const source = nodeById(id);
+      const sourceRow = source && rowOf(source);
+      if (sourceRow)
+        focus.expect(sourceRow, () => {
+          const node = nodeById(id);
+          if (!node || listFor(node)?.dataset.treeParent !== target.parentId) return null;
+          if ((node.nextElementSibling?.getAttribute("data-tree-node") ?? "") !== target.before) return null;
+          const destination = listFor(node);
+          if (destination?.closest(`${childrenSelector}[hidden]`)) {
+            // A confirmed move into a closed folder should remain keyboard-reachable.
+            const parent = nodeById(target.parentId);
+            if (parent) {
+              collapsed.delete(target.parentId);
+              syncExpanded();
+            }
+          }
+          return rowOf(node);
+        });
       flip.prepare();
       emitMove(id, target);
     };
     const onKeyDown = (event: KeyboardEvent) => {
+      if (!owns(event.target as HTMLElement)) return;
       const row = (event.target as HTMLElement).closest<HTMLElement>(rowSelector);
       const id = row && rowId(row);
       if (!id) return;
@@ -255,7 +256,9 @@ rocket(sortableTreeContract.tag, {
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.key === "Alt") commitStage();
     };
-    const onPointerDown = () => clearStage();
+    const onPointerDown = (event: PointerEvent) => {
+      if (owns(event.target as HTMLElement)) clearStage();
+    };
     const dispose = installPointerDrag({
       host,
       itemSelector: rowSelector,
@@ -271,9 +274,9 @@ rocket(sortableTreeContract.tag, {
     window.addEventListener("blur", commitStage);
     cleanup(() => {
       observer.disconnect();
+      pendingExpansion = null;
       clearStage();
-      if (focusInterval) clearInterval(focusInterval);
-      if (focusTimeout) clearTimeout(focusTimeout);
+      focus.dispose();
       host.removeEventListener("keydown", onKeyDown);
       host.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("keyup", onKeyUp);

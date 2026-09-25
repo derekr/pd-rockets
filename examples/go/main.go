@@ -224,6 +224,31 @@ func number(value any) int {
 }
 
 func applyMove(model *DemoModel, cardID string, col int, before string) {
+	targetIndex := -1
+	for index, column := range model.Columns {
+		if column.ID == col {
+			targetIndex = index
+			break
+		}
+	}
+	if targetIndex < 0 {
+		return
+	}
+	if before == cardID {
+		return
+	}
+	if before != "" {
+		foundBefore := false
+		for _, candidate := range model.Columns[targetIndex].Cards {
+			if candidate.ID == before {
+				foundBefore = true
+				break
+			}
+		}
+		if !foundBefore {
+			return
+		}
+	}
 	var card Card
 	found := false
 	for columnIndex := range model.Columns {
@@ -238,10 +263,10 @@ func applyMove(model *DemoModel, cardID string, col int, before string) {
 		}
 		model.Columns[columnIndex].Cards = cards
 	}
-	if !found || col >= len(model.Columns) {
+	if !found {
 		return
 	}
-	target := &model.Columns[col].Cards
+	target := &model.Columns[targetIndex].Cards
 	index := len(*target)
 	for candidateIndex, candidate := range *target {
 		if candidate.ID == before {

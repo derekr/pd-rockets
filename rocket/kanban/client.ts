@@ -1,8 +1,10 @@
 // @ts-ignore — the browser bundle resolves the vendored Rocket module at this URL.
 import { rocket } from "/js/datastar-rocket.js";
 import { installFlip } from "../../core/flip";
+import { installFocusRecovery } from "../../core/focus-recovery";
 import { insertionBefore } from "../../core/insertion-target";
 import { keyMatches } from "../../core/keyboard";
+import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
 import { kanbanContract, kanbanKeyboardConfig, type KanbanMoveDetail } from "../../contracts/kanban";
 
@@ -15,6 +17,7 @@ function datasetKey(slot: string): keyof DOMStringMap {
 rocket(kanbanContract.tag, {
   mode: "light",
   setup({ host, cleanup }: { host: HTMLElement; cleanup: (fn: () => void) => void }) {
+    cleanup(markRocketHost(host));
     const keyboardOverrides = Object.fromEntries(
       [
         "selectNext",
@@ -32,41 +35,21 @@ rocket(kanbanContract.tag, {
       }),
     );
     const keyboard = kanbanKeyboardConfig(keyboardOverrides);
-    const cards = () => [...host.querySelectorAll<HTMLElement>(kanbanContract.selectors.card)];
-    const lanes = () => [...host.querySelectorAll<HTMLElement>(kanbanContract.selectors.lane)];
+    const owns = (element: HTMLElement) => ownsRocketElement(host, element);
+    const cards = () => [...host.querySelectorAll<HTMLElement>(kanbanContract.selectors.card)].filter(owns);
+    const lanes = () => [...host.querySelectorAll<HTMLElement>(kanbanContract.selectors.lane)].filter(owns);
+    const cardsIn = (lane: HTMLElement) =>
+      [...lane.querySelectorAll<HTMLElement>(kanbanContract.selectors.card)].filter(owns);
+    const focus = installFocusRecovery(host);
     let staged: { itemId: string; target: Target; releaseKey: string } | null = null;
-    let restoreFocusTarget: { itemId: string; col: number; before: string } | null = null;
-    let focusTimeout: ReturnType<typeof setTimeout> | null = null;
-    let focusInterval: ReturnType<typeof setInterval> | null = null;
-    const restoreFocus = () => {
-      if (!restoreFocusTarget) return;
-      const { itemId, col, before } = restoreFocusTarget;
-      const card = host.querySelector<HTMLElement>(`[data-kanban-card="${CSS.escape(itemId)}"]`);
-      if (!card) return;
-      const lane = card.closest<HTMLElement>(kanbanContract.selectors.lane);
-      if (Number(lane?.dataset.col) !== col) return;
-      const siblings = [...(card.parentElement?.querySelectorAll<HTMLElement>(kanbanContract.selectors.card) ?? [])];
-      if ((siblings[siblings.indexOf(card) + 1]?.dataset.kanbanCard ?? "") !== before) return;
-      if (document.activeElement !== card && !card.contains(document.activeElement))
-        card.focus({ preventScroll: true });
-      restoreFocusTarget = null;
-      if (focusTimeout) clearTimeout(focusTimeout);
-      if (focusInterval) clearInterval(focusInterval);
-      focusTimeout = null;
-      focusInterval = null;
-    };
-    const focusObserver = new MutationObserver(() => {
-      if (restoreFocusTarget) requestAnimationFrame(restoreFocus);
-    });
-    focusObserver.observe(host, { childList: true, subtree: true });
     const flip = installFlip({
       host,
       itemSelector: kanbanContract.selectors.card,
-      itemId: (card) => card.dataset.kanbanCard ?? null,
+      itemId: (card) => (owns(card) ? (card.dataset.kanbanCard ?? null) : null),
     });
     const clearMarks = () => {
       cards().forEach((card) => card.removeAttribute("data-drop-before"));
-      host.querySelectorAll<HTMLElement>(kanbanContract.selectors.lane).forEach((lane) => {
+      lanes().forEach((lane) => {
         lane.removeAttribute("data-drop-active");
         lane.querySelector("[data-kanban-lane-cards]")?.removeAttribute("data-drop-end");
       });
@@ -77,8 +60,8 @@ rocket(kanbanContract.tag, {
       if (!target) return;
       target.lane.setAttribute("data-drop-active", "true");
       if (target.before) {
-        target.lane
-          .querySelector<HTMLElement>(`[data-kanban-card="${CSS.escape(target.before)}"]`)
+        cardsIn(target.lane)
+          .find((card) => card.dataset.kanbanCard === target.before)
           ?.setAttribute("data-drop-before", "");
       } else {
         target.lane.querySelector("[data-kanban-lane-cards]")?.setAttribute("data-drop-end", "");
@@ -97,8 +80,8 @@ rocket(kanbanContract.tag, {
     };
     const targetAt = (x: number, y: number, itemId: string): Target | null => {
       const lane = document.elementFromPoint(x, y)?.closest<HTMLElement>(kanbanContract.selectors.lane);
-      if (!lane || !host.contains(lane)) return null;
-      const candidates = [...lane.querySelectorAll<HTMLElement>(kanbanContract.selectors.card)]
+      if (!lane || !owns(lane)) return null;
+      const candidates = cardsIn(lane)
         .filter((card) => card.dataset.kanbanCard !== itemId)
         .map((card) => {
           const rect = card.getBoundingClientRect();
@@ -125,23 +108,23 @@ rocket(kanbanContract.tag, {
       if (!staged) return;
       const { itemId, target } = staged;
       cancelStaged();
-      restoreFocusTarget = { itemId, col: target.col, before: target.before };
-      if (focusTimeout) clearTimeout(focusTimeout);
-      if (focusInterval) clearInterval(focusInterval);
-      focusInterval = setInterval(restoreFocus, 30);
-      focusTimeout = setTimeout(() => {
-        restoreFocusTarget = null;
-        if (focusInterval) clearInterval(focusInterval);
-        focusInterval = null;
-        focusTimeout = null;
-      }, 2000);
+      const source = cards().find((card) => card.dataset.kanbanCard === itemId);
+      if (source)
+        focus.expect(source, () => {
+          const card = cards().find((candidate) => candidate.dataset.kanbanCard === itemId);
+          const lane = card?.closest<HTMLElement>(kanbanContract.selectors.lane);
+          if (!card || !lane || Number(lane.dataset.col) !== target.col) return null;
+          const siblings = cardsIn(lane);
+          return (siblings[siblings.indexOf(card) + 1]?.dataset.kanbanCard ?? "") === target.before ? card : null;
+        });
       flip.prepare();
       emitMove(itemId, target);
     };
     const pointerDispose = installPointerDrag({
       host,
       itemSelector: kanbanContract.selectors.card,
-      itemId: (card) => card.dataset.kanbanCard ?? null,
+      interactiveHandle: kanbanContract.selectors.cardMain,
+      itemId: (card) => (owns(card) ? (card.dataset.kanbanCard ?? null) : null),
       targetAt,
       mark: markTarget,
       beforeCommit: (id, rect) => flip.prepare({ itemId: id, rect }),
@@ -149,9 +132,10 @@ rocket(kanbanContract.tag, {
     });
     const onKeyDown = (event: Event) => {
       const keyEvent = event as KeyboardEvent;
+      if (!owns(keyEvent.target as HTMLElement)) return;
       const card = (keyEvent.target as HTMLElement).closest<HTMLElement>(kanbanContract.selectors.card);
       const itemId = card?.dataset.kanbanCard;
-      if (!card || !itemId) return;
+      if (!card || !owns(card) || !itemId) return;
       if (keyboard.cancel.some((key) => keyMatches(key, keyEvent))) {
         if (staged) event.preventDefault();
         cancelStaged();
@@ -181,10 +165,8 @@ rocket(kanbanContract.tag, {
         const lane = card.closest<HTMLElement>(kanbanContract.selectors.lane);
         const laneIndex = lane ? allLanes.indexOf(lane) : -1;
         const targetLane = allLanes[laneIndex + laneDirection];
-        const targetCards = targetLane
-          ? [...targetLane.querySelectorAll<HTMLElement>(kanbanContract.selectors.card)]
-          : [];
-        const row = lane ? [...lane.querySelectorAll<HTMLElement>(kanbanContract.selectors.card)].indexOf(card) : 0;
+        const targetCards = targetLane ? cardsIn(targetLane) : [];
+        const row = lane ? cardsIn(lane).indexOf(card) : 0;
         select(targetCards[Math.min(targetCards.length - 1, Math.max(0, row))]);
         return;
       }
@@ -210,14 +192,12 @@ rocket(kanbanContract.tag, {
       if (!targetLane) return;
       let before = "";
       if (rowDirection) {
-        const candidates = [...targetLane.querySelectorAll<HTMLElement>(kanbanContract.selectors.card)].filter(
-          (candidate) => candidate !== card,
-        );
+        const candidates = cardsIn(targetLane).filter((candidate) => candidate !== card);
         const position = stagedTarget
           ? stagedTarget.before
             ? candidates.findIndex((candidate) => candidate.dataset.kanbanCard === stagedTarget.before)
             : candidates.length
-          : [...targetLane.querySelectorAll(kanbanContract.selectors.card)].indexOf(card);
+          : cardsIn(targetLane).indexOf(card);
         const nextPosition = Math.max(0, Math.min(candidates.length, position + rowDirection));
         if (nextPosition === position) return;
         before = candidates[nextPosition]?.dataset.kanbanCard ?? "";
@@ -240,16 +220,16 @@ rocket(kanbanContract.tag, {
       if (staged?.releaseKey === event.key) commitStaged();
     };
     const onBlur = () => commitStaged();
-    const onPointerDown = () => cancelStaged();
+    const onPointerDown = (event: PointerEvent) => {
+      if (owns(event.target as HTMLElement)) cancelStaged();
+    };
     host.addEventListener("keydown", onKeyDown);
     host.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("blur", onBlur);
     cleanup(() => {
       cancelStaged();
-      focusObserver.disconnect();
-      if (focusTimeout) clearTimeout(focusTimeout);
-      if (focusInterval) clearInterval(focusInterval);
+      focus.dispose();
       pointerDispose();
       flip.dispose();
       host.removeEventListener("keydown", onKeyDown);

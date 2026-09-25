@@ -1,20 +1,26 @@
 // @ts-ignore — the browser bundle resolves the vendored Rocket module at this URL.
 import { rocket } from "/js/datastar-rocket.js";
 import { installFlip } from "../../core/flip";
+import { installFocusRecovery } from "../../core/focus-recovery";
 import { insertionBefore } from "../../core/insertion-target";
 import { keyMatches } from "../../core/keyboard";
+import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
 import { sortableListContract, type SortableMoveDetail } from "../../contracts/sortable-list";
 
 rocket(sortableListContract.tag, {
   mode: "light",
   setup({ host, cleanup }: { host: HTMLElement; cleanup: (fn: () => void) => void }) {
-    const itemId = (item: HTMLElement): string | null => item.dataset.sortableItem ?? null;
+    cleanup(markRocketHost(host));
+    const owns = (item: HTMLElement) => ownsRocketElement(host, item);
+    const itemId = (item: HTMLElement): string | null => (owns(item) ? (item.dataset.sortableItem ?? null) : null);
+    const focus = installFocusRecovery(host);
+    const items = () => [...host.querySelectorAll<HTMLElement>(sortableListContract.selectors.item)].filter(owns);
     const flip = installFlip({ host, itemSelector: sortableListContract.selectors.item, itemId });
     const targetAt = (x: number, y: number, sourceId: string) => {
       const hit = document.elementFromPoint(x, y);
-      if (!hit || !host.contains(hit)) return null;
-      const candidates = [...host.querySelectorAll<HTMLElement>(sortableListContract.selectors.item)]
+      if (!hit || !owns(hit as HTMLElement)) return null;
+      const candidates = items()
         .filter((item) => item.dataset.sortableItem !== sourceId)
         .map((item) => {
           const rect = item.getBoundingClientRect();
@@ -23,12 +29,11 @@ rocket(sortableListContract.tag, {
       return { before: insertionBefore(candidates, y) };
     };
     const mark = (target: { before: string } | null) => {
-      host.querySelectorAll<HTMLElement>(sortableListContract.selectors.item).forEach((item) => {
+      items().forEach((item) => {
         item.toggleAttribute("data-drop-before", target?.before !== "" && item.dataset.sortableItem === target?.before);
       });
       host.toggleAttribute("data-drop-end", target !== null && target.before === "");
     };
-    const items = () => [...host.querySelectorAll<HTMLElement>(sortableListContract.selectors.item)];
     const emitMove = (id: string, target: { before: string }) => {
       host.dispatchEvent(
         new CustomEvent<SortableMoveDetail>(sortableListContract.events.move, {
@@ -39,21 +44,6 @@ rocket(sortableListContract.tag, {
       );
     };
     let staged: { id: string; before: string } | null = null;
-    let focusTarget: { id: string; before: string } | null = null;
-    let focusInterval: ReturnType<typeof setInterval> | null = null;
-    let focusTimeout: ReturnType<typeof setTimeout> | null = null;
-    const restoreFocus = () => {
-      if (!focusTarget) return;
-      const all = items();
-      const index = all.findIndex((item) => item.dataset.sortableItem === focusTarget?.id);
-      if (index < 0 || (all[index + 1]?.dataset.sortableItem ?? "") !== focusTarget.before) return;
-      all[index]?.focus({ preventScroll: true });
-      focusTarget = null;
-      if (focusInterval) clearInterval(focusInterval);
-      if (focusTimeout) clearTimeout(focusTimeout);
-      focusInterval = null;
-      focusTimeout = null;
-    };
     const clearStage = () => {
       staged = null;
       mark(null);
@@ -63,16 +53,13 @@ rocket(sortableListContract.tag, {
       if (!staged) return;
       const { id, before } = staged;
       clearStage();
-      focusTarget = { id, before };
-      if (focusInterval) clearInterval(focusInterval);
-      if (focusTimeout) clearTimeout(focusTimeout);
-      focusInterval = setInterval(restoreFocus, 30);
-      focusTimeout = setTimeout(() => {
-        focusTarget = null;
-        if (focusInterval) clearInterval(focusInterval);
-        focusInterval = null;
-        focusTimeout = null;
-      }, 2000);
+      const source = items().find((item) => itemId(item) === id);
+      if (source)
+        focus.expect(source, () => {
+          const all = items();
+          const index = all.findIndex((item) => itemId(item) === id);
+          return index >= 0 && (all[index + 1]?.dataset.sortableItem ?? "") === before ? all[index]! : null;
+        });
       flip.prepare();
       emitMove(id, { before });
     };
@@ -86,8 +73,9 @@ rocket(sortableListContract.tag, {
       commit: emitMove,
     });
     const onKeyDown = (event: KeyboardEvent) => {
+      if (!owns(event.target as HTMLElement)) return;
       const item = (event.target as HTMLElement).closest<HTMLElement>(sortableListContract.selectors.item);
-      if (!item || !host.contains(item)) return;
+      if (!item || !owns(item)) return;
       if (event.key === "Escape") {
         if (staged) event.preventDefault();
         clearStage();
@@ -138,15 +126,16 @@ rocket(sortableListContract.tag, {
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.key === "Alt") commitStage();
     };
-    const onPointerDown = () => clearStage();
+    const onPointerDown = (event: PointerEvent) => {
+      if (owns(event.target as HTMLElement)) clearStage();
+    };
     host.addEventListener("keydown", onKeyDown);
     host.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("blur", commitStage);
     cleanup(() => {
       clearStage();
-      if (focusInterval) clearInterval(focusInterval);
-      if (focusTimeout) clearTimeout(focusTimeout);
+      focus.dispose();
       host.removeEventListener("keydown", onKeyDown);
       host.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("keyup", onKeyUp);

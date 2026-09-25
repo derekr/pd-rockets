@@ -1,9 +1,11 @@
 import { createDragState } from "./drag-state";
+import { ownsRocketElement } from "./ownership";
 
 export type PointerDragOptions<ItemId, Target> = {
   host: HTMLElement;
   itemSelector: string;
   itemId: (item: HTMLElement) => ItemId | null;
+  interactiveHandle?: string;
   canStart?: (event: PointerEvent, item: HTMLElement) => boolean;
   targetAt: (x: number, y: number, itemId: ItemId) => Target | null;
   mark: (target: Target | null, itemId?: ItemId) => void;
@@ -18,6 +20,8 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
   let active: { itemId: ItemId; pointerId: number } | null = null;
   let preview: HTMLElement | null = null;
   let previewOffset = { x: 0, y: 0 };
+  let start: { x: number; y: number; item: HTMLElement } | null = null;
+  let dragging = false;
 
   const movePreview = (event: PointerEvent): void => {
     if (!preview) return;
@@ -34,12 +38,14 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     const current = active;
     const previewPosition = preview && { left: parseFloat(preview.style.left), top: parseFloat(preview.style.top) };
     active = null;
+    start = null;
+    dragging = false;
     if (!target || cancelled || !options.retainPreviewOnCommit) options.mark(null, current?.itemId);
     clearPreview();
     options.host.removeAttribute("data-drag-active");
-    options.host
-      .querySelectorAll<HTMLElement>("[data-dragging]")
-      .forEach((item) => item.removeAttribute("data-dragging"));
+    options.host.querySelectorAll<HTMLElement>("[data-dragging]").forEach((item) => {
+      if (ownsRocketElement(options.host, item)) item.removeAttribute("data-dragging");
+    });
     if (!current) return;
     try {
       options.host.releasePointerCapture?.(current.pointerId);
@@ -63,6 +69,11 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
   const onMove = (event: Event): void => {
     if (!active || (event as PointerEvent).pointerId !== active.pointerId) return;
     const pointer = event as PointerEvent;
+    if (!dragging) {
+      if (!start || Math.hypot(pointer.clientX - start.x, pointer.clientY - start.y) < 5) return;
+      dragging = true;
+      beginPreview(start.item, pointer);
+    }
     movePreview(pointer);
     const target = options.targetAt(pointer.clientX, pointer.clientY, active.itemId);
     state.send({ type: "preview", target });
@@ -71,6 +82,10 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
   const onUp = (event: Event): void => {
     if (!active || (event as PointerEvent).pointerId !== active.pointerId) return;
     const pointer = event as PointerEvent;
+    if (!dragging) {
+      finish(null, true);
+      return;
+    }
     movePreview(pointer);
     finish(options.targetAt(pointer.clientX, pointer.clientY, active.itemId), false);
   };
@@ -78,18 +93,11 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     if (!active || (event as PointerEvent).pointerId !== active.pointerId) return;
     finish(null, true);
   };
-  const onDown = (event: Event): void => {
-    const pointer = event as PointerEvent;
-    if (pointer.button !== 0 || active) return;
-    const item = (pointer.target as HTMLElement).closest<HTMLElement>(options.itemSelector);
-    const itemId = item && options.host.contains(item) ? options.itemId(item) : null;
-    if (!item || itemId === null || (options.canStart && !options.canStart(pointer, item))) return;
-    active = { itemId, pointerId: pointer.pointerId };
-    state.send({ type: "begin", itemId });
+  const beginPreview = (item: HTMLElement, pointer: PointerEvent): void => {
     options.host.setAttribute("data-drag-active", "");
     item.setAttribute("data-dragging", "true");
     const rect = item.getBoundingClientRect();
-    previewOffset = { x: pointer.clientX - rect.left, y: pointer.clientY - rect.top };
+    previewOffset = { x: start!.x - rect.left, y: start!.y - rect.top };
     preview = item.cloneNode(true) as HTMLElement;
     preview.removeAttribute("id");
     preview.setAttribute("data-drag-preview", "true");
@@ -104,19 +112,33 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     document.body.append(preview);
     options.host.setPointerCapture?.(pointer.pointerId);
   };
+  const onDown = (event: Event): void => {
+    const pointer = event as PointerEvent;
+    if (pointer.button !== 0 || active) return;
+    const target = pointer.target as HTMLElement;
+    if (!ownsRocketElement(options.host, target)) return;
+    if (
+      target.closest("button, a, input, select, textarea, [contenteditable]:not([contenteditable='false'])") &&
+      !(options.interactiveHandle && target.closest(options.interactiveHandle))
+    )
+      return;
+    const item = target.closest<HTMLElement>(options.itemSelector);
+    const itemId = item && ownsRocketElement(options.host, item) ? options.itemId(item) : null;
+    if (!item || itemId === null || (options.canStart && !options.canStart(pointer, item))) return;
+    active = { itemId, pointerId: pointer.pointerId };
+    start = { x: pointer.clientX, y: pointer.clientY, item };
+    state.send({ type: "begin", itemId });
+  };
 
   options.host.addEventListener("pointerdown", onDown);
-  options.host.addEventListener("pointermove", onMove);
-  options.host.addEventListener("pointerup", onUp);
-  options.host.addEventListener("pointercancel", onCancel);
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+  window.addEventListener("pointercancel", onCancel);
   return () => {
     finish(null, true);
     options.host.removeEventListener("pointerdown", onDown);
-    options.host.removeEventListener("pointermove", onMove);
-    options.host.removeEventListener("pointerup", onUp);
-    options.host.removeEventListener("pointercancel", onCancel);
-    options.host
-      .querySelectorAll<HTMLElement>("[data-dragging]")
-      .forEach((item) => item.removeAttribute("data-dragging"));
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    window.removeEventListener("pointercancel", onCancel);
   };
 }

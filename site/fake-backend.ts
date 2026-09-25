@@ -11,7 +11,8 @@ const sortableRoot = document.querySelector<HTMLElement>("#sortable-demo");
 const groupRoot = document.querySelector<HTMLElement>("#group-demo");
 const bentoRoot = document.querySelector<HTMLElement>("#bento-demo");
 const treeRoot = document.querySelector<HTMLElement>("#tree-demo");
-if (!kanbanRoot || !sortableRoot || !groupRoot || !bentoRoot || !treeRoot)
+const nestedRoot = document.querySelector<HTMLElement>("#nested-demo");
+if (!kanbanRoot || !sortableRoot || !groupRoot || !bentoRoot || !treeRoot || !nestedRoot)
   throw new Error("rocket kit site: missing example root");
 
 const kanbanModel = kanbanRoot.cloneNode(true) as HTMLElement;
@@ -19,6 +20,7 @@ const sortableModel = sortableRoot.cloneNode(true) as HTMLElement;
 const groupModel = groupRoot.cloneNode(true) as HTMLElement;
 const bentoModel = bentoRoot.cloneNode(true) as HTMLElement;
 const treeModel = treeRoot.cloneNode(true) as HTMLElement;
+const nestedModel = nestedRoot.cloneNode(true) as HTMLElement;
 
 function signalPayload(body: string): Record<string, unknown> {
   const payload = JSON.parse(body) as Record<string, unknown>;
@@ -38,19 +40,19 @@ function moveCard(target: BoardTarget): void {
   list.insertBefore(card, before);
 }
 
-function moveListItem(target: ListTarget): void {
-  const item = sortableModel.querySelector<HTMLElement>(`[data-sortable-item="${CSS.escape(target.itemId)}"]`);
+function moveListItem(target: ListTarget, model = sortableModel): void {
+  const item = model.querySelector<HTMLElement>(`[data-sortable-item="${CSS.escape(target.itemId)}"]`);
   const before = target.before
-    ? sortableModel.querySelector<HTMLElement>(`[data-sortable-item="${CSS.escape(target.before)}"]`)
+    ? model.querySelector<HTMLElement>(`[data-sortable-item="${CSS.escape(target.before)}"]`)
     : null;
   const list = item?.parentElement;
   if (!item || !list) return;
   list.insertBefore(item, before);
 }
 
-function moveGroupItem(target: GroupTarget): void {
-  const source = groupModel.querySelector<HTMLElement>(`[data-drop-list="${CSS.escape(target.fromList)}"]`);
-  const list = groupModel.querySelector<HTMLElement>(`[data-drop-list="${CSS.escape(target.toList)}"]`);
+function moveGroupItem(target: GroupTarget, model = groupModel): void {
+  const source = model.querySelector<HTMLElement>(`[data-drop-list="${CSS.escape(target.fromList)}"]`);
+  const list = model.querySelector<HTMLElement>(`[data-drop-list="${CSS.escape(target.toList)}"]`);
   const item = source?.querySelector<HTMLElement>(`[data-drag-item="${CSS.escape(target.itemId)}"]`);
   if (!item || !list) return;
   const before = target.before
@@ -99,12 +101,33 @@ function applyBentoPositions(updates: BentoPosition[]): void {
         !Number.isInteger(update.height) ||
         update.col < 1 ||
         update.row < 1 ||
+        update.row > 100 ||
         update.width < 1 ||
         update.height < 1 ||
+        update.height > 5 ||
         update.col + update.width - 1 > Number(grid?.dataset.columns ?? 0),
     )
   )
     return;
+  // The preview proposes positions; the fixture still checks the complete resulting layout.
+  const proposed = new Map(updates.map((update) => [update.itemId, update]));
+  const occupied = new Set<string>();
+  for (const item of bentoModel.querySelectorAll<HTMLElement>("[data-bento-item]")) {
+    const grid = item.closest<HTMLElement>("[data-bento-grid]");
+    const position = proposed.get(item.dataset.bentoItem ?? "");
+    const gridId = position?.grid ?? grid?.dataset.bentoGrid;
+    if (!gridId) return;
+    const col = position?.col ?? Number(item.dataset.bentoCol);
+    const row = position?.row ?? Number(item.dataset.bentoRow);
+    const width = position?.width ?? Number(item.dataset.bentoWidth);
+    const height = position?.height ?? Number(item.dataset.bentoHeight);
+    for (let x = col; x < col + width; x++)
+      for (let y = row; y < row + height; y++) {
+        const key = `${gridId}:${x}:${y}`;
+        if (occupied.has(key)) return;
+        occupied.add(key);
+      }
+  }
   for (const { update, grid, item } of resolved) {
     grid!.append(item!);
     item!.dataset.bentoCol = String(update.col);
@@ -134,6 +157,18 @@ const interceptFetch = async (input: RequestInfo | URL, init?: RequestInit): Pro
   const request = new Request(input, init);
   const url = new URL(request.url);
   if (request.method !== "POST") return originalFetch(input, init);
+
+  if (url.pathname.endsWith("/nested-list-move")) {
+    showActivity("Datastar", "@post('./nested-list-move')");
+    moveListItem(signalPayload(await request.text()) as unknown as ListTarget, nestedModel);
+    return patchResponse("#nested-demo", nestedModel);
+  }
+
+  if (url.pathname.endsWith("/nested-group-move")) {
+    showActivity("Datastar", "@post('./nested-group-move')");
+    moveGroupItem(signalPayload(await request.text()) as unknown as GroupTarget, nestedModel);
+    return patchResponse("#nested-demo", nestedModel);
+  }
 
   if (url.pathname.endsWith("/tree-move")) {
     showActivity("Datastar", "@post('./tree-move')");

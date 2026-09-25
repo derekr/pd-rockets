@@ -2,8 +2,10 @@
 import { rocket } from "/js/datastar-rocket.js";
 import { dragGroupContract, type DragGroupMoveDetail } from "../../contracts/drag-group";
 import { installFlip } from "../../core/flip";
+import { installFocusRecovery } from "../../core/focus-recovery";
 import { insertionBefore } from "../../core/insertion-target";
 import { keyMatches } from "../../core/keyboard";
+import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
 
 type Target = { list: HTMLElement; toList: string; before: string };
@@ -11,8 +13,10 @@ type Target = { list: HTMLElement; toList: string; before: string };
 rocket(dragGroupContract.tag, {
   mode: "light",
   setup({ host, cleanup }: { host: HTMLElement; cleanup: (fn: () => void) => void }) {
+    cleanup(markRocketHost(host));
     const { list: listSelector, item: itemSelector } = dragGroupContract.selectors;
-    const owns = (element: HTMLElement): boolean => element.closest(dragGroupContract.tag) === host;
+    const owns = (element: HTMLElement): boolean => ownsRocketElement(host, element);
+    const focus = installFocusRecovery(host);
     const itemId = (item: HTMLElement): string | null =>
       owns(item) && item.closest(listSelector) ? (item.dataset.dragItem ?? null) : null;
     const lists = () => [...host.querySelectorAll<HTMLElement>(listSelector)].filter(owns);
@@ -63,24 +67,6 @@ rocket(dragGroupContract.tag, {
       );
     };
     let staged: { itemId: string; target: Target } | null = null;
-    let focusTarget: { itemId: string; target: Target } | null = null;
-    let focusInterval: ReturnType<typeof setInterval> | null = null;
-    let focusTimeout: ReturnType<typeof setTimeout> | null = null;
-    const restoreFocus = () => {
-      if (!focusTarget) return;
-      const { itemId: id, target } = focusTarget;
-      const destination = lists().find((list) => list.dataset.dropList === target.toList);
-      if (!destination) return;
-      const items = itemsIn(destination);
-      const index = items.findIndex((item) => item.dataset.dragItem === id);
-      if (index < 0 || (items[index + 1]?.dataset.dragItem ?? "") !== target.before) return;
-      items[index]?.focus({ preventScroll: true });
-      focusTarget = null;
-      if (focusInterval) clearInterval(focusInterval);
-      if (focusTimeout) clearTimeout(focusTimeout);
-      focusInterval = null;
-      focusTimeout = null;
-    };
     const cancelStaged = () => {
       staged = null;
       mark(null);
@@ -90,20 +76,19 @@ rocket(dragGroupContract.tag, {
       if (!staged) return;
       const { itemId: id, target } = staged;
       cancelStaged();
-      focusTarget = { itemId: id, target };
-      if (focusInterval) clearInterval(focusInterval);
-      if (focusTimeout) clearTimeout(focusTimeout);
-      focusInterval = setInterval(restoreFocus, 30);
-      focusTimeout = setTimeout(() => {
-        focusTarget = null;
-        if (focusInterval) clearInterval(focusInterval);
-        focusInterval = null;
-        focusTimeout = null;
-      }, 2000);
+      const source = [...host.querySelectorAll<HTMLElement>(itemSelector)].find((item) => itemId(item) === id);
+      if (source)
+        focus.expect(source, () => {
+          const destination = lists().find((list) => list.dataset.dropList === target.toList);
+          const items = destination ? itemsIn(destination) : [];
+          const index = items.findIndex((item) => itemId(item) === id);
+          return index >= 0 && (items[index + 1]?.dataset.dragItem ?? "") === target.before ? items[index]! : null;
+        });
       flip.prepare();
       emitMove(id, target);
     };
     const onKeyDown = (event: KeyboardEvent) => {
+      if (!owns(event.target as HTMLElement)) return;
       const item = (event.target as HTMLElement).closest<HTMLElement>(itemSelector);
       const id = item && itemId(item);
       if (!item || !id) return;
@@ -180,7 +165,9 @@ rocket(dragGroupContract.tag, {
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.key === "Alt") commitStaged();
     };
-    const onPointerDown = () => cancelStaged();
+    const onPointerDown = (event: PointerEvent) => {
+      if (owns(event.target as HTMLElement)) cancelStaged();
+    };
     const dispose = installPointerDrag({
       host,
       itemSelector,
@@ -196,8 +183,7 @@ rocket(dragGroupContract.tag, {
     window.addEventListener("blur", commitStaged);
     cleanup(() => {
       cancelStaged();
-      if (focusInterval) clearInterval(focusInterval);
-      if (focusTimeout) clearTimeout(focusTimeout);
+      focus.dispose();
       host.removeEventListener("keydown", onKeyDown);
       host.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("keyup", onKeyUp);

@@ -47,6 +47,15 @@ rocket-bento-workspace {
   gap: 1rem;
 }
 
+.nested-frame rocket-sortable-list {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+}
+
+.nested-frame [data-drag-item] > rocket-sortable-list [data-sortable-item] {
+  margin: 0;
+}
+
 rocket-sortable-tree {
   display: block;
   font:

@@ -17,14 +17,3 @@ for (const { entry, file } of browserBundles) {
   const bytes = await Bun.write(output, result.outputs[0]);
   console.error(`built ${output} (${bytes} bytes)`);
 }
-
-const demo = await Bun.build({
-  entrypoints: [join(root, "examples/hono-datastar/client.ts")],
-  target: "browser",
-});
-if (!demo.success || demo.outputs.length !== 1 || !demo.outputs[0]) {
-  throw new AggregateError(demo.logs, "rocket-kit: demo build failed");
-}
-const demoOutput = join(root, "dist/demo.js");
-const demoBytes = await Bun.write(demoOutput, demo.outputs[0]);
-console.error(`built ${demoOutput} (${demoBytes} bytes)`);

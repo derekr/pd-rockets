@@ -30,6 +30,9 @@ rendered HTML over SSE. Pointer drops animate the dragged row from the floating 
 
 Every surface supports arrow-key focus navigation. Home/End navigate list, group, grid and tree items; Alt + arrows
 stage moves, and Escape cancels staging. The file tree presents compact explorer-style rows rather than cards.
+Nested Rocket hosts are supported: the nearest host owns each pointer or keyboard gesture. The guide includes a live
+sortable list inside a drag-group item, with independent server-rendered move responses for each host. Semantic events
+still bubble; page handlers on nested hosts with the same event name should check the event target.
 
 The reusable client does not know about application actions, persistence, permissions, or transport policy. Rocket
 provides the component boundary and lifecycle for local browser mechanics, while Datastar handles actions and HTML
@@ -87,7 +90,8 @@ To run the Hono JSX demo instead:
 bun run demo
 ```
 
-Then open `http://localhost:3025`. Its local event listener demonstrates the semantic boundary without a backend.
+Then open `http://localhost:3025`. Its Hono handlers apply semantic moves to in-memory state and return HTML patches
+over SSE.
 
 To run the Go demo after `bun run runtime:fetch && bun run build:client`:
 

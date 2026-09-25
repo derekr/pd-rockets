@@ -2,7 +2,9 @@
 import { rocket } from "/js/datastar-rocket.js";
 import { bentoContract, type BentoMoveDetail, type BentoPosition, type BentoResizeDetail } from "../../contracts/bento";
 import { installFlip } from "../../core/flip";
+import { installFocusRecovery } from "../../core/focus-recovery";
 import { keyMatches } from "../../core/keyboard";
+import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
 import { projectBentoLayout, type Cell, type GridLayout } from "./placement";
 
@@ -11,8 +13,10 @@ type Target = Cell & { grid: HTMLElement; gridId: string };
 rocket(bentoContract.tag, {
   mode: "light",
   setup({ host, cleanup }: { host: HTMLElement; cleanup: (fn: () => void) => void }) {
+    cleanup(markRocketHost(host));
     const { grid: gridSelector, item: itemSelector, resize: resizeSelector } = bentoContract.selectors;
-    const owns = (element: HTMLElement) => element.closest(bentoContract.tag) === host;
+    const owns = (element: HTMLElement) => ownsRocketElement(host, element);
+    const focus = installFocusRecovery(host);
     const grids = () => [...host.querySelectorAll<HTMLElement>(gridSelector)].filter(owns);
     const itemId = (item: HTMLElement) => (owns(item) ? (item.dataset.bentoItem ?? null) : null);
     const cells = (item: HTMLElement): Cell => ({
@@ -213,6 +217,7 @@ rocket(bentoContract.tag, {
       mark(null);
     };
     const onPointerDown = (event: PointerEvent) => {
+      if (!owns(event.target as HTMLElement)) return;
       if (staged) clearStage();
       const handle = (event.target as HTMLElement).closest<HTMLElement>(resizeSelector);
       const item = handle?.closest<HTMLElement>(itemSelector);
@@ -268,9 +273,6 @@ rocket(bentoContract.tag, {
     };
 
     let staged: { id: string; target: Target; kind: "move" | "resize" } | null = null;
-    let focusId: string | null = null;
-    let focusTimer: ReturnType<typeof setInterval> | null = null;
-    let focusExpiry: ReturnType<typeof setTimeout> | null = null;
     const clearStage = () => {
       staged = null;
       host.removeAttribute("data-key-staging");
@@ -281,42 +283,32 @@ rocket(bentoContract.tag, {
       const { id, target, kind } = staged;
       staged = null;
       host.removeAttribute("data-key-staging");
-      focusId = id;
-      if (focusTimer) clearInterval(focusTimer);
-      if (focusExpiry) clearTimeout(focusExpiry);
-      focusTimer = setInterval(() => {
-        const item = [...host.querySelectorAll<HTMLElement>(itemSelector)].find(
-          (candidate) => itemId(candidate) === focusId,
-        );
-        if (!item || gridFor(item)?.dataset.bentoGrid !== target.gridId) return;
-        if (
-          cells(item).col !== target.col ||
-          cells(item).row !== target.row ||
-          cells(item).width !== target.width ||
-          cells(item).height !== target.height
-        )
-          return;
-        item.focus({ preventScroll: true });
-        focusId = null;
-        if (focusTimer) clearInterval(focusTimer);
-        if (focusExpiry) clearTimeout(focusExpiry);
-        focusTimer = null;
-        focusExpiry = null;
-      }, 30);
-      focusExpiry = setTimeout(() => {
-        focusId = null;
-        if (focusTimer) clearInterval(focusTimer);
-        focusTimer = null;
-        focusExpiry = null;
-      }, 2000);
+      const source = [...host.querySelectorAll<HTMLElement>(itemSelector)].find(
+        (candidate) => itemId(candidate) === id,
+      );
+      if (source)
+        focus.expect(source, () => {
+          const item = [...host.querySelectorAll<HTMLElement>(itemSelector)].find(
+            (candidate) => itemId(candidate) === id,
+          );
+          if (!item || gridFor(item)?.dataset.bentoGrid !== target.gridId) return null;
+          const position = cells(item);
+          return position.col === target.col &&
+            position.row === target.row &&
+            position.width === target.width &&
+            position.height === target.height
+            ? item
+            : null;
+        });
       flip.prepare();
       if (kind === "move") emitMove(id, target);
       else emitResize(id, target);
     };
     const onKeyDown = (event: KeyboardEvent) => {
+      if (!owns(event.target as HTMLElement)) return;
       const item = (event.target as HTMLElement).closest<HTMLElement>(itemSelector);
       const id = item && itemId(item);
-      if (!item || !id) return;
+      if (!item || !id || !owns(item)) return;
       if (event.key === "Escape") {
         if (staged) event.preventDefault();
         clearStage();
@@ -455,8 +447,7 @@ rocket(bentoContract.tag, {
       clearProjection();
       pointerDispose();
       flip.dispose();
-      if (focusTimer) clearInterval(focusTimer);
-      if (focusExpiry) clearTimeout(focusExpiry);
+      focus.dispose();
       host.removeEventListener("pointerdown", onPointerDown);
       host.removeEventListener("pointermove", onPointerMove);
       host.removeEventListener("pointerup", onPointerUp);

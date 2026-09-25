@@ -71,6 +71,20 @@ const treeMove: DatastarEventBinding = {
   event: sortableTreeContract.events.move,
   attrs: { "data-on:rocket-tree-move": "$tree = evt.detail; @post('./tree-move')" },
 };
+const nestedGroupMove: DatastarEventBinding = {
+  event: dragGroupContract.events.move,
+  attrs: {
+    "data-on:rocket-drag-group-move":
+      "$itemId = evt.detail?.['itemId'] ?? null; $fromList = evt.detail?.['fromList'] ?? null; $toList = evt.detail?.['toList'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./nested-group-move')",
+  },
+};
+const nestedListMove: DatastarEventBinding = {
+  event: sortableListContract.events.move,
+  attrs: {
+    "data-on:rocket-sortable-move":
+      "$itemId = evt.detail?.['itemId'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./nested-list-move')",
+  },
+};
 
 const page = renderHTML(
   <html lang="en">
@@ -151,6 +165,7 @@ const page = renderHTML(
                 <a href="#kanban">02 · Kanban board</a>
                 <a href="#sortable">03 · Sortable list</a>
                 <a href="#drag-group">04 · Drag group</a>
+                <a href="#nested">Nested hosts</a>
                 <a href="#bento">05 · Bento grids</a>
                 <a href="#tree">06 · File tree</a>
                 <a href="#server">07 · Wire a backend</a>
@@ -355,6 +370,52 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                 </p>
               </section>
 
+              <section id="nested" class="docs-section" aria-labelledby="nested-title">
+                <p class="section-kicker">COMPOSITION / LIVE EXAMPLE</p>
+                <h2 id="nested-title">Nested Rockets</h2>
+                <p>
+                  A sortable list sits inside an item of a drag group. Drag or use Alt + arrows on an inner item to
+                  reorder only that list; drag the outer item to move the whole group item. Each host emits its own
+                  event, and the page patches the matching example over SSE. Semantic events still bubble; when nesting
+                  two hosts of the same surface, the page should check the event target before invoking an outer action.
+                </p>
+                <div class="example-frame nested-frame">
+                  <div class="example-head">
+                    <span class="live-dot" aria-hidden="true"></span> LIVE / NESTED HOSTS
+                  </div>
+                  <div id="nested-demo" class="example-body">
+                    <rocket-drag-group {...nestedGroupMove.attrs}>
+                      <section data-drop-list="nested-a" aria-label="First region">
+                        <h3>First region</h3>
+                        <div data-drag-item="outer-a" tabindex={0}>
+                          <strong>Move this whole item</strong>
+                          <SortableList
+                            items={[
+                              { id: "inner-a", label: "Inner A" },
+                              { id: "inner-b", label: "Inner B" },
+                            ]}
+                            move={nestedListMove}
+                          />
+                        </div>
+                        <div data-drag-item="outer-b" tabindex={0}>
+                          Another outer item
+                        </div>
+                      </section>
+                      <section data-drop-list="nested-b" aria-label="Second region">
+                        <h3>Second region</h3>
+                        <div data-drag-item="outer-c" tabindex={0}>
+                          Destination item
+                        </div>
+                      </section>
+                    </rocket-drag-group>
+                  </div>
+                </div>
+                <p>
+                  <a href="./source/core/ownership.ts.txt">Host ownership source ↗</a> ·{" "}
+                  <a href="./source/core/pointer-drag.ts.txt">Pointer lifecycle ↗</a>
+                </p>
+              </section>
+
               <section id="bento" class="docs-section" aria-labelledby="bento-title">
                 <p class="section-kicker">STEP 05 / LIVE EXAMPLE</p>
                 <h2 id="bento-title">Bento grids</h2>
@@ -365,6 +426,11 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                   within and across grids. Focus a tile: Alt + arrows move it by a cell and cross a board boundary at an
                   edge; Alt + Page Up/Down switches grids directly, and Shift + arrows resize. Release the modifier to
                   commit; Escape cancels.
+                </p>
+                <p>
+                  The browser proposes positions for its live preview. The synthetic backend checks the complete
+                  resulting grid for bounds and overlap before accepting them; a consuming backend validates its own
+                  layout rules.
                 </p>
                 <div class="example-frame bento-frame">
                   <div class="example-head">
