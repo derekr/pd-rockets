@@ -104,8 +104,8 @@ a {
 
 .bundle-links {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
-  gap: 8px 18px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
   padding-left: 20px;
 }
 

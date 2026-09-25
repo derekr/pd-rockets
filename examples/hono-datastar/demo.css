@@ -61,6 +61,10 @@ rocket-sortable-tree {
   padding-left: 16px;
 }
 
+[data-tree-children][hidden] {
+  display: none;
+}
+
 rocket-sortable-tree > [data-tree-children] {
   padding-left: 0;
 }
@@ -95,6 +99,9 @@ rocket-sortable-tree > [data-tree-children] {
   display: inline-block;
   min-width: 14px;
   color: color-mix(in srgb, currentColor 55%, transparent);
+}
+[data-tree-row][aria-expanded="false"] span {
+  transform: rotate(-90deg);
 }
 [data-tree-node][data-tree-kind="folder"] > [data-tree-row] {
   font-weight: 600;

@@ -340,18 +340,30 @@ rocket(bentoContract.tag, {
           const rect = item.getBoundingClientRect();
           const x = rect.left + rect.width / 2,
             y = rect.top + rect.height / 2;
-          next = items
-            .filter((candidate) => candidate !== item)
-            .map((candidate) => {
-              const box = candidate.getBoundingClientRect();
-              const dx = box.left + box.width / 2 - x,
-                dy = box.top + box.height / 2 - y;
-              const along = dx * direction.x + dy * direction.y;
-              const across = Math.abs(dx * direction.y - dy * direction.x);
-              return { candidate, along, score: along + across * 2 };
-            })
-            .filter((option) => option.along > 1)
-            .sort((a, b) => a.score - b.score)[0]?.candidate;
+          const nearest = (candidates: HTMLElement[], crossBoard = false) =>
+            candidates
+              .map((candidate) => {
+                const box = candidate.getBoundingClientRect();
+                const dx = box.left + box.width / 2 - x,
+                  dy = box.top + box.height / 2 - y;
+                const along = dx * direction.x + dy * direction.y;
+                const across = Math.abs(dx * direction.y - dy * direction.x);
+                return { candidate, along, score: (crossBoard ? 0 : along) + across * 2 };
+              })
+              .filter((option) => crossBoard || option.along > 1)
+              .sort((a, b) => a.score - b.score)[0]?.candidate;
+          const currentGrid = gridFor(item);
+          next = nearest(items.filter((candidate) => candidate !== item && gridFor(candidate) === currentGrid));
+          if (!next && currentGrid) {
+            const allGrids = grids();
+            const step = direction.x || direction.y;
+            const neighbor = allGrids[allGrids.indexOf(currentGrid) + step];
+            if (neighbor)
+              next = nearest(
+                items.filter((candidate) => gridFor(candidate) === neighbor),
+                true,
+              );
+          }
         }
         if (next) {
           event.preventDefault();
@@ -381,7 +393,16 @@ rocket(bentoContract.tag, {
       const current = staged?.id === id && staged.kind === (move ? "move" : "resize") ? staged.target : null;
       const currentGrid = current?.grid ?? sourceGrid;
       const allGrids = grids();
-      const targetGrid = currentGrid && allGrids[allGrids.indexOf(currentGrid) + gridDirection];
+      let targetGrid = currentGrid && allGrids[allGrids.indexOf(currentGrid) + gridDirection];
+      let crossing = !!gridDirection;
+      if (move && dx && currentGrid && !gridDirection) {
+        const currentCol = current?.col ?? cells(item).col;
+        const currentWidth = current?.width ?? cells(item).width;
+        if (currentCol + dx < 1 || currentCol + currentWidth + dx > columns(currentGrid)) {
+          targetGrid = allGrids[allGrids.indexOf(currentGrid) + dx];
+          crossing = !!targetGrid;
+        }
+      }
       if (!targetGrid) return;
       const origin = current ?? { grid: targetGrid, gridId: targetGrid.dataset.bentoGrid ?? "", ...cells(item) };
       const width = resize
@@ -390,7 +411,13 @@ rocket(bentoContract.tag, {
       const target: Target = {
         grid: targetGrid,
         gridId: targetGrid.dataset.bentoGrid ?? "",
-        col: resize ? origin.col : Math.max(1, Math.min(columns(targetGrid) - width + 1, origin.col + dx)),
+        col: resize
+          ? origin.col
+          : crossing && dx
+            ? dx > 0
+              ? 1
+              : columns(targetGrid) - width + 1
+            : Math.max(1, Math.min(columns(targetGrid) - width + 1, origin.col + dx)),
         row: resize ? origin.row : Math.max(1, origin.row + dy),
         width,
         height: resize ? Math.max(1, Math.min(5, origin.height + dy)) : origin.height,
@@ -400,7 +427,7 @@ rocket(bentoContract.tag, {
         target.row = 1;
       }
       if (
-        !gridDirection &&
+        !crossing &&
         target.col === origin.col &&
         target.row === origin.row &&
         target.width === origin.width &&

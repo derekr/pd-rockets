@@ -23,6 +23,20 @@ rocket(sortableTreeContract.tag, {
       [...host.querySelectorAll<HTMLElement>(nodeSelector)].find((node) => owns(node) && node.dataset.treeNode === id);
     const rowOf = (node: HTMLElement) => node.querySelector<HTMLElement>(`:scope > ${rowSelector}`);
     const listFor = (node: HTMLElement) => node.parentElement?.closest<HTMLElement>(childrenSelector);
+    const collapsed = new Set<string>();
+    const syncExpanded = () => {
+      host.querySelectorAll<HTMLElement>(nodeSelector).forEach((node) => {
+        if (!owns(node) || node.dataset.treeKind !== "folder") return;
+        const list = node.querySelector<HTMLElement>(`:scope > ${childrenSelector}`);
+        const row = rowOf(node);
+        if (!list || !row) return;
+        const closed = collapsed.has(node.dataset.treeNode ?? "");
+        list.hidden = closed;
+        row.setAttribute("aria-expanded", String(!closed));
+      });
+    };
+    const observer = new MutationObserver(syncExpanded);
+    observer.observe(host, { childList: true, subtree: true });
     const flip = installFlip({ host, itemSelector: rowSelector, itemId: rowId });
 
     const valid = (sourceId: string, target: Target): boolean => {
@@ -141,24 +155,39 @@ rocket(sortableTreeContract.tag, {
         return;
       }
       if (!event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
-        const rows = [...host.querySelectorAll<HTMLElement>(rowSelector)].filter(owns);
+        const rows = [...host.querySelectorAll<HTMLElement>(rowSelector)].filter(
+          (candidate) => owns(candidate) && !candidate.closest(`${childrenSelector}[hidden]`),
+        );
         const index = rows.indexOf(row!);
         const node = nodeById(id);
         const childList = node?.querySelector<HTMLElement>(`:scope > ${childrenSelector}`);
         const firstChild = childList && childrenOf(childList)[0];
         const parent = node?.parentElement?.closest<HTMLElement>(nodeSelector);
+        const key = event.key === "j" ? "ArrowDown" : event.key === "k" ? "ArrowUp" : event.key;
+        if (childList && key === "ArrowLeft" && !childList.hidden) {
+          event.preventDefault();
+          collapsed.add(id);
+          syncExpanded();
+          return;
+        }
+        if (childList?.hidden && key === "ArrowRight") {
+          event.preventDefault();
+          collapsed.delete(id);
+          syncExpanded();
+          return;
+        }
         const next =
-          event.key === "ArrowUp"
+          key === "ArrowUp"
             ? rows[index - 1]
-            : event.key === "ArrowDown"
+            : key === "ArrowDown"
               ? rows[index + 1]
-              : event.key === "Home"
+              : key === "Home"
                 ? rows[0]
-                : event.key === "End"
+                : key === "End"
                   ? rows.at(-1)
-                  : event.key === "ArrowRight" && firstChild
+                  : key === "ArrowRight" && firstChild
                     ? rowOf(firstChild)
-                    : event.key === "ArrowLeft" && parent
+                    : key === "ArrowLeft" && parent
                       ? rowOf(parent)
                       : null;
         if (next) {
@@ -241,6 +270,7 @@ rocket(sortableTreeContract.tag, {
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("blur", commitStage);
     cleanup(() => {
+      observer.disconnect();
       clearStage();
       if (focusInterval) clearInterval(focusInterval);
       if (focusTimeout) clearTimeout(focusTimeout);
