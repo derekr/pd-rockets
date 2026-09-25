@@ -7,7 +7,7 @@ const rootFiles = ["README.md", "build-client.ts", "client-entry.ts", "package.j
 const sourceFile = /\.(?:ts|tsx|go|json|css|md)$|\.mod$/;
 
 /** Publish browsable, plain-text copies of the public source without a GitHub-specific URL. */
-export async function buildSourceIndex(root: string, output: string): Promise<void> {
+export async function buildSourceIndex(root: string, output: string, assetVersion: string): Promise<void> {
   const sourceOutput = join(output, "source");
 
   const buildDirectory = async (relative: string): Promise<void> => {
@@ -38,7 +38,7 @@ export async function buildSourceIndex(root: string, output: string): Promise<vo
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1" />
             <title>{relative || "Source"} · PD rockets</title>
-            <link rel="stylesheet" href={`${backToGuide}site.css`} />
+            <link rel="stylesheet" href={`${backToGuide}site.css?v=${assetVersion}`} />
           </head>
           <body>
             <main class="source-index">

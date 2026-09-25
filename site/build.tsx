@@ -1,5 +1,6 @@
 import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { KanbanBoard } from "../examples/hono-datastar/adapter/kanban";
 import { DragGroup } from "../examples/hono-datastar/adapter/drag-group";
 import { BentoWorkspace } from "../examples/hono-datastar/adapter/bento";
@@ -15,6 +16,14 @@ import { buildSourceIndex } from "./build-source";
 
 const root = join(import.meta.dir, "..");
 const output = join(root, "dist/site");
+const bundle = await readFile(join(root, "dist/rocket-kit.js"), "utf8");
+const assetVersion = createHash("sha256")
+  .update(bundle)
+  .update(await readFile(join(import.meta.dir, "fake-backend.ts")))
+  .update(await readFile(join(import.meta.dir, "site.css")))
+  .update(await readFile(join(root, "examples/hono-datastar/demo.css")))
+  .digest("hex")
+  .slice(0, 12);
 
 const kanbanMove: DatastarEventBinding = {
   event: kanbanContract.events.move,
@@ -59,8 +68,8 @@ const page = renderHTML(
         name="description"
         content="PD rockets: reusable Rocket components, starting with drag-and-drop for Kanban and sortable lists."
       />
-      <link rel="stylesheet" href="./demo.css" />
-      <link rel="stylesheet" href="./site.css" />
+      <link rel="stylesheet" href={`./demo.css?v=${assetVersion}`} />
+      <link rel="stylesheet" href={`./site.css?v=${assetVersion}`} />
     </head>
     <body data-signals='{"cardId":"","col":0,"before":"","itemId":"","fromList":"","toList":"","bento":{}}'>
       <div class="site-frame">
@@ -721,8 +730,8 @@ cd examples/go && go run .`}</code>
           <a href="#top">Back to top ↑</a>
         </footer>
       </div>
-      <script type="module" src="./fake-backend.js"></script>
-      <script type="module" src="./rocket-kit.js"></script>
+      <script type="module" src={`./fake-backend.js?v=${assetVersion}`}></script>
+      <script type="module" src={`./rocket-kit.js?v=${assetVersion}`}></script>
     </body>
   </html>,
 );
@@ -736,9 +745,8 @@ await mkdir(join(output, "js"), { recursive: true });
 await copyFile(join(root, "public/js/datastar-rocket.js"), join(output, "js/datastar-rocket.js"));
 await copyFile(join(root, "public/js/DATASTAR-LICENSE.md"), join(output, "js/DATASTAR-LICENSE.md"));
 await copyFile(join(root, "LICENSE"), join(output, "LICENSE"));
-await buildSourceIndex(root, output);
+await buildSourceIndex(root, output, assetVersion);
 
-const bundle = await readFile(join(root, "dist/rocket-kit.js"), "utf8");
 await writeFile(
   join(output, "rocket-kit.js"),
   bundle.replaceAll('"/js/datastar-rocket.js"', '"./js/datastar-rocket.js"'),
