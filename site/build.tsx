@@ -915,7 +915,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                         ))}
                       </section>
                       <section data-drop-list="bin" aria-label="Trash can">
-                        <span class="trash-region-label">THE BETTER WAY / 00 SAVED</span>
+                        <span class="trash-region-label">Elsa said it best...</span>
                         <span class="trash-icon" aria-hidden="true">
                           ⌫
                         </span>
