@@ -85,9 +85,9 @@ rocket(sortableListContract.tag, {
       const index = all.indexOf(item);
       if (!event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
         const next =
-          event.key === "ArrowDown"
+          keyMatches("ArrowDown", event) || keyMatches("j", event)
             ? all[index + 1]
-            : event.key === "ArrowUp"
+            : keyMatches("ArrowUp", event) || keyMatches("k", event)
               ? all[index - 1]
               : event.key === "Home"
                 ? all[0]

@@ -310,9 +310,9 @@ rocket-kanban-move → { cardId, col, before }`}</code>
                 <h2 id="sortable-title">Sortable list</h2>
                 <p>
                   A sortable list uses the shared pointer lifecycle but chooses its own target geometry and semantic
-                  event. Drag above or below an item to insert at that position. Up/down arrows navigate focused items;
-                  Home/End jump to the first or last item. Alt + up/down stages a reorder; release Alt to commit or
-                  press Escape to cancel.
+                  event. Drag above or below an item to insert at that position. Up/down arrows or j/k navigate focused
+                  items; Home/End jump to the first or last item. Alt + up/down stages a reorder; release Alt to commit
+                  or press Escape to cancel.
                 </p>
                 <div class="example-frame list-frame">
                   <div class="example-head">
