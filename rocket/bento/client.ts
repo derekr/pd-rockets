@@ -322,6 +322,43 @@ rocket(bentoContract.tag, {
         clearStage();
         return;
       }
+      if (!event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
+        if (event.target !== item) return;
+        const items = [...host.querySelectorAll<HTMLElement>(itemSelector)].filter(owns);
+        let next = event.key === "Home" ? items[0] : event.key === "End" ? items.at(-1) : null;
+        const direction =
+          event.key === "ArrowLeft"
+            ? { x: -1, y: 0 }
+            : event.key === "ArrowRight"
+              ? { x: 1, y: 0 }
+              : event.key === "ArrowUp"
+                ? { x: 0, y: -1 }
+                : event.key === "ArrowDown"
+                  ? { x: 0, y: 1 }
+                  : null;
+        if (direction) {
+          const rect = item.getBoundingClientRect();
+          const x = rect.left + rect.width / 2,
+            y = rect.top + rect.height / 2;
+          next = items
+            .filter((candidate) => candidate !== item)
+            .map((candidate) => {
+              const box = candidate.getBoundingClientRect();
+              const dx = box.left + box.width / 2 - x,
+                dy = box.top + box.height / 2 - y;
+              const along = dx * direction.x + dy * direction.y;
+              const across = Math.abs(dx * direction.y - dy * direction.x);
+              return { candidate, along, score: along + across * 2 };
+            })
+            .filter((option) => option.along > 1)
+            .sort((a, b) => a.score - b.score)[0]?.candidate;
+        }
+        if (next) {
+          event.preventDefault();
+          next.focus();
+        }
+        return;
+      }
       const move = event.altKey && !event.shiftKey;
       const resize = event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey;
       if (!move && !resize) return;

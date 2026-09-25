@@ -112,6 +112,35 @@ rocket(dragGroupContract.tag, {
         cancelStaged();
         return;
       }
+      if (!event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
+        const source = item.closest<HTMLElement>(listSelector);
+        const groupLists = lists();
+        const siblings = source ? itemsIn(source) : [];
+        const index = siblings.indexOf(item);
+        const listIndex = source ? groupLists.indexOf(source) : -1;
+        const nextList =
+          event.key === "ArrowLeft"
+            ? groupLists[listIndex - 1]
+            : event.key === "ArrowRight"
+              ? groupLists[listIndex + 1]
+              : null;
+        const neighbors = nextList ? itemsIn(nextList) : [];
+        const next =
+          event.key === "ArrowUp"
+            ? siblings[index - 1]
+            : event.key === "ArrowDown"
+              ? siblings[index + 1]
+              : event.key === "Home"
+                ? siblings[0]
+                : event.key === "End"
+                  ? siblings.at(-1)
+                  : neighbors[Math.min(index, neighbors.length - 1)];
+        if (next) {
+          event.preventDefault();
+          next.focus();
+        }
+        return;
+      }
       const horizontal =
         keyMatches("Alt+ArrowLeft", event) || keyMatches("Alt+h", event)
           ? -1

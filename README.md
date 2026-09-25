@@ -28,6 +28,9 @@ Grid tracks (`grid-template-columns` and a fixed `grid-auto-rows`) for pointer-t
 `rocket-tree-move` detail carries `{ itemId, fromParent, toParent, before }`; the backend applies that change and sends
 rendered HTML over SSE. Pointer drops animate the dragged row from the floating preview's final position.
 
+Every surface supports arrow-key focus navigation. Home/End navigate list, group, grid and tree items; Alt + arrows
+stage moves, and Escape cancels staging. The file tree presents compact explorer-style rows rather than cards.
+
 The reusable client does not know about application actions, persistence, permissions, or transport policy. Rocket
 provides the component boundary and lifecycle for local browser mechanics, while Datastar handles actions and HTML
 updates. See the [Rocket reference](https://data-star.dev/reference/rocket) for the upstream API.

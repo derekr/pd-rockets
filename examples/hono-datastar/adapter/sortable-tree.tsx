@@ -12,7 +12,7 @@ function Node({ node }: { node: FileNode }) {
   return (
     <div data-tree-node={node.id} data-tree-kind={node.kind}>
       <div data-tree-row="" tabindex={0} aria-label={`${node.kind}: ${node.name}`}>
-        <span aria-hidden="true">{node.kind === "folder" ? "▸" : "·"}</span> {node.name}
+        <span aria-hidden="true">{node.kind === "folder" ? "▾" : "·"}</span> {node.name}
       </div>
       {node.kind === "folder" && (
         <div data-tree-children="" data-tree-parent={node.id}>

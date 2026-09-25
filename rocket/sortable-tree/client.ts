@@ -140,6 +140,33 @@ rocket(sortableTreeContract.tag, {
         clearStage();
         return;
       }
+      if (!event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
+        const rows = [...host.querySelectorAll<HTMLElement>(rowSelector)].filter(owns);
+        const index = rows.indexOf(row!);
+        const node = nodeById(id);
+        const childList = node?.querySelector<HTMLElement>(`:scope > ${childrenSelector}`);
+        const firstChild = childList && childrenOf(childList)[0];
+        const parent = node?.parentElement?.closest<HTMLElement>(nodeSelector);
+        const next =
+          event.key === "ArrowUp"
+            ? rows[index - 1]
+            : event.key === "ArrowDown"
+              ? rows[index + 1]
+              : event.key === "Home"
+                ? rows[0]
+                : event.key === "End"
+                  ? rows.at(-1)
+                  : event.key === "ArrowRight" && firstChild
+                    ? rowOf(firstChild)
+                    : event.key === "ArrowLeft" && parent
+                      ? rowOf(parent)
+                      : null;
+        if (next) {
+          event.preventDefault();
+          next.focus();
+        }
+        return;
+      }
       const dx =
         keyMatches("Alt+ArrowLeft", event) || keyMatches("Alt+h", event)
           ? -1

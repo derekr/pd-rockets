@@ -257,8 +257,8 @@ curl -fsSL "https://github.com/<owner>/<repo>/releases/latest/download/pd-rocket
                   </a>
                   ; cards carry stable IDs. Drag a card into another lane, or focus a card and press <kbd>Alt</kbd>+
                   <kbd>→</kbd>. The emitted event describes the target lane and the card to insert before; it does not
-                  perform a mutation. Use <kbd>Alt</kbd>+<kbd>h</kbd>/<kbd>j</kbd>/<kbd>k</kbd>/<kbd>l</kbd> to stage
-                  keyboard moves, then release Alt to commit.
+                  perform a mutation. Plain arrows navigate focus; use <kbd>Alt</kbd>+<kbd>h</kbd>/<kbd>j</kbd>/
+                  <kbd>k</kbd>/<kbd>l</kbd> to stage keyboard moves, then release Alt to commit.
                 </p>
                 <div class="example-frame">
                   <div class="example-head">
@@ -295,8 +295,9 @@ rocket-kanban-move → { cardId, col, before }`}</code>
                 <h2 id="sortable-title">Sortable list</h2>
                 <p>
                   A sortable list uses the shared pointer lifecycle but chooses its own target geometry and semantic
-                  event. Drag above or below an item to insert at that position. The list demo does not define keyboard
-                  reordering; its items remain focusable.
+                  event. Drag above or below an item to insert at that position. Up/down arrows navigate focused items;
+                  Home/End jump to the first or last item. Alt + up/down stages a reorder; release Alt to commit or
+                  press Escape to cancel.
                 </p>
                 <div class="example-frame list-frame">
                   <div class="example-head">
@@ -326,8 +327,9 @@ rocket-sortable-move → { itemId, before }`}</code>
                 <p>
                   A drag group coordinates several lists without assigning Kanban columns or card semantics. Move an
                   item within a list or into another list, including the space after its last item. Each group is its
-                  own drag scope; the page decides how to apply the emitted move. Focus an item and use Alt + arrows (or
-                  h/j/k/l), then release Alt to commit. Escape cancels the staged move.
+                  own drag scope; the page decides how to apply the emitted move. Plain arrows move focus within and
+                  between lists. Focus an item and use Alt + arrows (or h/j/k/l), then release Alt to commit. Escape
+                  cancels the staged move.
                 </p>
                 <div class="example-frame group-frame">
                   <div class="example-head">
@@ -359,9 +361,9 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                 <p>
                   Two CSS grids share one drag scope. Drop a tile on a cell in either grid, or use its ↘ handle to
                   resize it. Displaced tiles preview their new cells while you drag or resize. Rocket sends every
-                  changed position on commit; the backend applies them and returns HTML. Focus a tile: Alt + arrows move
-                  it by a cell, Alt + Page Up/Down switches grids, and Shift + arrows resize. Release the modifier to
-                  commit; Escape cancels.
+                  changed position on commit; the backend applies them and returns HTML. Plain arrows navigate tiles
+                  spatially across grids. Focus a tile: Alt + arrows move it by a cell, Alt + Page Up/Down switches
+                  grids, and Shift + arrows resize. Release the modifier to commit; Escape cancels.
                 </p>
                 <div class="example-frame bento-frame">
                   <div class="example-head">
@@ -398,8 +400,9 @@ rocket-bento-resize → { itemId, grid, updates: [{ itemId, grid, col, row, widt
                 <h2 id="tree-title">File tree</h2>
                 <p>
                   Reorder files and folders, or drop onto a folder to move an entry inside it—even when it is empty.
-                  Nested entries move with their folder. Focus a row: Alt + up/down reorders among siblings, Alt + right
-                  moves it into the preceding folder, and Alt + left moves it out. Release Alt to commit; Escape
+                  Nested entries move with their folder. Plain up/down arrows navigate the visible rows; right enters a
+                  folder, and left returns to its parent. Focus a row: Alt + up/down reorders among siblings, Alt +
+                  right moves it into the preceding folder, and Alt + left moves it out. Release Alt to commit; Escape
                   cancels.
                 </p>
                 <div class="example-frame tree-frame">
@@ -465,6 +468,10 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                 <p>
                   These are browser-facing contracts. Action bindings, permissions and transport configuration belong to
                   the consuming application.
+                </p>
+                <p>
+                  All surfaces support unmodified arrow-key focus navigation; list, group, grid and tree surfaces also
+                  support Home/End. Alt + arrows stage moves, where supported, without changing focus until the morph.
                 </p>
                 <h3 id="keyboard">Kanban keyboard attributes</h3>
                 <div class="table-scroll">

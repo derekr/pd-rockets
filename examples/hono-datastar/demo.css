@@ -49,56 +49,72 @@ rocket-bento-workspace {
 
 rocket-sortable-tree {
   display: block;
+  font:
+    13px/1.35 ui-monospace,
+    "SFMono-Regular",
+    Consolas,
+    monospace;
 }
 
 [data-tree-children] {
-  min-height: 28px;
-  padding-left: 20px;
-  border-left: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  min-height: 24px;
+  padding-left: 16px;
 }
 
 rocket-sortable-tree > [data-tree-children] {
   padding-left: 0;
-  border-left: 0;
 }
 
 [data-tree-node] {
-  margin-block: 4px;
+  margin: 0;
 }
 
 [data-tree-row] {
   position: relative;
-  padding: 8px 12px;
-  border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
-  border-radius: 5px;
-  background: Canvas;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: transparent;
   cursor: grab;
   touch-action: none;
 }
 
+[data-tree-row]:hover {
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+
+[data-tree-row]:focus-visible {
+  outline: 1px solid Highlight;
+  outline-offset: -1px;
+}
+
 [data-tree-row] span {
   display: inline-block;
-  min-width: 20px;
+  min-width: 14px;
+  color: color-mix(in srgb, currentColor 55%, transparent);
 }
 [data-tree-node][data-tree-kind="folder"] > [data-tree-row] {
-  font-weight: 700;
+  font-weight: 600;
 }
 [data-tree-row][data-tree-into] {
-  background: color-mix(in srgb, Highlight 13%, Canvas);
-  outline: 2px solid Highlight;
+  background: color-mix(in srgb, Highlight 15%, transparent);
+  outline: 1px solid Highlight;
+  outline-offset: -1px;
 }
 [data-tree-row][data-tree-before]::before,
 [data-tree-children][data-tree-end]::after {
   content: "";
   display: block;
-  height: 3px;
-  border-radius: 2px;
+  height: 2px;
   background: Highlight;
 }
 
 [data-tree-row][data-tree-before]::before {
   position: absolute;
-  inset: -5px 0 auto;
+  inset: -1px 0 auto;
 }
 
 [data-bento-grid] {
