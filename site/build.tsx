@@ -16,6 +16,7 @@ import { sortableTreeContract } from "../contracts/sortable-tree";
 import fixture from "../examples/hono-datastar/fixture.json";
 import { buildSourceIndex } from "./build-source";
 import { ensureRuntime } from "../scripts/fetch-datastar-rocket";
+import { browserBundles } from "../browser-bundles";
 
 const root = join(import.meta.dir, "..");
 const output = join(root, "dist/site");
@@ -214,21 +215,35 @@ const page = renderHTML(
                 <p class="section-kicker">STEP 01 / GET STARTED</p>
                 <h2 id="install-title">Install</h2>
                 <p>
-                  Build the browser code and serve it alongside the open-source Datastar + Rocket bundle. Render the
-                  custom-element tags and data attributes from any backend; Hono JSX and Go examples are included.
+                  Download the prebuilt release archive, then serve one surface bundle or the full kit alongside the
+                  open-source Datastar + Rocket runtime. Each surface includes its own core dependencies; the core
+                  bundle is also available for custom mechanics. Render the tags and data attributes from any backend.
                 </p>
                 <pre>
-                  <code>{`bun install
-bun run build:client
-bun run runtime:fetch
-# copy dist/rocket-kit.js into your application
-# serve public/js/datastar-rocket.js at /js/datastar-rocket.js`}</code>
+                  <code>{`mkdir -p public/js
+curl -fsSL "https://github.com/<owner>/<repo>/releases/latest/download/pd-rockets-browser.tar.gz" | tar -xz -C public/js
+# serve the upstream datastar-rocket.js at /js/datastar-rocket.js
+# choose one of the following:
+<script type="module" src="/js/rocket-sortable-tree.js"></script>
+<script type="module" src="/js/rocket-kit.js"></script>`}</code>
                 </pre>
                 <p>
-                  <a href="./source/build-client.ts.txt">Client build source ↗</a> ·{" "}
-                  <a href="./source/scripts/fetch-datastar-rocket.ts.txt">Pinned runtime fetch ↗</a> ·{" "}
-                  <a href="./rocket-kit.js">Built client bundle ↗</a> ·{" "}
+                  <a href="https://data-star.dev/reference/rocket#bundle">Get the Rocket runtime ↗</a> ·{" "}
                   <a href="./js/DATASTAR-LICENSE.md">Upstream MIT notice ↗</a>
+                </p>
+                <ul class="bundle-links" aria-label="Prebuilt PD rockets bundles">
+                  {browserBundles.map(({ file }) => (
+                    <li>
+                      <a href={`./downloads/${file}`} download={file}>
+                        <code>{file}</code> ↓
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <p>
+                  <a href="./LICENSE" download="LICENSE">
+                    PD rockets license ↓
+                  </a>
                 </p>
               </section>
 
@@ -799,10 +814,12 @@ await copyFile(join(root, "public/js/DATASTAR-LICENSE.md"), join(output, "js/DAT
 await copyFile(join(root, "LICENSE"), join(output, "LICENSE"));
 await buildSourceIndex(root, output, assetVersion);
 
-await writeFile(
-  join(output, "rocket-kit.js"),
-  bundle.replaceAll('"/js/datastar-rocket.js"', '"./js/datastar-rocket.js"'),
-);
+await mkdir(join(output, "downloads"), { recursive: true });
+for (const { file } of browserBundles) {
+  const content = file === "rocket-kit.js" ? bundle : await readFile(join(root, "dist", file), "utf8");
+  await writeFile(join(output, "downloads", file), content);
+  await writeFile(join(output, file), content.replaceAll('"/js/datastar-rocket.js"', '"./js/datastar-rocket.js"'));
+}
 
 await writeFile(join(output, "fake-backend.js"), backendBundle);
 

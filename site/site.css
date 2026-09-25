@@ -102,6 +102,13 @@ a {
   min-width: 62px;
 }
 
+.bundle-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 8px 18px;
+  padding-left: 20px;
+}
+
 .site-header {
   display: flex;
   align-items: center;

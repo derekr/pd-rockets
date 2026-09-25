@@ -32,31 +32,44 @@ The reusable client does not know about application actions, persistence, permis
 provides the component boundary and lifecycle for local browser mechanics, while Datastar handles actions and HTML
 updates. See the [Rocket reference](https://data-star.dev/reference/rocket) for the upstream API.
 
-## Build and run
+## Install prebuilt browser bundles
 
-```sh
-bun install
-bun run build:client
-bun run serve:site
-```
-
-Open `http://localhost:4173`. `dist/rocket-kit.js` is the vendorable client bundle. It imports Rocket from
-`/js/datastar-rocket.js`. The site build fetches the pinned open-source runtime into ignored `public/js/`, verifies its
-SHA-256 and publishes it alongside the tracked upstream MIT notice. Serve both files from the same origin in a consuming
-application.
-
-For a tagged release, GitHub Actions publishes `pd-rockets-browser.tar.gz` with `rocket-kit.js` and its license. Replace
-`<owner>/<repo>` with the published GitHub repository to vendor PD rockets in one line:
+Tagged releases publish `pd-rockets-browser.tar.gz` with only PD rockets JavaScript bundles and their Beer-Ware license.
+Replace `<owner>/<repo>` with the published GitHub repository:
 
 ```sh
 mkdir -p public/js && curl -fsSL "https://github.com/<owner>/<repo>/releases/latest/download/pd-rockets-browser.tar.gz" | tar -xz -C public/js
 ```
 
-Run `bun run bundle:browser` to produce the same archive locally. Separately obtain the open-source
+Choose a single surface or the full collection:
+
+| File                        | Use                                                                     |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `rocket-core.js`            | Import framework-neutral pointer, insertion, keyboard and FLIP helpers. |
+| `rocket-kanban.js`          | Kanban board.                                                           |
+| `rocket-sortable-list.js`   | One sortable list.                                                      |
+| `rocket-drag-group.js`      | Multiple lists.                                                         |
+| `rocket-bento-workspace.js` | Dashboard grids.                                                        |
+| `rocket-sortable-tree.js`   | Folder/file tree.                                                       |
+| `rocket-kit.js`             | All surfaces.                                                           |
+
+Each surface bundle includes the core code it needs; `rocket-core.js` is for direct imports, not a required second
+script. Load your chosen surface as a module, for example
+`<script type="module" src="/js/rocket-sortable-tree.js"></script>`. Separately obtain the open-source
 [`datastar-rocket.js` bundle](https://data-star.dev/reference/rocket#bundle) using the official Rocket bundle instructions
 and serve it at `/js/datastar-rocket.js`. This bundle includes Datastar and Rocket; it replaces a separate `datastar.js`
-on the page. Keep its upstream MIT notice with the runtime. `bun run runtime:fetch` obtains the checked version for
-the local examples and site; the PD rockets release archive does not include it.
+on the page. Keep its upstream MIT notice with the runtime; the PD rockets release archive does not include it.
+
+## Build and run locally
+
+```sh
+bun install
+bun run serve:site
+```
+
+Open `http://localhost:4173`. `bun run build:client` produces all seven browser artifacts in `dist/`, and
+`bun run bundle:browser` creates the release archive locally. The site build fetches the pinned open-source runtime into
+ignored `public/js/`, verifies its SHA-256 and publishes it alongside the tracked upstream MIT notice.
 
 The site build writes `dist/site`, a relative-path static artifact suitable for GitHub Pages. Its in-browser fixture
 intercepts the demo actions and returns `datastar-patch-elements` SSE responses, exercising the same morph path
