@@ -20,5 +20,16 @@
     { "id": "list-a", "label": "First item" },
     { "id": "list-b", "label": "Second item" },
     { "id": "list-c", "label": "Third item" }
+  ],
+  "groups": [
+    {
+      "id": "inbox",
+      "label": "Inbox",
+      "items": [
+        { "id": "note-a", "label": "Sketch a card" },
+        { "id": "note-b", "label": "Review the draft" }
+      ]
+    },
+    { "id": "later", "label": "Later", "items": [{ "id": "note-c", "label": "Share the update" }] }
   ]
 }

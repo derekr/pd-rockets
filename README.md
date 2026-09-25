@@ -1,10 +1,10 @@
 # PD rockets
 
 PD rockets is a collection of vendorable components built with [Rocket](https://data-star.dev/reference/rocket),
-Datastar's open-source web component API. Drag-and-drop is the first family: Kanban and sortable-list surfaces are
-working examples, with bento-grid and sortable-tree layouts as future pressure tests. A server renders light DOM;
-Rocket owns browser interaction and emits semantic events; the page connects those events to its Datastar actions and
-backend handlers.
+Datastar's open-source web component API. Drag-and-drop is the first family: a multi-list drag group, Kanban, and
+sortable-list surfaces are working examples, with bento-grid and sortable-tree layouts as future pressure tests. A server
+renders light DOM; Rocket owns browser interaction and emits semantic events; the page connects those events to its
+Datastar actions and backend handlers.
 
 - `contracts/` — DOM inputs, keyboard defaults, and semantic event outputs.
 - `core/` — pointer lifecycle, drag preview, and FLIP mechanics.
@@ -12,6 +12,11 @@ backend handlers.
 - `examples/hono-datastar/` — JSX event bindings and a local DOM demo.
 - `examples/go/` — Go templates, Datastar actions, and SSE morphs.
 - `site/` — a static guide and live examples backed by an in-browser SSE fixture.
+
+`rocket-drag-group` coordinates multiple `[data-drop-list]` regions containing `[data-drag-item]` elements. Pointer
+dragging or Alt + arrows (or h/j/k/l) emits `rocket-drag-group-move` with `{ itemId, fromList, toList, before }`;
+releasing Alt commits a keyboard move, and Escape cancels it. Groups are independent. Kanban keeps its own column and
+card contract while sharing the insertion and pointer mechanics.
 
 The reusable client does not know about application actions, persistence, permissions, or transport policy. Rocket
 provides the component boundary and lifecycle for local browser mechanics, while Datastar handles actions and HTML

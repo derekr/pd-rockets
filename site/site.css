@@ -450,6 +450,7 @@ kbd {
 }
 
 .example-body [data-kanban-lane],
+.example-body [data-drop-list],
 .example-body rocket-sortable-list {
   border: 1px solid var(--line);
   border-radius: 5px;
@@ -469,7 +470,8 @@ kbd {
 }
 
 .example-body [data-kanban-card],
-.example-body [data-sortable-item] {
+.example-body [data-sortable-item],
+.example-body [data-drag-item] {
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--card);
@@ -478,8 +480,8 @@ kbd {
   touch-action: none;
 }
 
-.example-body :is([data-kanban-card], [data-sortable-item])[data-drop-before]::before,
-.example-body :is([data-kanban-lane-cards], rocket-sortable-list)[data-drop-end]::after {
+.example-body :is([data-kanban-card], [data-sortable-item], [data-drag-item])[data-drop-before]::before,
+.example-body :is([data-kanban-lane-cards], [data-drop-list], rocket-sortable-list)[data-drop-end]::after {
   background: var(--blue);
 }
 

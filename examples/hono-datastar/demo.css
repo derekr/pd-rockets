@@ -35,13 +35,33 @@ rocket-sortable-list {
   gap: 0.5rem;
 }
 
+rocket-drag-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+[data-drop-list] {
+  min-height: 8rem;
+}
+
+[data-drop-list] h3 {
+  margin-top: 0;
+}
+
+[data-drag-item] {
+  margin-block: 0.5rem;
+}
+
 [data-kanban-card],
-[data-sortable-item] {
+[data-sortable-item],
+[data-drag-item] {
   padding: 0.75rem;
   border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
   border-radius: 0.5rem;
   background: Canvas;
   cursor: grab;
+  touch-action: none;
   transition:
     opacity 120ms ease,
     border-color 120ms ease,
@@ -78,7 +98,9 @@ body:has([data-drag-active]) {
 
 [data-kanban-card],
 [data-sortable-item],
+[data-drag-item],
 [data-kanban-lane-cards],
+[data-drop-list],
 rocket-sortable-list {
   position: relative;
 }
@@ -87,8 +109,8 @@ rocket-sortable-list {
   min-height: 12px;
 }
 
-:is([data-kanban-card], [data-sortable-item])[data-drop-before]::before,
-:is([data-kanban-lane-cards], rocket-sortable-list)[data-drop-end]::after {
+:is([data-kanban-card], [data-sortable-item], [data-drag-item])[data-drop-before]::before,
+:is([data-kanban-lane-cards], [data-drop-list], rocket-sortable-list)[data-drop-end]::after {
   content: "";
   position: absolute;
   left: 0;
@@ -100,11 +122,11 @@ rocket-sortable-list {
   z-index: 2;
 }
 
-:is([data-kanban-card], [data-sortable-item])[data-drop-before]::before {
+:is([data-kanban-card], [data-sortable-item], [data-drag-item])[data-drop-before]::before {
   top: -7px;
 }
 
-:is([data-kanban-lane-cards], rocket-sortable-list)[data-drop-end]::after {
+:is([data-kanban-lane-cards], [data-drop-list], rocket-sortable-list)[data-drop-end]::after {
   bottom: -7px;
 }
 

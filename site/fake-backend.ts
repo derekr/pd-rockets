@@ -1,12 +1,15 @@
 type BoardTarget = { cardId: string; col: number; before: string };
 type ListTarget = { itemId: string; before: string };
+type GroupTarget = { itemId: string; fromList: string; toList: string; before: string };
 
 const kanbanRoot = document.querySelector<HTMLElement>("#kanban-demo");
 const sortableRoot = document.querySelector<HTMLElement>("#sortable-demo");
-if (!kanbanRoot || !sortableRoot) throw new Error("rocket kit site: missing example root");
+const groupRoot = document.querySelector<HTMLElement>("#group-demo");
+if (!kanbanRoot || !sortableRoot || !groupRoot) throw new Error("rocket kit site: missing example root");
 
 const kanbanModel = kanbanRoot.cloneNode(true) as HTMLElement;
 const sortableModel = sortableRoot.cloneNode(true) as HTMLElement;
+const groupModel = groupRoot.cloneNode(true) as HTMLElement;
 
 function signalPayload(body: string): Record<string, unknown> {
   const payload = JSON.parse(body) as Record<string, unknown>;
@@ -36,6 +39,17 @@ function moveListItem(target: ListTarget): void {
   list.insertBefore(item, before);
 }
 
+function moveGroupItem(target: GroupTarget): void {
+  const source = groupModel.querySelector<HTMLElement>(`[data-drop-list="${CSS.escape(target.fromList)}"]`);
+  const list = groupModel.querySelector<HTMLElement>(`[data-drop-list="${CSS.escape(target.toList)}"]`);
+  const item = source?.querySelector<HTMLElement>(`[data-drag-item="${CSS.escape(target.itemId)}"]`);
+  if (!item || !list) return;
+  const before = target.before
+    ? list.querySelector<HTMLElement>(`[data-drag-item="${CSS.escape(target.before)}"]`)
+    : null;
+  list.insertBefore(item, before);
+}
+
 function patchResponse(selector: string, model: HTMLElement): Response {
   const lines = ["event: datastar-patch-elements", `data: selector ${selector}`, "data: mode outer"];
   for (const line of model.outerHTML.split("\n")) lines.push(`data: elements ${line}`);
@@ -53,6 +67,11 @@ const interceptFetch = async (input: RequestInfo | URL, init?: RequestInit): Pro
   const request = new Request(input, init);
   const url = new URL(request.url);
   if (request.method !== "POST") return originalFetch(input, init);
+
+  if (url.pathname.endsWith("/group-move")) {
+    moveGroupItem(signalPayload(await request.text()) as unknown as GroupTarget);
+    return patchResponse("#group-demo", groupModel);
+  }
 
   if (url.pathname.endsWith("/list-move")) {
     moveListItem(signalPayload(await request.text()) as unknown as ListTarget);

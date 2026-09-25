@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { Hono } from "hono";
 import { serve } from "bun";
 import { KanbanBoard } from "./adapter/kanban";
+import { DragGroup } from "./adapter/drag-group";
 import { SortableList } from "./adapter/sortable-list";
 import fixture from "./fixture.json";
 
@@ -32,6 +33,10 @@ app.get("/", (c) =>
           <div class="demo-block">
             <h2>Sortable list</h2>
             <SortableList items={fixture.list} />
+          </div>
+          <div class="demo-block">
+            <h2>Drag group</h2>
+            <DragGroup lists={fixture.groups} />
           </div>
         </div>
         <script type="module" src="/rocket-kit.js"></script>

@@ -1,11 +1,13 @@
 import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { KanbanBoard } from "../examples/hono-datastar/adapter/kanban";
+import { DragGroup } from "../examples/hono-datastar/adapter/drag-group";
 import type { DatastarEventBinding } from "../examples/hono-datastar/adapter/event-binding";
 import { renderHTML } from "../examples/hono-datastar/adapter/render";
 import { SortableList } from "../examples/hono-datastar/adapter/sortable-list";
 import { kanbanContract } from "../contracts/kanban";
 import { sortableListContract } from "../contracts/sortable-list";
+import { dragGroupContract } from "../contracts/drag-group";
 import fixture from "../examples/hono-datastar/fixture.json";
 
 const root = join(import.meta.dir, "..");
@@ -27,6 +29,14 @@ const sortableMove: DatastarEventBinding = {
   },
 };
 
+const groupMove: DatastarEventBinding = {
+  event: dragGroupContract.events.move,
+  attrs: {
+    "data-on:rocket-drag-group-move":
+      "$itemId = evt.detail?.['itemId'] ?? null; $fromList = evt.detail?.['fromList'] ?? null; $toList = evt.detail?.['toList'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./group-move')",
+  },
+};
+
 const page = renderHTML(
   <html lang="en">
     <head>
@@ -40,7 +50,7 @@ const page = renderHTML(
       <link rel="stylesheet" href="./demo.css" />
       <link rel="stylesheet" href="./site.css" />
     </head>
-    <body data-signals='{"cardId":"","col":0,"before":"","itemId":""}'>
+    <body data-signals='{"cardId":"","col":0,"before":"","itemId":"","fromList":"","toList":""}'>
       <div class="site-frame">
         <header class="site-header">
           <a class="brand" href="#top" aria-label="PD rockets, back to top">
@@ -105,7 +115,8 @@ const page = renderHTML(
                 <a href="#install">01 · Get started</a>
                 <a href="#kanban">02 · Kanban board</a>
                 <a href="#sortable">03 · Sortable list</a>
-                <a href="#server">04 · Wire a backend</a>
+                <a href="#drag-group">04 · Drag group</a>
+                <a href="#server">05 · Wire a backend</a>
                 <a href="#reference">Reference</a>
                 <a href="#keyboard">Keyboard inputs</a>
                 <a href="#events">Events &amp; DOM</a>
@@ -120,10 +131,9 @@ const page = renderHTML(
                 <p class="section-kicker">FIELD GUIDE / 01</p>
                 <h2 id="guide-title">How it works</h2>
                 <p>
-                  The public contract lives in <code>contracts/kanban.ts</code> and{" "}
-                  <code>contracts/sortable-list.ts</code>. Core owns pointer capture, the detached preview, target
-                  marking and post-move FLIP. The Rocket hosts own DOM lookup and event emission. Neither layer knows
-                  which Datastar action your page will invoke or how your backend stores changes.
+                  The public contracts live in <code>contracts/</code>. Core owns pointer capture, the detached preview,
+                  target marking and post-move FLIP. The Rocket hosts own DOM lookup and event emission. Neither layer
+                  knows which Datastar action your page will invoke or how your backend stores changes.
                 </p>
                 <h3>Why Rocket?</h3>
                 <p>
@@ -234,8 +244,37 @@ rocket-sortable-move → { itemId, before }`}</code>
                 </pre>
               </section>
 
+              <section id="drag-group" class="docs-section" aria-labelledby="drag-group-title">
+                <p class="section-kicker">STEP 04 / LIVE EXAMPLE</p>
+                <h2 id="drag-group-title">Move between lists</h2>
+                <p>
+                  A drag group coordinates several lists without assigning Kanban columns or card semantics. Move an
+                  item within a list or into another list, including the space after its last item. Each group is its
+                  own drag scope; the page decides how to apply the emitted move. Focus an item and use Alt + arrows (or
+                  h/j/k/l), then release Alt to commit. Escape cancels the staged move.
+                </p>
+                <div class="example-frame group-frame">
+                  <div class="example-head">
+                    <span class="live-dot" aria-hidden="true"></span> LIVE / DRAG GROUP <span>drag between lists</span>
+                  </div>
+                  <div id="group-demo" class="example-body">
+                    <DragGroup lists={fixture.groups} move={groupMove} />
+                  </div>
+                </div>
+                <pre>
+                  <code>{`<rocket-drag-group>
+  <section data-drop-list="inbox">
+    <div data-drag-item="note-a" tabindex="0">Sketch a card</div>
+  </section>
+  <section data-drop-list="later"></section>
+</rocket-drag-group>
+
+rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
+                </pre>
+              </section>
+
               <section id="server" class="docs-section" aria-labelledby="server-title">
-                <p class="section-kicker">STEP 04 / SERVER HANDOFF</p>
+                <p class="section-kicker">STEP 05 / SERVER HANDOFF</p>
                 <h2 id="server-title">Server round trip</h2>
                 <p>
                   Bind each semantic event to a Datastar action in your page. Your server handler validates the target,
@@ -250,9 +289,7 @@ data: mode outer
 data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                 </pre>
                 <p class="callout">
-                  The page seeds only four interaction signals: <code>cardId</code>, <code>col</code>,{" "}
-                  <code>before</code>, and <code>itemId</code>. Board and list content live in rendered DOM, not
-                  signals.
+                  The page seeds only move-detail signals. Board and list content live in rendered DOM, not signals.
                 </p>
               </section>
 
@@ -397,6 +434,17 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                           <code>rocket-sortable-move</code> <small>{`{ itemId, before }`}</small>
                         </td>
                       </tr>
+                      <tr>
+                        <td>
+                          <code>rocket-drag-group</code>
+                        </td>
+                        <td>
+                          <code>[data-drop-list]</code> + <code>[data-drag-item]</code>
+                        </td>
+                        <td>
+                          <code>rocket-drag-group-move</code> <small>{`{ itemId, fromList, toList, before }`}</small>
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -410,9 +458,9 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                 <p class="section-kicker">ON THE HORIZON / 03</p>
                 <h2 id="next-title">What's next</h2>
                 <p>
-                  Kanban and sortable lists are the first drag-and-drop examples. A bento grid and sortable tree are
-                  useful next pressure tests for different target geometry and keyboard behavior. Each surface can share
-                  core mechanics without pretending every layout is the same component.
+                  Drag groups, Kanban and sortable lists are the first drag-and-drop examples. A bento grid and sortable
+                  tree are useful next pressure tests for different target geometry and keyboard behavior. Each surface
+                  can share core mechanics without pretending every layout is the same component.
                 </p>
                 <div class="layer-strip future-strip" aria-label="Potential drag-and-drop surfaces">
                   <span>
