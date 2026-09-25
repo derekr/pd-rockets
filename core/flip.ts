@@ -56,8 +56,15 @@ export function installFlip(options: FlipOptions): { prepare: (origin?: FlipOrig
     play(options, snapshot);
   };
 
-  const observer = new MutationObserver(() => {
-    if (!before || frame !== null) return;
+  const containsItem = (node: Node): boolean =>
+    node instanceof Element && (node.matches(options.itemSelector) || !!node.querySelector(options.itemSelector));
+  const observer = new MutationObserver((records) => {
+    if (
+      !before ||
+      frame !== null ||
+      !records.some((record) => [...record.addedNodes, ...record.removedNodes].some(containsItem))
+    )
+      return;
     frame = requestAnimationFrame(finish);
   });
   observer.observe(options.host, { childList: true, subtree: true });

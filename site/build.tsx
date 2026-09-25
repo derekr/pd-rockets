@@ -130,7 +130,7 @@ function CustomKanban() {
             {transmissions
               .filter((card) => card.lane === index)
               .map((card) => (
-                <article class="signal-card" data-kanban-card={card.id} tabindex={0}>
+                <article id={`signal-card-${card.id}`} class="signal-card" data-kanban-card={card.id} tabindex={0}>
                   <span class="signal-card-top">
                     <span>{card.code}</span>
                     <span aria-hidden="true">{card.symbol}</span>
@@ -816,6 +816,10 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                   own components, classes, and content. PD rockets supplies interaction behavior, not a required
                   stylesheet. Keep the host tag, stable item IDs, focusable items, and the <code>data-*</code> hooks;
                   style everything around them to fit your product.
+                </p>
+                <p>
+                  If your HTML morph keys elements by DOM <code>id</code>, give each card a stable, board-scoped ID too.
+                  That keeps an in-flight animation attached to the same card when another card leaves its lane.
                 </p>
                 <p class="callout">
                   Your server-rendered markup is the design surface. Use your own component classes and CSS custom

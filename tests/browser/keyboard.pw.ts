@@ -231,6 +231,44 @@ test("pointer drag emits a semantic move and staging is cancelled by a pointer g
   expect(events[0]).toMatchObject({ name: "rocket-sortable-move", detail: { itemId: "list-a", before: "list-c" } });
 });
 
+test("FLIP waits for a delayed item move, not removal of a custom target indicator", async ({ page }) => {
+  await ready(page);
+  await page.evaluate(() => {
+    const host = document.querySelector("#list rocket-sortable-list")!;
+    const template = document.createElement("template");
+    template.dataset.rocketTarget = "before";
+    template.innerHTML = "<span>Place here</span>";
+    host.append(template);
+    (window as any).__flips = [];
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (frames, options) {
+      if (this.matches("[data-sortable-item]")) (window as any).__flips.push(this.getAttribute("data-sortable-item"));
+      return animate.call(this, frames, options);
+    };
+    host.addEventListener("rocket-sortable-move", (event) => {
+      const { itemId, before } = (event as CustomEvent<{ itemId: string; before: string }>).detail;
+      (window as any).__applyMove = () => {
+        const item = host.querySelector(`[data-sortable-item="${itemId}"]`)!;
+        const next = host.querySelector(`[data-sortable-item="${before}"]`);
+        host.insertBefore(item, next);
+      };
+    });
+  });
+  const source = await page.locator("#list [data-sortable-item=list-a]").boundingBox();
+  const destination = await page.locator("#list [data-sortable-item=list-c]").boundingBox();
+  expect(source && destination).toBeTruthy();
+  await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(destination!.x + destination!.width / 2, destination!.y + 2, { steps: 6 });
+  await expect(page.locator("#list [data-rocket-target-indicator=before]")).toBeVisible();
+  await page.mouse.up();
+  await expect.poll(() => page.evaluate(() => typeof (window as any).__applyMove)).toBe("function");
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  expect(await page.evaluate(() => (window as any).__flips)).toEqual([]);
+  await page.evaluate(() => (window as any).__applyMove());
+  await expect.poll(() => page.evaluate(() => (window as any).__flips)).toContain("list-a");
+});
+
 test("tree pointer preview updates only the active marker as the target changes", async ({ page }) => {
   await ready(page);
   const source = page.locator("#tree [data-tree-node=button] > [data-tree-row]");

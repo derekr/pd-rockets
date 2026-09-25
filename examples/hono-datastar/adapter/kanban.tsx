@@ -60,7 +60,7 @@ export function KanbanBoard({ id, columns, keyboard, move, select, children }: K
           <h2>{column.label}</h2>
           <div data-kanban-lane-cards="">
             {column.cards.map((card) => (
-              <article data-kanban-card={card.id} tabindex={0}>
+              <article id={id ? `${id}-card-${card.id}` : undefined} data-kanban-card={card.id} tabindex={0}>
                 <button type="button" data-kanban-card-main="">
                   {card.title}
                 </button>
