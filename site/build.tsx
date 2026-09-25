@@ -423,9 +423,9 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                   Two CSS grids share one drag scope. Drop a tile on a cell in either grid, or use its ↘ handle to
                   resize it. Displaced tiles preview their new cells while you drag or resize. Rocket sends every
                   changed position on commit; the backend applies them and returns HTML. Plain arrows navigate tiles
-                  within and across grids. Focus a tile: Alt + arrows move it by a cell and cross a board boundary at an
-                  edge; Alt + Page Up/Down switches grids directly, and Shift + arrows resize. Release the modifier to
-                  commit; Escape cancels.
+                  within and across grids with arrows or h/j/k/l. Focus a tile: Alt + arrows move it by a cell and cross
+                  a board boundary at an edge; Alt + Page Up/Down switches grids directly, and Shift + arrows resize.
+                  Release the modifier to commit; Escape cancels.
                 </p>
                 <p>
                   The browser proposes positions for its live preview. The synthetic backend checks the complete
@@ -470,7 +470,8 @@ rocket-bento-resize → { itemId, grid, updates: [{ itemId, grid, col, row, widt
                   Nested entries move with their folder. Plain up/down arrows (or j/k) navigate visible rows; right
                   expands or enters a folder, and left collapses it or returns to its parent. Focus a row: Alt + up/down
                   reorders among siblings, Alt + right moves it into the preceding folder, and Alt + left moves it out.
-                  Release Alt to commit; Escape cancels.
+                  At the first or last child, Alt + up/down also moves it before or after the parent folder. Release Alt
+                  to commit; Escape cancels.
                 </p>
                 <div class="example-frame tree-frame">
                   <div class="example-head">

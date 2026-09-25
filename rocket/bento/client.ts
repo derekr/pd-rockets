@@ -6,7 +6,7 @@ import { installFocusRecovery } from "../../core/focus-recovery";
 import { keyMatches } from "../../core/keyboard";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
-import { projectBentoLayout, type Cell, type GridLayout } from "./placement";
+import { nextBentoColumn, projectBentoLayout, type Cell, type GridLayout } from "./placement";
 
 type Target = Cell & { grid: HTMLElement; gridId: string };
 
@@ -319,13 +319,13 @@ rocket(bentoContract.tag, {
         const items = [...host.querySelectorAll<HTMLElement>(itemSelector)].filter(owns);
         let next = event.key === "Home" ? items[0] : event.key === "End" ? items.at(-1) : null;
         const direction =
-          event.key === "ArrowLeft"
+          keyMatches("ArrowLeft", event) || keyMatches("h", event)
             ? { x: -1, y: 0 }
-            : event.key === "ArrowRight"
+            : keyMatches("ArrowRight", event) || keyMatches("l", event)
               ? { x: 1, y: 0 }
-              : event.key === "ArrowUp"
+              : keyMatches("ArrowUp", event) || keyMatches("k", event)
                 ? { x: 0, y: -1 }
-                : event.key === "ArrowDown"
+                : keyMatches("ArrowDown", event) || keyMatches("j", event)
                   ? { x: 0, y: 1 }
                   : null;
         if (direction) {
@@ -340,9 +340,9 @@ rocket(bentoContract.tag, {
                   dy = box.top + box.height / 2 - y;
                 const along = dx * direction.x + dy * direction.y;
                 const across = Math.abs(dx * direction.y - dy * direction.x);
-                return { candidate, along, score: (crossBoard ? 0 : along) + across * 2 };
+                return { candidate, along, across, score: (crossBoard ? 0 : along) + across * 2 };
               })
-              .filter((option) => crossBoard || option.along > 1)
+              .filter((option) => crossBoard || (option.along > 1 && option.across <= option.along))
               .sort((a, b) => a.score - b.score)[0]?.candidate;
           const currentGrid = gridFor(item);
           next = nearest(items.filter((candidate) => candidate !== item && gridFor(candidate) === currentGrid));
@@ -390,7 +390,7 @@ rocket(bentoContract.tag, {
       if (move && dx && currentGrid && !gridDirection) {
         const currentCol = current?.col ?? cells(item).col;
         const currentWidth = current?.width ?? cells(item).width;
-        if (currentCol + dx < 1 || currentCol + currentWidth + dx > columns(currentGrid)) {
+        if (nextBentoColumn(currentCol, currentWidth, columns(currentGrid), dx) === null) {
           targetGrid = allGrids[allGrids.indexOf(currentGrid) + dx];
           crossing = !!targetGrid;
         }

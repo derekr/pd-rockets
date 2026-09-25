@@ -223,13 +223,27 @@ rocket(sortableTreeContract.tag, {
       let target: Target | null = null;
       if (dy) {
         const next = Math.max(0, Math.min(siblings.length, position + dy));
-        if (next !== position)
+        if (next !== position) {
           target = {
             list,
             parentId: list.dataset.treeParent ?? "",
             before: siblings[next]?.dataset.treeNode ?? "",
             into: false,
           };
+        } else {
+          const parent = list.closest<HTMLElement>(nodeSelector);
+          const outer = parent && listFor(parent);
+          if (parent && outer)
+            target = {
+              list: outer,
+              parentId: outer.dataset.treeParent ?? "",
+              before:
+                dy < 0
+                  ? (parent.dataset.treeNode ?? "")
+                  : (parent.nextElementSibling?.getAttribute("data-tree-node") ?? ""),
+              into: false,
+            };
+        }
       } else if (dx > 0) {
         const previous = siblings
           .slice(0, position)

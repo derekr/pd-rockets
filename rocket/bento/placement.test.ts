@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { overlaps, placeWithPush, projectBentoLayout } from "./placement";
+import { nextBentoColumn, overlaps, placeWithPush, projectBentoLayout } from "./placement";
+
+test("a wide tile reaches the last valid column before crossing a grid boundary", () => {
+  expect(nextBentoColumn(1, 2, 4, 1)).toBe(2);
+  expect(nextBentoColumn(2, 2, 4, 1)).toBe(3);
+  expect(nextBentoColumn(3, 2, 4, 1)).toBeNull();
+  expect(nextBentoColumn(1, 2, 4, -1)).toBeNull();
+});
 
 test("a moved multi-cell tile stays anchored and pushes collisions down", () => {
   const items = [

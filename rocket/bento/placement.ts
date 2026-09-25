@@ -4,6 +4,12 @@ export type Cell = { col: number; row: number; width: number; height: number };
 export type PlacedItem = Cell & { id: string };
 export type GridLayout = { id: string; columns: number; items: readonly PlacedItem[] };
 
+/** The last valid anchor is columns - width + 1 (coordinates are one-based). */
+export function nextBentoColumn(col: number, width: number, columns: number, direction: number): number | null {
+  const next = col + direction;
+  return next >= 1 && next + width - 1 <= columns ? next : null;
+}
+
 export function overlaps(a: Cell, b: Cell): boolean {
   return a.col < b.col + b.width && b.col < a.col + a.width && a.row < b.row + b.height && b.row < a.row + a.height;
 }
