@@ -1,6 +1,11 @@
 // @ts-ignore — consuming pages provide the same Rocket instance through their import map.
 import { rocket } from "pd-rockets/rocket";
-import { contextMenuContract, type MenuActionDetail, type ContextMenuHost } from "../../contracts/context-menu";
+import {
+  contextMenuContract,
+  type MenuActionDetail,
+  type ContextMenuHost,
+  type MenuScopeDetail,
+} from "../../contracts/context-menu";
 import { bindTemplate } from "../../core/template-bind";
 import { showPositionedPopover } from "../../core/popover";
 import { cancelKeys, keyboardBindings, platformFocusKeys } from "../../core/keyboard";
@@ -13,6 +18,7 @@ rocket(contextMenuContract.tag, {
   setup({ host, cleanup }: { host: MenuHost; cleanup: (fn: () => void) => void }) {
     let trigger: HTMLElement | null = null;
     let content: HTMLElement | null = null;
+    let clonedContent = false;
     let contextId = "";
     let unpositionRoot: (() => void) | null = null;
     let pendingContextOpen = 0;
@@ -41,8 +47,15 @@ rocket(contextMenuContract.tag, {
       host.hidePopover();
       unpositionRoot?.();
       unpositionRoot = null;
-      content.remove();
+      if (clonedContent) content.remove();
       content = null;
+      clonedContent = false;
+      host.dispatchEvent(
+        new CustomEvent<MenuScopeDetail>(contextMenuContract.events.scope, {
+          bubbles: true,
+          detail: { root: host, active: false },
+        }),
+      );
       const previous = trigger;
       trigger = null;
       if (previous) {
@@ -76,14 +89,18 @@ rocket(contextMenuContract.tag, {
     };
     const openFor = (source: HTMLElement, point?: { x: number; y: number }, context: Record<string, string> = {}) => {
       const template = host.querySelector<HTMLTemplateElement>(":scope > template[data-rocket-menu]");
-      if (!template) return;
+      const live = host.querySelector<HTMLElement>(":scope > [data-rocket-menu-content]");
+      if (!template && !live) return;
       close();
       trigger = source;
       contextId = source.closest<HTMLElement>("[data-context-id]")?.dataset.contextId ?? source.dataset.contextId ?? "";
-      content = document.createElement("div");
-      content.setAttribute("data-menu-content", "");
-      content.append(bindTemplate(template, { ...context, contextId }));
-      host.append(content);
+      clonedContent = !!template;
+      if (template) {
+        content = document.createElement("div");
+        content.setAttribute("data-menu-content", "");
+        content.append(bindTemplate(template, { ...context, contextId }));
+        host.append(content);
+      } else content = live;
       // A server morph may replace setup-only attributes with the original HTML.
       host.popover = "auto";
       host.setAttribute("role", "menu");
@@ -92,8 +109,16 @@ rocket(contextMenuContract.tag, {
       source.setAttribute("aria-expanded", "true");
       unpositionRoot = showPositionedPopover(host, point ?? source, point ? "point" : "below");
       host.focus();
+      host.dispatchEvent(
+        new CustomEvent<MenuScopeDetail>(contextMenuContract.events.scope, {
+          bubbles: true,
+          detail: { root: host, active: true },
+        }),
+      );
     };
     host.openFor = openFor;
+    host.closeMenu = close;
+    host.isOpen = () => !!content;
     const ownsTrigger = (element: Element): HTMLElement | null => {
       const found = element.closest<HTMLElement>(contextMenuContract.selectors.trigger);
       return found?.dataset.menuFor === host.id ? found : null;
@@ -213,6 +238,8 @@ rocket(contextMenuContract.tag, {
       cancelAnimationFrame(pendingContextOpen);
       close();
       delete (host as Partial<ContextMenuHost>).openFor;
+      delete (host as Partial<ContextMenuHost>).closeMenu;
+      delete (host as Partial<ContextMenuHost>).isOpen;
       document.removeEventListener("contextmenu", onContextMenu);
       document.removeEventListener("click", onTriggerClick);
       host.removeEventListener("click", onClick);

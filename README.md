@@ -21,6 +21,9 @@ card contract while sharing the insertion and pointer mechanics.
 `rocket-context-menu` is a template-first, backend-neutral action menu. Server-rendered items and nested submenus are
 cloned on open with a target `contextId`; the menu handles popover placement, keyboard navigation, and focus return,
 then emits `{ action, contextId }`. The page owns action handling and may morph the template with fresh server HTML.
+For fetched menu fragments, render a direct child marked `data-rocket-menu-content` instead of a template and call
+`openFor(trigger)` after the page installs the fragment. `closeMenu(refocus?)` and `isOpen()` expose the lifecycle;
+`rocket-menu-scope` emits `{ root, active }` for page-owned keyboard scopes. Live content remains in the DOM on close.
 
 `rocket-inline-edit` owns a title's double-press detection, Enter/blur commit, and Escape cancellation while the page
 owns its input, edit mode, validation and save. Mark title and input with `data-inline-edit-trigger` / `data-inline-edit-value`

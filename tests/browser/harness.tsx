@@ -129,6 +129,16 @@ const html = renderHTML(
             </div>
           </template>
         </rocket-context-menu>
+        <a href="#" data-menu-for="live-menu" data-context-id="live-row">
+          Fetched actions
+        </a>
+        <rocket-context-menu id="live-menu" popover="auto" role="menu">
+          <div data-rocket-menu-content="">
+            <button type="button" role="menuitem" data-action="shared">
+              Server-rendered row-b
+            </button>
+          </div>
+        </rocket-context-menu>
       </div>
       <div class="fixture" id="edit-fixture">
         <h2>Inline edit</h2>

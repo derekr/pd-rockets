@@ -253,3 +253,48 @@ test("a server morph without runtime attributes cannot break the next open", asy
   await expect(menu.getByRole("menuitem", { name: "View row-a" })).toBeFocused();
   expect(errors).toEqual([]);
 });
+
+test("a fetched live menu preserves server markup and exposes scope and close hooks", async ({ page }) => {
+  const menu = page.locator("#live-menu");
+  await page.evaluate(() => {
+    (window as any).__menuScopes = [];
+    document.querySelector("#live-menu")!.addEventListener("rocket-menu-scope", (event) => {
+      const detail = (event as CustomEvent).detail;
+      (window as any).__menuScopes.push({ active: detail.active, root: detail.root.id });
+    });
+  });
+  await page.locator('a[data-menu-for="live-menu"]').click();
+  await expect(menu).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(menu.getByRole("menuitem", { name: "Server-rendered row-b" })).toBeFocused();
+  await menu.evaluate((host: any) => host.closeMenu(true));
+  await expect(menu).not.toBeVisible();
+  await expect(menu.locator(":scope > [data-rocket-menu-content]")).toHaveCount(1);
+  expect(await menu.evaluate((host: any) => host.isOpen())).toBe(false);
+  expect(await page.evaluate(() => (window as any).__menuScopes)).toEqual([
+    { active: true, root: "live-menu" },
+    { active: false, root: "live-menu" },
+  ]);
+  await page.locator('a[data-menu-for="live-menu"]').click();
+  await expect(menu).toBeFocused();
+  expect(await menu.evaluate((host: any) => host.isOpen())).toBe(true);
+});
+
+test("a freshly installed live fragment emits actions for the current trigger", async ({ page }) => {
+  await page.evaluate(() => {
+    (window as any).__liveActions = [];
+    const menu = document.querySelector("#live-menu")!;
+    menu.addEventListener("rocket-menu-action", (event) =>
+      (window as any).__liveActions.push((event as CustomEvent).detail),
+    );
+    menu.querySelector("[data-rocket-menu-content]")!.innerHTML =
+      '<button type="button" role="menuitem" data-action="inspect">Fresh action</button>';
+  });
+  await page.locator('a[data-menu-for="live-menu"]').click();
+  await page.locator("#live-menu").getByRole("menuitem", { name: "Fresh action" }).click();
+  expect(await page.evaluate(() => (window as any).__liveActions)).toEqual([
+    { action: "inspect", contextId: "live-row" },
+  ]);
+  await expect(page.locator("#live-menu [data-rocket-menu-content]")).toContainText("Fresh action");
+  await expect(page.locator('a[data-menu-for="live-menu"]')).toBeFocused();
+});

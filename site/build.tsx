@@ -1244,8 +1244,12 @@ rocket-menu-action → { action, contextId }`}</code>
                   directives are left as server-rendered.
                 </p>
                 <p>
-                  For fresh or sensitive options, fetch page-owned HTML before opening and morph the template, then call{" "}
-                  <code>menu.openFor(trigger)</code>. Additional non-sensitive values can be passed as{" "}
+                  For fresh options, fetch page-owned HTML before opening and morph the template, or render a direct
+                  child marked <code>data-rocket-menu-content</code> for live server markup. Then call{" "}
+                  <code>menu.openFor(trigger)</code>. Live markup stays in the host after close; use{" "}
+                  <code>menu.closeMenu(refocus?)</code> and <code>menu.isOpen()</code> when coordinating a page-owned
+                  menu lifecycle. <code>rocket-menu-scope</code> emits <code>{`{ root, active }`}</code> when its
+                  keyboard scope opens or closes. Additional non-sensitive values can be passed as{" "}
                   <code>{`menu.openFor(trigger, undefined, { label: "Example" })`}</code> and used as{" "}
                   <code>{`{label}`}</code> in the template. The Rocket never fetches menus or makes authorization
                   decisions. See <a href="./source/rocket/context-menu/client.ts.txt">menu behavior ↗</a> and{" "}
