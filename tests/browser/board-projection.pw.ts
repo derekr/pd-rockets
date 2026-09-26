@@ -17,6 +17,9 @@ test("a held card projects across lanes, survives a fat morph and reveals confir
     host.id = "board-one";
     host.innerHTML = markup;
     document.body.append(host);
+    const persistent = document.createElement("style");
+    persistent.id = "board-projection";
+    host.after(persistent);
     const holds = new Map([["b", { col: 1, row: 0, fromCol: 0, state: "pending" }]]);
     const projection = installBoardProjection({
       host,
@@ -31,13 +34,13 @@ test("a held card projects across lanes, survives a fat morph and reveals confir
   const host = page.locator("#board-one");
   await expect(host.locator('[data-col="1"] > [data-board-card="b"]')).toHaveCount(1);
   await expect(host.locator('[data-board-card="b"]')).toHaveAttribute("data-persist-state", "pending");
-  await expect(host.locator("#board-styles + #board-projection")).toHaveCount(1);
+  await expect(page.locator("#board-one + #board-projection")).toHaveCount(1);
   expect(await host.locator('[data-board-card="b"]').evaluate((card) => getComputedStyle(card).gridRowStart)).toBe("1");
   await host.evaluate((element, markup) => {
     element.innerHTML = markup;
   }, boardMarkup);
   await expect(host.locator('[data-col="1"] > [data-board-card="b"]')).toHaveCount(1);
-  await expect(host.locator("#board-styles + #board-projection")).toHaveCount(1);
+  await expect(page.locator("#board-one + #board-projection")).toHaveCount(1);
   await page.evaluate(() => {
     const { holds, projection } = (window as any).__boardProjection;
     holds.clear();
@@ -48,7 +51,7 @@ test("a held card projects across lanes, survives a fat morph and reveals confir
     projection.sync();
   });
   await expect(host.locator('[data-board-card="b"]')).not.toHaveAttribute("data-persist-state");
-  await expect(host.locator("#board-projection")).toBeEmpty();
+  await expect(page.locator("#board-projection")).toBeEmpty();
   expect(await host.locator('[data-board-card="b"]').evaluate((card) => getComputedStyle(card).gridRowStart)).toBe("2");
 });
 

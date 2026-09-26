@@ -43,7 +43,8 @@ selector to scope the rules. Linear lists continue to use
 `core/insertion-target.ts`.
 `installBoardProjection()` is the browser half: the page supplies current holds and an optional staged preview through
 callbacks. It reasserts only those cards across full morphs, marking persistence state, moving held cards between lanes
-when CSS alone cannot, and keeping its override style after server truth. Request dispatch, confirmation, and retry
+when CSS alone cannot, and keeping its override style after server truth and outside a morph region if the page placed it
+there. Request dispatch, confirmation, and retry
 policy stay with the page.
 
 `rocket-sortable-tree` is a folder/file list with between-sibling insertion and drops into folders. Its

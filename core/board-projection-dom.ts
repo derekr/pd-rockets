@@ -45,7 +45,11 @@ export function installBoardProjection(options: {
       style.id = options.projectionStyleId;
       ownsStyle = true;
     }
-    if (style.previousElementSibling !== truth) truth.after(style);
+    // A persistent style may live outside the server's fat-morph region.
+    // Preserve that location whenever it already sorts after truth.
+    if (!(truth.compareDocumentPosition(style) & Node.DOCUMENT_POSITION_FOLLOWING)) {
+      document.body.append(style);
+    }
     return style;
   };
   const queueSync = () => {
