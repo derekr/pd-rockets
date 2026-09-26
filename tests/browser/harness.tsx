@@ -19,6 +19,9 @@ const built = await Bun.build({
 });
 if (!built.success || !built.outputs[0]) throw new AggregateError(built.logs, "browser harness build failed");
 const bundle = await built.outputs[0].text();
+const coreBuild = await Bun.build({ entrypoints: [join(root, "core/index.ts")], target: "browser" });
+if (!coreBuild.success || !coreBuild.outputs[0]) throw new AggregateError(coreBuild.logs, "browser core build failed");
+const coreBundle = await coreBuild.outputs[0].text();
 const css = await Bun.file(join(root, "examples/hono-datastar/demo.css")).text();
 
 const html = renderHTML(
@@ -169,6 +172,8 @@ Bun.serve({
     if (path === "/demo.css") return new Response(css, { headers: { "Content-Type": "text/css; charset=utf-8" } });
     if (path === "/rocket-kit.js")
       return new Response(bundle, { headers: { "Content-Type": "text/javascript; charset=utf-8" } });
+    if (path === "/rocket-core.js")
+      return new Response(coreBundle, { headers: { "Content-Type": "text/javascript; charset=utf-8" } });
     if (path === "/js/datastar-rocket.js")
       return new Response(Bun.file(join(root, "public/js/datastar-rocket.js")), {
         headers: { "Content-Type": "text/javascript; charset=utf-8" },

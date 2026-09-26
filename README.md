@@ -34,6 +34,10 @@ cards. These pure helpers do not read application state or move DOM nodes; a con
 lifecycle and places the generated rules after server-rendered layout styles. Multiple boards can pass a trusted host
 selector to scope the rules. Linear lists continue to use
 `core/insertion-target.ts`.
+`installBoardProjection()` is the browser half: the page supplies current holds and an optional staged preview through
+callbacks. It reasserts only those cards across full morphs, marking persistence state, moving held cards between lanes
+when CSS alone cannot, and keeping its override style after server truth. Request dispatch, confirmation, and retry
+policy stay with the page.
 
 `rocket-sortable-tree` is a folder/file list with between-sibling insertion and drops into folders. Its
 `rocket-tree-move` detail carries `{ itemId, fromParent, toParent, before }`; the backend applies that change and sends

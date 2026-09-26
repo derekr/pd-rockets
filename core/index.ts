@@ -4,6 +4,8 @@ export { cellFromPoint, gridIndex, insertOrder, parseGridTemplate, placementRule
 export type { BoardLane, BoardLaneGeometry } from "./board-geometry";
 export { projectBoardMoves } from "./board-projection";
 export type { BoardProjectionMove } from "./board-projection";
+export { installBoardProjection } from "./board-projection-dom";
+export type { BoardHold, BoardProjectionSource } from "./board-projection-dom";
 export { installFlip } from "./flip";
 export type { FlipOptions, FlipOrigin } from "./flip";
 export { insertionBefore } from "./insertion-target";
