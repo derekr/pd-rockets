@@ -46,6 +46,16 @@ callbacks. It reasserts only those cards across full morphs, marking persistence
 when CSS alone cannot, and keeping its override style after server truth and outside a morph region if the page placed it
 there. Request dispatch, confirmation, and retry
 policy stay with the page.
+`installBoardDrag()` supplies lane-grid pointer capture, keep-in-place previews, hit testing and a morph-tolerant drag
+lifecycle. Cards use `data-board-card`, lanes use `data-board-lane` / `data-col`, and the explicit grip uses
+`data-rocket-board-drag-handle`. A direct child `<template data-rocket-preview>` can supply the page's preview markup
+and CSS (with `--rocket-source-width` / `--rocket-source-height` available); otherwise a non-interactive card clone is
+used. The page provides selection, semantic intents, projection indicators and optional mobile drag targets through
+callbacks, so its mobile tabs, pager, scrolling and command policy are independent of the kit.
+`installBoardColumnReorder()` is likewise opt-in: the page marks its desktop heads with `data-rocket-board-column`,
+mobile tabs with `data-rocket-board-mobile-column`, their handles with `data-rocket-board-column-grip` (and
+`data-rocket-board-mobile-grip` for tabs), and optional accessible steps with `data-rocket-board-column-step`. It
+produces only `(columnId, toIndex)`; the page renders and orders the columns and owns the command.
 
 `rocket-sortable-tree` is a folder/file list with between-sibling insertion and drops into folders. Its
 `rocket-tree-move` detail carries `{ itemId, fromParent, toParent, before }`; the backend applies that change and sends

@@ -9,6 +9,8 @@ import "./rocket/inline-edit/client";
 // The full bundle also exposes reusable board mechanics to pages that
 // own their own gesture and command policies.
 export { installBoardProjection } from "./core/board-projection-dom";
+export { installBoardDrag } from "./core/board-drag";
+export { installBoardColumnReorder } from "./core/board-column-reorder";
 export {
   cellFromPoint,
   gridIndex,
