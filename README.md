@@ -124,7 +124,8 @@ same Datastar instance; a standalone Datastar script by itself does not provide 
 publishes Rocket in the combined bundle. Keep its upstream MIT notice with the runtime; the PD rockets release archive
 does not include it.
 
-Server-owned light-DOM hosts may receive new Datastar issuers during morphs. The pinned open-source Rocket bundle
+Rocket explicitly supports `setup` without `render` for server-owned light DOM. Those hosts may receive new Datastar
+issuers during morphs. The pinned open-source Rocket bundle
 dispatches newly scoped descendants by finding their nearest Rocket host, as verified by
 `tests/browser/rocket-scope.pw.ts`. A consumer runtime that looks up ownership only on the issuer itself must refresh
 that ownership on every scope update; otherwise a newly morphed `@dispatchRocket` issuer silently misses its action.
