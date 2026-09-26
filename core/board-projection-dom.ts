@@ -100,12 +100,14 @@ export function installBoardProjection(options: {
       if (preview?.cardId === cardId) continue;
       const structural = card?.closest<HTMLElement>("[data-board-lane]");
       const structuralCol = Number(structural?.dataset.col);
+      // A newer authoritative snapshot can place the card in a different
+      // structural origin before its pending landing is resolved.
+      if (structural && structuralCol !== hold.col && Number.isInteger(structuralCol)) hold.fromCol = structuralCol;
       moves.push({
         cardId,
         col: hold.col,
         row: hold.row,
-        fromCol:
-          structural && structuralCol !== hold.col && Number.isInteger(structuralCol) ? structuralCol : hold.fromCol,
+        fromCol: hold.fromCol,
       });
     }
     if (preview) moves.push(preview);
@@ -137,7 +139,8 @@ export function installBoardProjection(options: {
       sync();
     },
     clear() {
-      source = null;
+      // Clearing a landing does not detach the page's hold source: the same
+      // board host can accept another drag without a second setSource call.
       sync();
     },
     dispose() {
