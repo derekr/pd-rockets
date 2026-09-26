@@ -123,6 +123,13 @@ If an application uses separate scripts, map `pd-rockets/rocket` to a Rocket ES 
 same Datastar instance; a standalone Datastar script by itself does not provide Rocket. Upstream v1.0.4 currently
 publishes Rocket in the combined bundle. Keep its upstream MIT notice with the runtime; the PD rockets release archive
 does not include it.
+
+Server-owned light-DOM hosts may receive new Datastar issuers during morphs. The pinned open-source Rocket bundle
+dispatches newly scoped descendants by finding their nearest Rocket host, as verified by
+`tests/browser/rocket-scope.pw.ts`. A consumer runtime that looks up ownership only on the issuer itself must refresh
+that ownership on every scope update; otherwise a newly morphed `@dispatchRocket` issuer silently misses its action.
+That is a runtime dispatch/scoping issue, not a board behavior contract. A page can temporarily call Rocket's renderless
+`render()` after child additions to refresh ownership, but the kit does not install an observer for the pinned runtime.
 Serve the `.js` files normally; precompressed `.js.br` files are optional for servers configured to negotiate Brotli
 and send `Content-Encoding: br` with a JavaScript content type. Do not reference `.js.br` in a script tag.
 
