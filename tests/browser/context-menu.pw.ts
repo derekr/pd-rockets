@@ -298,3 +298,31 @@ test("a freshly installed live fragment emits actions for the current trigger", 
   await expect(page.locator("#live-menu [data-rocket-menu-content]")).toContainText("Fresh action");
   await expect(page.locator('a[data-menu-for="live-menu"]')).toBeFocused();
 });
+
+test("installer opens server-owned inline content, handles nested focus and disposal", async ({ page }) => {
+  await page.evaluate(async () => {
+    const { installContextMenu } = (await new Function('return import("/rocket-kit.js")')()) as {
+      installContextMenu: (host: HTMLElement, cleanup: (fn: () => void) => void, options: object) => void;
+    };
+    const host = document.createElement("section") as any;
+    host.innerHTML =
+      '<button role="menuitem" data-submenu="inline-sub">More</button><div id="inline-sub" role="menu"><button role="menuitem" data-action="choose">Choose</button></div>';
+    document.body.append(host);
+    (window as any).__inlineMenu = host;
+    installContextMenu(host, (dispose: () => void) => ((window as any).__disposeInlineMenu = dispose), {
+      inlineContent: true,
+      captureTriggers: false,
+      focusFirst: true,
+    });
+    host.openFor(document.querySelector("#menu-fixture button"));
+  });
+  const host = page.locator("section:has(#inline-sub)");
+  await expect(host.getByRole("menuitem", { name: "More" })).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(host.getByRole("menuitem", { name: "Choose" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(host.getByRole("menuitem", { name: "More" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect.poll(() => host.evaluate((menu) => menu.matches(":popover-open"))).toBe(false);
+  await host.evaluate(() => (window as any).__disposeInlineMenu());
+});

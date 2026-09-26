@@ -5,6 +5,7 @@ import "./rocket/bento/client";
 import "./rocket/sortable-tree/client";
 import "./rocket/context-menu/client";
 import "./rocket/inline-edit/client";
+export { installContextMenu } from "./rocket/context-menu/client";
 
 // The full bundle also exposes reusable board mechanics to pages that
 // own their own gesture and command policies.
