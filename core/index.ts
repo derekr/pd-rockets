@@ -1,5 +1,9 @@
 export { createDragState, reduceDragState } from "./drag-state";
 export type { DragEvent, DragState } from "./drag-state";
+export { cellFromPoint, gridIndex, insertOrder, parseGridTemplate, placementRules, rowCenter } from "./board-geometry";
+export type { BoardLane, BoardLaneGeometry } from "./board-geometry";
+export { projectBoardMoves } from "./board-projection";
+export type { BoardProjectionMove } from "./board-projection";
 export { installFlip } from "./flip";
 export type { FlipOptions, FlipOrigin } from "./flip";
 export { insertionBefore } from "./insertion-target";

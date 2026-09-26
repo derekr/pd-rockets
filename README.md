@@ -28,6 +28,13 @@ all changed positions on move or resize. The backend applies those positions and
 in-browser SSE fixture demonstrates that handoff without duplicating placement logic. The consuming page provides CSS
 Grid tracks (`grid-template-columns` and a fixed `grid-auto-rows`) for pointer-to-cell geometry.
 
+`core/board-geometry.ts` provides board-specific lane/grid-track hit testing and remove-then-insert ordering for
+variable-height cards. `core/board-projection.ts` calculates disposable CSS placement overrides for held or staged
+cards. These pure helpers do not read application state or move DOM nodes; a consuming board supplies its own move
+lifecycle and places the generated rules after server-rendered layout styles. Multiple boards can pass a trusted host
+selector to scope the rules. Linear lists continue to use
+`core/insertion-target.ts`.
+
 `rocket-sortable-tree` is a folder/file list with between-sibling insertion and drops into folders. Its
 `rocket-tree-move` detail carries `{ itemId, fromParent, toParent, before }`; the backend applies that change and sends
 rendered HTML over SSE. Pointer drops animate the dragged row from the floating preview's final position.
