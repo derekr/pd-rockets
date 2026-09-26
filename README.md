@@ -89,6 +89,8 @@ updates. See the [Rocket reference](https://data-star.dev/reference/rocket) for 
 
 Tagged releases publish `pd-rockets-browser.tar.gz` with minified PD rockets JavaScript bundles, matching Brotli
 `.js.br` files, and their Beer-Ware license. The guide lists the Brotli size beside each bundle download.
+Release tags use UTC dates: `vYYYY-MM-DD` for the first release of a day and `vYYYY-MM-DD-2`, `-3`, etc. for later
+releases that day. Pin a specific tag and verify the archive digest when vendoring; `releases/latest` follows future tags.
 Replace `<owner>/<repo>` with the published GitHub repository:
 
 ```sh
@@ -144,6 +146,12 @@ bun run serve:site
 Open `http://localhost:4173`. `bun run build:client` produces the standalone and combined browser artifacts in `dist/`, and
 `bun run bundle:browser` creates the release archive locally. The site build fetches the pinned open-source runtime into
 ignored `public/js/`, verifies its SHA-256 and publishes it alongside the tracked upstream MIT notice.
+
+To publish a browser bundle, run formatting, typecheck, unit/browser tests and both demo smoke tests, review the release
+tree, then push a clean `main` branch. Run `bun run release:tag` on that branch. The command fetches remote tags, confirms
+local `main` matches `origin/main`, creates the next UTC date tag with a neutral author, and pushes it. The tag workflow
+rejects other tag formats and attaches the built archive to the GitHub release. The previous `v0.1.0` release stays
+available for existing consumers; new releases use date tags.
 
 The site build writes `dist/site`, a relative-path static artifact suitable for GitHub Pages. The home page is a
 component catalog; `documentation/` contains focused component and guide pages, and `guide.html` preserves the
