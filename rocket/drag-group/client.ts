@@ -4,7 +4,7 @@ import { dragGroupContract, type DragGroupMoveDetail } from "../../contracts/dra
 import { installFlip } from "../../core/flip";
 import { installFocusRecovery } from "../../core/focus-recovery";
 import { insertionBefore } from "../../core/insertion-target";
-import { cancelKeys, focusKeys, keyboardBindings, keyboardItem, moveKeys } from "../../core/keyboard";
+import { cancelKeys, keyboardBindings, keyboardItem, moveKeys, platformFocusKeys } from "../../core/keyboard";
 import { installKeyboardStaging } from "../../core/keyboard-staging";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
@@ -18,7 +18,7 @@ rocket(dragGroupContract.tag, {
     cleanup(markRocketHost(host));
     const { list: listSelector, item: itemSelector } = dragGroupContract.selectors;
     const owns = (element: HTMLElement): boolean => ownsRocketElement(host, element);
-    const keyboard = keyboardBindings(host, { ...focusKeys, ...moveKeys, ...cancelKeys });
+    const keyboard = keyboardBindings(host, { ...platformFocusKeys(navigator.platform), ...moveKeys, ...cancelKeys });
     const focus = installFocusRecovery(host);
     const itemId = (item: HTMLElement): string | null =>
       owns(item) && item.closest(listSelector) ? (item.dataset.dragItem ?? null) : null;

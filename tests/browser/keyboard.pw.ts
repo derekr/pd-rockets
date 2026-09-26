@@ -42,6 +42,31 @@ test("all surfaces use plain vim keys for focus without emitting moves", async (
   expect(await moves(page)).toEqual([]);
 });
 
+test("macOS Control-N/P focus next and previous across drag-and-drop surfaces", async ({ page }) => {
+  await page.addInitScript(() =>
+    Object.defineProperty(navigator, "platform", { configurable: true, value: "MacIntel" }),
+  );
+  await ready(page);
+  const cases = [
+    { first: "#kanban [data-kanban-card=card-a]", second: "#kanban [data-kanban-card=card-b]" },
+    { first: "#list [data-sortable-item=list-a]", second: "#list [data-sortable-item=list-b]" },
+    { first: "#group [data-drag-item=note-a]", second: "#group [data-drag-item=note-b]" },
+    { first: "#bento [data-bento-item=tile-b]", second: "#bento [data-bento-item=tile-c]" },
+    {
+      first: "#tree [data-tree-node=src] > [data-tree-row]",
+      second: "#tree [data-tree-node=components] > [data-tree-row]",
+    },
+  ];
+  for (const { first, second } of cases) {
+    await page.locator(first).focus();
+    await page.keyboard.press("Control+n");
+    await expect(page.locator(second)).toBeFocused();
+    await page.keyboard.press("Control+p");
+    await expect(page.locator(first)).toBeFocused();
+  }
+  expect(await moves(page)).toEqual([]);
+});
+
 test("the consumer can map Rocket to a separate module entry", async ({ page }) => {
   await ready(page, "?runtime=adapter");
   await page.locator("#list [data-sortable-item=list-a]").focus();

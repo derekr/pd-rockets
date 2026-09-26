@@ -3,7 +3,7 @@ import { rocket } from "pd-rockets/rocket";
 import { installFlip } from "../../core/flip";
 import { installFocusRecovery } from "../../core/focus-recovery";
 import { insertionBefore } from "../../core/insertion-target";
-import { cancelKeys, focusKeys, keyboardBindings, keyboardItem, moveKeys } from "../../core/keyboard";
+import { cancelKeys, keyboardBindings, keyboardItem, moveKeys, platformFocusKeys } from "../../core/keyboard";
 import { installKeyboardStaging } from "../../core/keyboard-staging";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
@@ -15,11 +15,12 @@ rocket(sortableListContract.tag, {
   setup({ host, cleanup }: { host: HTMLElement; cleanup: (fn: () => void) => void }) {
     cleanup(markRocketHost(host));
     const owns = (item: HTMLElement) => ownsRocketElement(host, item);
+    const { focusNext, focusPrevious, focusFirst, focusLast } = platformFocusKeys(navigator.platform);
     const keyboard = keyboardBindings(host, {
-      focusNext: focusKeys.focusNext,
-      focusPrevious: focusKeys.focusPrevious,
-      focusFirst: focusKeys.focusFirst,
-      focusLast: focusKeys.focusLast,
+      focusNext,
+      focusPrevious,
+      focusFirst,
+      focusLast,
       moveUp: moveKeys.moveUp,
       moveDown: moveKeys.moveDown,
       cancel: cancelKeys.cancel,

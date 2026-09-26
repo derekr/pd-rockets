@@ -2,7 +2,7 @@
 
 PD rockets is a collection of vendorable components built with [Rocket](https://data-star.dev/reference/rocket),
 Datastar's open-source web component API. Drag-and-drop is the first family: a multi-list drag group, Kanban,
-sortable-list, bento-grid and file-tree surfaces are working examples. A server
+sortable-list, bento-grid and file-tree surfaces are working examples, alongside a contextual action menu. A server
 renders light DOM; Rocket owns browser interaction and emits semantic events; the page connects those events to its
 Datastar actions and backend handlers.
 
@@ -17,6 +17,10 @@ Datastar actions and backend handlers.
 dragging or Alt + arrows (or h/j/k/l) emits `rocket-drag-group-move` with `{ itemId, fromList, toList, before }`;
 releasing Alt commits a keyboard move, and Escape cancels it. Groups are independent. Kanban keeps its own column and
 card contract while sharing the insertion and pointer mechanics.
+
+`rocket-context-menu` is a template-first, backend-neutral action menu. Server-rendered items and nested submenus are
+cloned on open with a target `contextId`; the menu handles popover placement, keyboard navigation, and focus return,
+then emits `{ action, contextId }`. The page owns action handling and may morph the template with fresh server HTML.
 
 `rocket-bento-workspace` is an experimental two-grid dashboard surface. It reuses the pointer and FLIP lifecycle, but
 uses cell coordinates and spans instead of list insertion targets. It calculates a transient, animated layout and emits
@@ -42,6 +46,8 @@ such as `data-key-focus-next="ArrowDown n"`; an empty value disables that intent
 Bento also exposes `resize-up/down/left/right` and `grid-previous/next`. Kanban continues to accept its original
 `data-key-select-next/previous/left/right` names; the corresponding `data-key-focus-*` attribute takes precedence.
 All surface defaults live in `core/keyboard.ts`, with the Kanban compatibility defaults in `contracts/kanban.ts`.
+Every surface with previous/next focus navigation also accepts macOS `Ctrl+p` / `Ctrl+n` by default; other platforms
+leave those browser shortcuts available unless the host opts in. Editable descendants keep their native text shortcuts.
 
 The reusable client does not know about application actions, persistence, permissions, or transport policy. Rocket
 provides the component boundary and lifecycle for local browser mechanics, while Datastar handles actions and HTML
@@ -99,7 +105,9 @@ Open `http://localhost:4173`. `bun run build:client` produces all seven browser 
 `bun run bundle:browser` creates the release archive locally. The site build fetches the pinned open-source runtime into
 ignored `public/js/`, verifies its SHA-256 and publishes it alongside the tracked upstream MIT notice.
 
-The site build writes `dist/site`, a relative-path static artifact suitable for GitHub Pages. Its in-browser fixture
+The site build writes `dist/site`, a relative-path static artifact suitable for GitHub Pages. The home page is a
+component catalog; `documentation/` contains focused component and guide pages, and `guide.html` preserves the
+long-form guide and its section links. Its in-browser fixture
 intercepts the demo actions and returns `datastar-patch-elements` SSE responses, exercising the same morph path
 without an application server. The Pages workflow publishes this artifact on pushes to `main`; the guide's source links
 use a generated, browsable copy of the public project files that also works when served locally. A bounded activity

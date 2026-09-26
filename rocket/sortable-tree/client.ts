@@ -3,7 +3,7 @@ import { rocket } from "pd-rockets/rocket";
 import { sortableTreeContract, type TreeMoveDetail } from "../../contracts/sortable-tree";
 import { installFlip } from "../../core/flip";
 import { installFocusRecovery } from "../../core/focus-recovery";
-import { cancelKeys, focusKeys, keyboardBindings, keyboardItem, moveKeys } from "../../core/keyboard";
+import { cancelKeys, keyboardBindings, keyboardItem, moveKeys, platformFocusKeys } from "../../core/keyboard";
 import { installKeyboardStaging } from "../../core/keyboard-staging";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
@@ -17,7 +17,7 @@ rocket(sortableTreeContract.tag, {
     cleanup(markRocketHost(host));
     const { node: nodeSelector, row: rowSelector, children: childrenSelector } = sortableTreeContract.selectors;
     const owns = (element: HTMLElement) => ownsRocketElement(host, element);
-    const keyboard = keyboardBindings(host, { ...focusKeys, ...moveKeys, ...cancelKeys });
+    const keyboard = keyboardBindings(host, { ...platformFocusKeys(navigator.platform), ...moveKeys, ...cancelKeys });
     const focus = installFocusRecovery(host);
     const nodeFor = (row: HTMLElement) => row.closest<HTMLElement>(nodeSelector);
     const rowId = (row: HTMLElement) => (owns(row) ? (nodeFor(row)?.dataset.treeNode ?? null) : null);

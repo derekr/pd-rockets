@@ -2,7 +2,6 @@ import type { Child } from "hono/jsx";
 import { componentAttrs, defineComponent, event } from "./component";
 import {
   kanbanContract,
-  kanbanKeyboardConfig,
   type KanbanKeyboard,
   type KanbanMoveDetail,
   type KanbanSelectDetail,
@@ -45,9 +44,8 @@ function kebab(value: string): string {
  * resulting attributes and emits the declared event.
  */
 export function KanbanBoard({ id, columns, keyboard, move, select, children }: KanbanBoardProps) {
-  const keyConfig = kanbanKeyboardConfig(keyboard);
   const keyAttrs = Object.fromEntries(
-    Object.entries(keyConfig).map(([slot, keys]) => [`data-key-${kebab(slot)}`, keys.join(" ")]),
+    Object.entries(keyboard ?? {}).map(([slot, keys]) => [`data-key-${kebab(slot)}`, keys.join(" ")]),
   );
   const actionAttrs = {
     ...datastarEventBinding(kanbanContract.events.move, move),

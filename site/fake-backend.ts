@@ -14,17 +14,16 @@ const treeRoot = document.querySelector<HTMLElement>("#tree-demo");
 const nestedRoot = document.querySelector<HTMLElement>("#nested-demo");
 const customRoot = document.querySelector<HTMLElement>("#custom-demo");
 const trashRoot = document.querySelector<HTMLElement>("#trash-demo");
-if (!kanbanRoot || !sortableRoot || !groupRoot || !bentoRoot || !treeRoot || !nestedRoot || !customRoot || !trashRoot)
-  throw new Error("rocket kit site: missing example root");
-
-const kanbanModel = kanbanRoot.cloneNode(true) as HTMLElement;
-const sortableModel = sortableRoot.cloneNode(true) as HTMLElement;
-const groupModel = groupRoot.cloneNode(true) as HTMLElement;
-const bentoModel = bentoRoot.cloneNode(true) as HTMLElement;
-const treeModel = treeRoot.cloneNode(true) as HTMLElement;
-const nestedModel = nestedRoot.cloneNode(true) as HTMLElement;
-const customModel = customRoot.cloneNode(true) as HTMLElement;
-const trashModel = trashRoot.cloneNode(true) as HTMLElement;
+const menuRoot = document.querySelector<HTMLElement>("#menu-demo");
+const kanbanModel = kanbanRoot?.cloneNode(true) as HTMLElement | undefined;
+const sortableModel = sortableRoot?.cloneNode(true) as HTMLElement | undefined;
+const groupModel = groupRoot?.cloneNode(true) as HTMLElement | undefined;
+const bentoModel = bentoRoot?.cloneNode(true) as HTMLElement | undefined;
+const treeModel = treeRoot?.cloneNode(true) as HTMLElement | undefined;
+const nestedModel = nestedRoot?.cloneNode(true) as HTMLElement | undefined;
+const customModel = customRoot?.cloneNode(true) as HTMLElement | undefined;
+const trashModel = trashRoot?.cloneNode(true) as HTMLElement | undefined;
+const menuModel = menuRoot?.cloneNode(true) as HTMLElement | undefined;
 
 function signalPayload(body: string): Record<string, unknown> {
   const payload = JSON.parse(body) as Record<string, unknown>;
@@ -33,7 +32,13 @@ function signalPayload(body: string): Record<string, unknown> {
 }
 
 function moveCard(target: BoardTarget, model = kanbanModel): void {
-  if (typeof target?.cardId !== "string" || !Number.isInteger(target.col) || typeof target.before !== "string") return;
+  if (
+    !model ||
+    typeof target?.cardId !== "string" ||
+    !Number.isInteger(target.col) ||
+    typeof target.before !== "string"
+  )
+    return;
   const card = model.querySelector<HTMLElement>(`[data-kanban-card="${CSS.escape(target.cardId)}"]`);
   const lane = model.querySelector<HTMLElement>(`[data-kanban-lane][data-col="${target.col}"]`);
   const list = lane?.querySelector<HTMLElement>("[data-kanban-lane-cards]");
@@ -50,6 +55,7 @@ function moveCard(target: BoardTarget, model = kanbanModel): void {
 }
 
 function moveListItem(target: ListTarget, model = sortableModel): void {
+  if (!model) return;
   const item = model.querySelector<HTMLElement>(`[data-sortable-item="${CSS.escape(target.itemId)}"]`);
   const before = target.before
     ? model.querySelector<HTMLElement>(`[data-sortable-item="${CSS.escape(target.before)}"]`)
@@ -60,6 +66,7 @@ function moveListItem(target: ListTarget, model = sortableModel): void {
 }
 
 function moveGroupItem(target: GroupTarget, model = groupModel): void {
+  if (!model) return;
   const source = model.querySelector<HTMLElement>(`[data-drop-list="${CSS.escape(target.fromList)}"]`);
   const list = model.querySelector<HTMLElement>(`[data-drop-list="${CSS.escape(target.toList)}"]`);
   const item = source?.querySelector<HTMLElement>(`[data-drag-item="${CSS.escape(target.itemId)}"]`);
@@ -71,6 +78,7 @@ function moveGroupItem(target: GroupTarget, model = groupModel): void {
 }
 
 function moveTreeNode(target: TreeMoveDetail): void {
+  if (!treeModel) return;
   const node = treeModel.querySelector<HTMLElement>(`[data-tree-node="${CSS.escape(target.itemId)}"]`);
   const list = [...treeModel.querySelectorAll<HTMLElement>("[data-tree-children]")].find(
     (candidate) => candidate.dataset.treeParent === target.toParent,
@@ -87,10 +95,11 @@ function moveTreeNode(target: TreeMoveDetail): void {
 }
 
 function bentoGrid(id: string): HTMLElement | null {
-  return bentoModel.querySelector<HTMLElement>(`[data-bento-grid="${CSS.escape(id)}"]`);
+  return bentoModel?.querySelector<HTMLElement>(`[data-bento-grid="${CSS.escape(id)}"]`) ?? null;
 }
 
 function applyBentoPositions(updates: BentoPosition[]): void {
+  if (!bentoModel) return;
   if (!Array.isArray(updates) || updates.length > 100) return;
   if (updates.some((update) => !update || typeof update.itemId !== "string" || typeof update.grid !== "string")) return;
   const resolved = updates.map((update) => ({
@@ -168,54 +177,63 @@ const interceptFetch = async (input: RequestInfo | URL, init?: RequestInit): Pro
   if (request.method !== "POST") return originalFetch(input, init);
 
   if (url.pathname.endsWith("/nested-list-move")) {
+    if (!nestedModel) return originalFetch(input, init);
     showActivity("Datastar", "@post('./nested-list-move')");
     moveListItem(signalPayload(await request.text()) as unknown as ListTarget, nestedModel);
     return patchResponse("#nested-demo", nestedModel);
   }
 
   if (url.pathname.endsWith("/nested-group-move")) {
+    if (!nestedModel) return originalFetch(input, init);
     showActivity("Datastar", "@post('./nested-group-move')");
     moveGroupItem(signalPayload(await request.text()) as unknown as GroupTarget, nestedModel);
     return patchResponse("#nested-demo", nestedModel);
   }
 
   if (url.pathname.endsWith("/tree-move")) {
+    if (!treeModel) return originalFetch(input, init);
     showActivity("Datastar", "@post('./tree-move')");
     moveTreeNode(signalPayload(await request.text()).tree as TreeMoveDetail);
     return patchResponse("#tree-demo", treeModel);
   }
 
   if (url.pathname.endsWith("/bento-move")) {
+    if (!bentoModel) return originalFetch(input, init);
     showActivity("Datastar", "@post('./bento-move')");
     applyBentoPositions((signalPayload(await request.text()).bento as BentoMoveDetail).updates);
     return patchResponse("#bento-demo", bentoModel);
   }
 
   if (url.pathname.endsWith("/bento-resize")) {
+    if (!bentoModel) return originalFetch(input, init);
     showActivity("Datastar", "@post('./bento-resize')");
     applyBentoPositions((signalPayload(await request.text()).bento as BentoResizeDetail).updates);
     return patchResponse("#bento-demo", bentoModel);
   }
 
   if (url.pathname.endsWith("/group-move")) {
+    if (!groupModel) return originalFetch(input, init);
     showActivity("Datastar", "@post('./group-move')");
     moveGroupItem(signalPayload(await request.text()) as unknown as GroupTarget);
     return patchResponse("#group-demo", groupModel);
   }
 
   if (url.pathname.endsWith("/list-move")) {
+    if (!sortableModel) return originalFetch(input, init);
     showActivity("Datastar", "@post('./list-move')");
     moveListItem(signalPayload(await request.text()) as unknown as ListTarget);
     return patchResponse("#sortable-demo", sortableModel);
   }
 
   if (url.pathname.endsWith("/custom-move")) {
+    if (!customModel) return originalFetch(input, init);
     showActivity("Datastar", "@post('./custom-move')");
     moveCard(signalPayload(await request.text()) as unknown as BoardTarget, customModel);
     return patchResponse("#custom-demo", customModel);
   }
 
   if (url.pathname.endsWith("/trash-move")) {
+    if (!trashModel) return originalFetch(input, init);
     showActivity("Datastar", "@post('./trash-move')");
     const target = signalPayload(await request.text()) as unknown as GroupTarget;
     if (target?.fromList === "tropes" && target.toList === "bin" && typeof target.itemId === "string") {
@@ -238,7 +256,23 @@ const interceptFetch = async (input: RequestInfo | URL, init?: RequestInit): Pro
     return patchResponse("#trash-demo", trashModel);
   }
 
+  if (url.pathname.endsWith("/menu-action")) {
+    if (!menuModel) return originalFetch(input, init);
+    showActivity("Datastar", "@post('./menu-action')");
+    const detail = signalPayload(await request.text()).menu as { action?: unknown; contextId?: unknown } | undefined;
+    const allowed = ["inspect", "inbox", "archive"];
+    const row =
+      typeof detail?.contextId === "string"
+        ? menuModel.querySelector<HTMLElement>(`[data-context-id="${CSS.escape(detail.contextId)}"]`)
+        : null;
+    const result = menuModel.querySelector<HTMLElement>(".menu-demo-result");
+    if (result && row && typeof detail?.action === "string" && allowed.includes(detail.action))
+      result.textContent = `${detail.action} / ${row.dataset.contextId}`;
+    return patchResponse("#menu-demo", menuModel);
+  }
+
   if (url.pathname.endsWith("/move")) {
+    if (!kanbanModel) return originalFetch(input, init);
     showActivity("Datastar", "@post('./move')");
     moveCard(signalPayload(await request.text()) as unknown as BoardTarget);
     return patchResponse("#kanban-demo", kanbanModel);

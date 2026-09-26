@@ -6,3 +6,5 @@ export { insertionBefore } from "./insertion-target";
 export { keyMatches } from "./keyboard";
 export { installPointerDrag } from "./pointer-drag";
 export type { PointerDragOptions } from "./pointer-drag";
+export { popoverPosition, showPositionedPopover } from "./popover";
+export { bindTemplate } from "./template-bind";

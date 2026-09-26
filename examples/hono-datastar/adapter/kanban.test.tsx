@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { renderHTML } from "./render";
 import { KanbanBoard } from "./kanban";
 
-test("Datastar JSX adapter renders the Rocket DOM contract and keyboard defaults", () => {
+test("Datastar JSX adapter renders the Rocket DOM contract and explicit keyboard overrides", () => {
   const html = renderHTML(
     <KanbanBoard
       id="demo-board"
@@ -11,9 +11,8 @@ test("Datastar JSX adapter renders the Rocket DOM contract and keyboard defaults
     />,
   );
   expect(html).toContain('<rocket-kanban-board id="demo-board"');
-  expect(html).toContain('data-key-move-left="Alt+ArrowLeft Alt+h"');
-  expect(html).toContain('data-key-move-up="Alt+ArrowUp Alt+k"');
-  expect(html).toContain('data-key-move-down="Alt+ArrowDown Alt+j"');
+  expect(html).toContain('data-key-select-next="n"');
+  expect(html).not.toContain("data-key-move-left");
   expect(html).toContain('data-kanban-lane="" data-col="0"');
   expect(html).toContain('data-kanban-card="a"');
   expect(html).toContain('id="demo-board-card-a"');

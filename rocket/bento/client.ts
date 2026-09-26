@@ -5,11 +5,11 @@ import { installFlip } from "../../core/flip";
 import { installFocusRecovery } from "../../core/focus-recovery";
 import {
   cancelKeys,
-  focusKeys,
   gridKeys,
   keyboardBindings,
   keyboardItem,
   moveKeys,
+  platformFocusKeys,
   resizeKeys,
 } from "../../core/keyboard";
 import { installKeyboardStaging } from "../../core/keyboard-staging";
@@ -26,7 +26,13 @@ rocket(bentoContract.tag, {
     cleanup(markRocketHost(host));
     const { grid: gridSelector, item: itemSelector, resize: resizeSelector } = bentoContract.selectors;
     const owns = (element: HTMLElement) => ownsRocketElement(host, element);
-    const keyboard = keyboardBindings(host, { ...focusKeys, ...moveKeys, ...resizeKeys, ...gridKeys, ...cancelKeys });
+    const keyboard = keyboardBindings(host, {
+      ...platformFocusKeys(navigator.platform),
+      ...moveKeys,
+      ...resizeKeys,
+      ...gridKeys,
+      ...cancelKeys,
+    });
     const focus = installFocusRecovery(host);
     const grids = () => [...host.querySelectorAll<HTMLElement>(gridSelector)].filter(owns);
     const itemId = (item: HTMLElement) => (owns(item) ? (item.dataset.bentoItem ?? null) : null);

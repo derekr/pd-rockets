@@ -8,11 +8,13 @@ import type { DatastarEventBinding } from "../examples/hono-datastar/adapter/eve
 import { renderHTML } from "../examples/hono-datastar/adapter/render";
 import { SortableList } from "../examples/hono-datastar/adapter/sortable-list";
 import { SortableTree, type FileNode } from "../examples/hono-datastar/adapter/sortable-tree";
+import { ContextMenu } from "../examples/hono-datastar/adapter/context-menu";
 import { kanbanContract } from "../contracts/kanban";
 import { sortableListContract } from "../contracts/sortable-list";
 import { dragGroupContract } from "../contracts/drag-group";
 import { bentoContract } from "../contracts/bento";
 import { sortableTreeContract } from "../contracts/sortable-tree";
+import { contextMenuContract } from "../contracts/context-menu";
 import fixture from "../examples/hono-datastar/fixture.json";
 import { buildSourceIndex } from "./build-source";
 import { ensureRuntime } from "../scripts/fetch-datastar-rocket";
@@ -210,6 +212,10 @@ const trashMove: DatastarEventBinding = {
       "$itemId = evt.detail?.['itemId'] ?? null; $fromList = evt.detail?.['fromList'] ?? null; $toList = evt.detail?.['toList'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./trash-move')",
   },
 };
+const menuAction: DatastarEventBinding = {
+  event: contextMenuContract.events.action,
+  attrs: { "data-on:rocket-menu-action": "$menu = evt.detail; @post('./menu-action')" },
+};
 
 const tropes = [
   { id: "trope-skeleton", label: "A skeleton for one word", stamp: "ALMOST READY", glyph: "▤" },
@@ -265,7 +271,7 @@ const page = renderHTML(
       <title>PD rockets · guide and reference</title>
       <meta
         name="description"
-        content="PD rockets: vendorable Rocket drag-and-drop components for Kanban boards, sortable lists, drag groups, bento grids, and file trees."
+        content="PD rockets: vendorable Rocket components for drag-and-drop surfaces and contextual action menus on server-rendered pages."
       />
       <link rel="stylesheet" href={`./demo.css?v=${assetVersion}`} />
       <link rel="stylesheet" href={`./site.css?v=${assetVersion}`} />
@@ -274,17 +280,17 @@ const page = renderHTML(
         dangerouslySetInnerHTML={{ __html: JSON.stringify({ imports: { [rocketModule]: "./js/datastar-rocket.js" } }) }}
       />
     </head>
-    <body data-signals='{"cardId":"","col":0,"before":"","itemId":"","fromList":"","toList":"","bento":{},"tree":{}}'>
+    <body data-signals='{"cardId":"","col":0,"before":"","itemId":"","fromList":"","toList":"","bento":{},"tree":{},"menu":{}}'>
       <div class="site-frame">
         <header class="site-header">
-          <a class="brand" href="#top" aria-label="PD rockets, back to top">
+          <a class="brand" href="./documentation/index.html" aria-label="PD rockets documentation home">
             <span class="brand-mark">PD</span> PD rockets
           </a>
           <nav aria-label="Page navigation">
-            <a href="#guide">Guide</a>
-            <a href="#reference">Reference</a>
-            <a href="#examples">Examples</a>
-            <a href="#try-it">Run locally</a>
+            <a href="./documentation/index.html">Documentation</a>
+            <a href="./documentation/reference.html">Reference</a>
+            <a href="./documentation/examples.html">Examples</a>
+            <a href="./documentation/getting-started.html">Get started</a>
             <a href="https://github.com/derekr/pd-rockets">GitHub ↗</a>
           </nav>
         </header>
@@ -335,22 +341,7 @@ const page = renderHTML(
           <div class="docs-layout">
             <aside class="docs-sidebar">
               <nav aria-label="Documentation contents">
-                <span class="sidebar-label">ON THIS PAGE</span>
-                <a href="#guide">Guide</a>
-                <a href="#install">01 · Get started</a>
-                <a href="#kanban">02 · Kanban board</a>
-                <a href="#sortable">03 · Sortable list</a>
-                <a href="#drag-group">04 · Drag group</a>
-                <a href="#nested">Nested hosts</a>
-                <a href="#bento">05 · Bento grids</a>
-                <a href="#tree">06 · File tree</a>
-                <a href="#server">07 · Wire a backend</a>
-                <a href="#customize">08 · Make it yours</a>
-                <a href="#reference">Reference</a>
-                <a href="#keyboard">Keyboard inputs</a>
-                <a href="#events">Events &amp; DOM</a>
-                <a href="#examples">Examples</a>
-                <a href="#try-it">Run locally</a>
+                <span class="sidebar-label">DOCUMENTATION</span>
               </nav>
             </aside>
 
@@ -1135,6 +1126,123 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                 </p>
               </section>
 
+              <section id="context-menu" class="docs-section" aria-labelledby="context-menu-title">
+                <p class="section-kicker">STEP 09 / CONTEXTUAL ACTIONS</p>
+                <h2 id="context-menu-title">A menu at the point of intent</h2>
+                <p>
+                  Right-click a row or use its Actions button. The server renders one inert template; Rocket clones it
+                  on demand, binds the row’s <code>contextId</code>, handles focus and nested menus, and emits a
+                  semantic action. The page decides what that action means and returns a small SSE patch. No menu fetch
+                  is needed for these shared, non-sensitive actions.
+                </p>
+                <div id="menu-demo" class="menu-demo">
+                  <div class="menu-demo-toolbar">
+                    <span>FIELD NOTES / TWO RECORDS</span>
+                    <span>RIGHT-CLICK OR OPEN ACTIONS ↗</span>
+                  </div>
+                  {[
+                    { id: "record-a", label: "Aurora sketch", note: "Observation / 01" },
+                    { id: "record-b", label: "Night frequency", note: "Observation / 02" },
+                  ].map((record) => (
+                    <article class="menu-demo-row" data-context-id={record.id} data-menu-for="guide-context-menu">
+                      <div>
+                        <strong>{record.label}</strong>
+                        <small>{record.note}</small>
+                      </div>
+                      <button
+                        type="button"
+                        data-menu-for="guide-context-menu"
+                        aria-haspopup="menu"
+                        aria-controls="guide-context-menu"
+                        aria-expanded="false"
+                      >
+                        Actions ···
+                      </button>
+                    </article>
+                  ))}
+                  <p class="menu-demo-result" aria-live="polite">
+                    Choose an action for a record.
+                  </p>
+                  <ContextMenu id="guide-context-menu" action={menuAction}>
+                    <button type="button" role="menuitem" data-action="inspect">
+                      Inspect {"{contextId}"}
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      data-submenu="menu-route"
+                      aria-haspopup="menu"
+                      aria-expanded="false"
+                    >
+                      Route to… →
+                    </button>
+                    <div id="menu-route" role="menu" popover="auto" aria-label="Route to">
+                      <button type="button" data-submenu-back="">
+                        ← Back
+                      </button>
+                      <button type="button" role="menuitem" data-action="inbox">
+                        Inbox
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        data-submenu="menu-deep"
+                        aria-haspopup="menu"
+                        aria-expanded="false"
+                      >
+                        Further out… →
+                      </button>
+                      <div id="menu-deep" role="menu" popover="auto" aria-label="Further out">
+                        <button type="button" data-submenu-back="">
+                          ← Back
+                        </button>
+                        <button type="button" role="menuitem" data-action="archive">
+                          Archive {"{contextId}"}
+                        </button>
+                      </div>
+                    </div>
+                  </ContextMenu>
+                </div>
+                <pre>
+                  <code>{`<article data-context-id="record-a" data-menu-for="record-menu">
+  <button data-menu-for="record-menu" aria-haspopup="menu">Actions</button>
+</article>
+<rocket-context-menu id="record-menu" data-on:rocket-menu-action="$menu = evt.detail; @post('/menu-action')">
+  <template data-rocket-menu>
+    <button role="menuitem" data-action="inspect">Inspect {contextId}</button>
+    <button role="menuitem" data-submenu="more" aria-haspopup="menu">More →</button>
+    <div id="more" role="menu" popover="auto">
+      <button role="menuitem" data-action="archive">Archive</button>
+    </div>
+  </template>
+</rocket-context-menu>
+
+rocket-menu-action → { action, contextId }`}</code>
+                </pre>
+                <p>
+                  Menus may nest as deeply as your markup needs. Opening focuses the menu; Down starts at the first item
+                  (Up starts at the last). Arrow keys or h/j/k/l move through a level, Right opens a submenu, and Left,
+                  Backspace or Escape returns one level. Escape at the root closes the menu; Enter or Space on the menu
+                  activates its first item. Home/End and per-host <code>data-key-*</code> overrides also work. On macOS,
+                  <code>Ctrl+n</code> / <code>Ctrl+p</code> also move next / previous, following familiar Control-key
+                  text navigation; Command-key browser shortcuts remain untouched. On other platforms the Control pair
+                  can be opted into with <code>data-key-focus-next="ArrowDown j Ctrl+n"</code> and{" "}
+                  <code>data-key-focus-previous="ArrowUp k Ctrl+p"</code>. Native popovers provide the top layer and
+                  light dismiss; CSS anchors position the menu and flip nested panels at viewport edges, with measured
+                  coordinates as a fallback. Your CSS owns the presentation. Context placeholders bind in text,{" "}
+                  <code>data-menu-param-*</code>, <code>aria-label</code>, and <code>title</code> attributes; executable
+                  directives are left as server-rendered.
+                </p>
+                <p>
+                  For fresh or sensitive options, fetch page-owned HTML before opening and morph the template, then call{" "}
+                  <code>menu.openFor(trigger)</code>. Additional non-sensitive values can be passed as{" "}
+                  <code>{`menu.openFor(trigger, undefined, { label: "Example" })`}</code> and used as{" "}
+                  <code>{`{label}`}</code> in the template. The Rocket never fetches menus or makes authorization
+                  decisions. See <a href="./source/rocket/context-menu/client.ts.txt">menu behavior ↗</a> and{" "}
+                  <a href="./source/examples/hono-datastar/adapter/context-menu.tsx.txt">JSX adapter ↗</a>.
+                </p>
+              </section>
+
               <section id="reference" class="docs-section reference-section" aria-labelledby="reference-title">
                 <p class="section-kicker">QUICK REFERENCE / 02</p>
                 <h2 id="reference-title">Reference</h2>
@@ -1143,8 +1251,10 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                   the consuming application.
                 </p>
                 <p>
-                  All surfaces support unmodified arrow-key focus navigation; list, group, grid and tree surfaces also
-                  support Home/End. Alt + arrows stage moves, where supported, without changing focus until the morph.
+                  All surfaces support unmodified arrow-key focus navigation and macOS <code>Ctrl+n</code> /{" "}
+                  <code>Ctrl+p</code> for next / previous focus; other platforms can opt in per host. List, group, grid
+                  and tree surfaces also support Home/End. Alt + arrows stage moves, where supported, without changing
+                  focus until the morph.
                 </p>
                 <h3 id="keyboard">Keyboard attributes</h3>
                 <p>
@@ -1502,7 +1612,140 @@ cd examples/go && go run .`}</code>
 
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
-await writeFile(join(output, "index.html"), `<!doctype html>${page}`);
+// Reuse the server-rendered sections for focused pages. The original long guide
+// remains available at /, including its existing hash links.
+const docs = [
+  { slug: "index", title: "Overview", group: "Start", sections: ["guide"] },
+  { slug: "getting-started", title: "Getting started", group: "Start", sections: ["install", "server", "try-it"] },
+  { slug: "kanban", title: "Kanban board", group: "Drag and drop", sections: ["kanban"] },
+  { slug: "sortable-list", title: "Sortable list", group: "Drag and drop", sections: ["sortable"] },
+  { slug: "drag-group", title: "Drag group", group: "Drag and drop", sections: ["drag-group", "nested"] },
+  { slug: "bento", title: "Bento grids", group: "Drag and drop", sections: ["bento"] },
+  { slug: "tree", title: "File tree", group: "Drag and drop", sections: ["tree"] },
+  { slug: "context-menu", title: "Context menu", group: "Menus", sections: ["context-menu"] },
+  { slug: "customize", title: "Make it yours", group: "Guides", sections: ["customize"] },
+  { slug: "reference", title: "Reference", group: "Guides", sections: ["reference"] },
+  { slug: "examples", title: "Examples", group: "Guides", sections: ["examples"] },
+] as const;
+const sectionPaths = new Map<string, string>();
+for (const doc of docs) for (const section of doc.sections) sectionPaths.set(section, doc.slug);
+sectionPaths.set("keyboard", "reference");
+sectionPaths.set("events", "reference");
+const sidebar = (active: string) => {
+  let group = "";
+  return (
+    docs
+      .map((doc) => {
+        const heading =
+          doc.group !== group ? `<span class="sidebar-label">${(group = doc.group).toUpperCase()}</span>` : "";
+        return `${heading}<a href="./documentation/${doc.slug}.html"${doc.slug === active ? ' aria-current="page"' : ""}>${doc.title}</a>`;
+      })
+      .join("") + '<a href="./guide.html">Full guide ↗</a>'
+  );
+};
+const catalog = `<div class="docs-catalog" aria-label="Component catalog"><p class="section-kicker">EXPLORE THE COLLECTION</p><h2>Components & guides</h2><div class="catalog-grid">${docs
+  .filter((doc) => doc.group === "Drag and drop" || doc.group === "Menus")
+  .map(
+    (doc) =>
+      `<a class="catalog-card" href="./documentation/${doc.slug}.html"><small>${doc.group}</small><strong>${doc.title}</strong><span>Live example, markup and contract <span aria-hidden="true">↗</span></span></a>`,
+  )
+  .join("")}</div></div>`;
+const fullGuide = await new HTMLRewriter()
+  .on(".docs-sidebar nav", {
+    element(element) {
+      element.setInnerContent(sidebar(""), { html: true });
+    },
+  })
+  .transform(new Response(`<!doctype html>${page}`))
+  .text();
+await writeFile(join(output, "guide.html"), fullGuide);
+await mkdir(join(output, "documentation"), { recursive: true });
+for (const doc of docs) {
+  const selected = new Set<string>(doc.sections);
+  const index = docs.indexOf(doc);
+  const previous = docs[index - 1];
+  const next = docs[index + 1];
+  const html = await new HTMLRewriter()
+    .on("head", {
+      element(element) {
+        element.prepend('<base href="../">', { html: true });
+      },
+    })
+    .on("title", {
+      element(element) {
+        element.setInnerContent(`${doc.title} · PD rockets`);
+      },
+    })
+    .on(".docs-sidebar nav", {
+      element(element) {
+        element.setInnerContent(sidebar(doc.slug), { html: true });
+      },
+    })
+    .on(".hero", {
+      element(element) {
+        if (doc.slug !== "index") element.remove();
+      },
+    })
+    .on(".hero-copy h1", {
+      element(element) {
+        if (doc.slug === "index")
+          element.setInnerContent("Interactions for <em>server-rendered pages.</em>", { html: true });
+      },
+    })
+    .on(".hero-lead", {
+      element(element) {
+        if (doc.slug === "index")
+          element.setInnerContent(
+            "A collection of vendorable Rocket components. Explore drag-and-drop surfaces and contextual menus, each with a live example, a browser contract, and server-rendered markup.",
+          );
+      },
+    })
+    .on(".docs-layout", {
+      element(element) {
+        if (doc.slug === "index") element.before(catalog, { html: true });
+        else
+          element.before(
+            `<div class="docs-page-heading"><a href="./documentation/index.html">Documentation</a> / ${doc.group}<h1>${doc.title}</h1></div>`,
+            { html: true },
+          );
+      },
+    })
+    .on(".docs-content > section", {
+      element(element) {
+        if (!selected.has(element.getAttribute("id") ?? "")) element.remove();
+      },
+    })
+    .on(".docs-content", {
+      element(element) {
+        if (doc.slug !== "index")
+          element.append(
+            `<nav class="docs-pager" aria-label="Adjacent documentation">${previous ? `<a href="./documentation/${previous.slug}.html">← ${previous.title}</a>` : "<span></span>"}${next ? `<a href="./documentation/${next.slug}.html">${next.title} →</a>` : ""}</nav>`,
+            { html: true },
+          );
+      },
+    })
+    .on('a[href^="#"]', {
+      element(element) {
+        const hash = element.getAttribute("href")!.slice(1);
+        const destination = sectionPaths.get(hash);
+        if (destination && destination !== doc.slug)
+          element.setAttribute("href", `./documentation/${destination}.html#${hash}`);
+      },
+    })
+    .transform(new Response(`<!doctype html>${page}`))
+    .text();
+  await writeFile(join(output, "documentation", `${doc.slug}.html`), html);
+  if (doc.slug === "index") {
+    const legacyHashes = [...sectionPaths.keys()].filter((hash) => hash !== "guide");
+    const landing = html
+      .replace('<base href="../">', '<base href="./">')
+      .replace(
+        "</head>",
+        `<script>if (${JSON.stringify(legacyHashes)}.includes(location.hash.slice(1))) location.replace('./guide.html' + location.hash);</script></head>`,
+      );
+    await writeFile(join(output, "index.html"), landing);
+  }
+}
 await copyFile(join(root, "examples/hono-datastar/demo.css"), join(output, "demo.css"));
 await copyFile(join(import.meta.dir, "site.css"), join(output, "site.css"));
 await mkdir(join(output, "js"), { recursive: true });

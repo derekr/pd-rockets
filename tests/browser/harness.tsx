@@ -27,7 +27,7 @@ const html = renderHTML(
       <meta charset="utf-8" />
       <title>Rocket keyboard harness</title>
       <link rel="stylesheet" href="/demo.css" />
-      <style>{`body { max-width: 1050px; } .fixture { margin-block: 16px; } .fixture > h2 { margin: 0 0 8px; }`}</style>
+      <style>{`body { max-width: 1050px; } .fixture { margin-block: 16px; } .fixture > h2 { margin: 0 0 8px; } rocket-context-menu, rocket-context-menu [role=menu] { margin: 0; min-width: 160px; padding: 8px; border: 1px solid currentColor; background: Canvas; } rocket-context-menu button { display: block; width: 100%; padding: 8px; }`}</style>
       <script
         type="importmap"
         dangerouslySetInnerHTML={{ __html: JSON.stringify({ imports: { [rocketModule]: "/js/datastar-rocket.js" } }) }}
@@ -81,6 +81,52 @@ const html = renderHTML(
           </section>
         </rocket-drag-group>
       </div>
+      <div class="fixture" id="menu-fixture">
+        <h2>Context menu</h2>
+        <div data-context-id="row-a" data-menu-for="fixture-menu" tabindex={0}>
+          Row A{" "}
+          <button type="button" data-menu-for="fixture-menu">
+            Actions
+          </button>
+        </div>
+        <div data-context-id="row-b" data-menu-for="fixture-menu" tabindex={0}>
+          Row B
+        </div>
+        <rocket-context-menu id="fixture-menu">
+          <template data-rocket-menu="">
+            <button type="button" role="menuitem" data-action="view">
+              View {"{contextId}"}
+            </button>
+            <button type="button" role="menuitem" data-action="label" data-menu-param-record="{contextId}">
+              Label {"{label}"}
+            </button>
+            <button type="button" role="menuitem" data-submenu="fixture-sub-one" aria-haspopup="menu">
+              More
+            </button>
+            <div id="fixture-sub-one" role="menu" popover="auto">
+              <button type="button" role="menuitem" data-action="copy">
+                Copy
+              </button>
+              <button type="button" role="menuitem" data-submenu="fixture-sub-two" aria-haspopup="menu">
+                Advanced
+              </button>
+              <div id="fixture-sub-two" role="menu" popover="auto">
+                <button type="button" role="menuitem" data-action="archive">
+                  Archive
+                </button>
+              </div>
+            </div>
+            <button type="button" role="menuitem" data-submenu="fixture-sub-other" aria-haspopup="menu">
+              Other
+            </button>
+            <div id="fixture-sub-other" role="menu" popover="auto">
+              <button type="button" role="menuitem" data-action="other">
+                Other action
+              </button>
+            </div>
+          </template>
+        </rocket-context-menu>
+      </div>
       <script type="module" src="/rocket-kit.js"></script>
     </body>
   </html>,
@@ -103,7 +149,17 @@ Bun.serve({
             ? html.replace("<rocket-sortable-list", '<rocket-sortable-list data-key-focus-next=""')
             : configured === "kanban"
               ? html.replace("<rocket-kanban-board", '<rocket-kanban-board data-key-focus-next="n"')
-              : html;
+              : configured === "menu"
+                ? html.replace(
+                    '<rocket-context-menu id="fixture-menu"',
+                    '<rocket-context-menu id="fixture-menu" data-key-focus-next="n"',
+                  )
+                : configured === "menu-emacs"
+                  ? html.replace(
+                      '<rocket-context-menu id="fixture-menu"',
+                      '<rocket-context-menu id="fixture-menu" data-key-focus-next="ArrowDown Ctrl+n" data-key-focus-previous="ArrowUp Ctrl+p"',
+                    )
+                  : html;
       const mappedPage =
         new URL(request.url).searchParams.get("runtime") === "adapter"
           ? page.replace('"/js/datastar-rocket.js"', '"/js/rocket-adapter.js"')

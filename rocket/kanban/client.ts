@@ -3,7 +3,7 @@ import { rocket } from "pd-rockets/rocket";
 import { installFlip } from "../../core/flip";
 import { installFocusRecovery } from "../../core/focus-recovery";
 import { insertionBefore } from "../../core/insertion-target";
-import { focusKeys, keyboardBindings, keyboardItem } from "../../core/keyboard";
+import { keyboardBindings, keyboardItem, platformFocusKeys } from "../../core/keyboard";
 import { installKeyboardStaging } from "../../core/keyboard-staging";
 import { markRocketHost, ownsRocketElement } from "../../core/ownership";
 import { installPointerDrag } from "../../core/pointer-drag";
@@ -17,15 +17,16 @@ rocket(kanbanContract.tag, {
   setup({ host, cleanup }: { host: HTMLElement; cleanup: (fn: () => void) => void }) {
     cleanup(markRocketHost(host));
     const owns = (element: HTMLElement) => ownsRocketElement(host, element);
+    const { focusNext, focusPrevious, focusFirst, focusLast } = platformFocusKeys(navigator.platform);
     const keyboard = keyboardBindings(
       host,
       {
-        focusNext: defaultKanbanKeyboard.selectNext,
-        focusPrevious: defaultKanbanKeyboard.selectPrevious,
+        focusNext,
+        focusPrevious,
         focusLeft: defaultKanbanKeyboard.selectLeft,
         focusRight: defaultKanbanKeyboard.selectRight,
-        focusFirst: focusKeys.focusFirst,
-        focusLast: focusKeys.focusLast,
+        focusFirst,
+        focusLast,
         moveUp: defaultKanbanKeyboard.moveUp,
         moveDown: defaultKanbanKeyboard.moveDown,
         moveLeft: defaultKanbanKeyboard.moveLeft,

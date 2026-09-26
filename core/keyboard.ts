@@ -9,6 +9,17 @@ export const focusKeys = {
   focusLast: ["End"],
 } as const;
 
+/** Keep browser Control shortcuts on non-Mac platforms; macOS uses Command for those. */
+export function platformFocusKeys(platform: string): Record<keyof typeof focusKeys, readonly string[]> {
+  return platform.startsWith("Mac")
+    ? {
+        ...focusKeys,
+        focusNext: [...focusKeys.focusNext, "Ctrl+n"],
+        focusPrevious: [...focusKeys.focusPrevious, "Ctrl+p"],
+      }
+    : focusKeys;
+}
+
 export const moveKeys = {
   moveUp: ["Alt+ArrowUp", "Alt+k"],
   moveDown: ["Alt+ArrowDown", "Alt+j"],
