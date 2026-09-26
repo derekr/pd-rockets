@@ -9,5 +9,6 @@ export const browserBundles = [
   { file: "rocket-bento-workspace.js", entry: "rocket/bento/client.ts" },
   { file: "rocket-sortable-tree.js", entry: "rocket/sortable-tree/client.ts" },
   { file: "rocket-context-menu.js", entry: "rocket/context-menu/client.ts" },
+  { file: "rocket-inline-edit.js", entry: "rocket/inline-edit/client.ts" },
   { file: "rocket-kit.js", entry: "client-entry.ts" },
 ] as const;

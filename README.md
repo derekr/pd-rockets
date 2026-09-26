@@ -22,6 +22,10 @@ card contract while sharing the insertion and pointer mechanics.
 cloned on open with a target `contextId`; the menu handles popover placement, keyboard navigation, and focus return,
 then emits `{ action, contextId }`. The page owns action handling and may morph the template with fresh server HTML.
 
+`rocket-inline-edit` owns a title's double-press detection, Enter/blur commit, and Escape cancellation while the page
+owns its input, edit mode, validation and save. Mark title and input with `data-inline-edit-trigger` / `data-inline-edit-value`
+and `data-inline-edit-input`; the host emits request, commit and cancel events with an opaque `contextId`.
+
 `rocket-bento-workspace` is an experimental two-grid dashboard surface. It reuses the pointer and FLIP lifecycle, but
 uses cell coordinates and spans instead of list insertion targets. It calculates a transient, animated layout and emits
 all changed positions on move or resize. The backend applies those positions and returns the confirmed HTML; the guide's
@@ -112,7 +116,7 @@ bun install
 bun run serve:site
 ```
 
-Open `http://localhost:4173`. `bun run build:client` produces all seven browser artifacts in `dist/`, and
+Open `http://localhost:4173`. `bun run build:client` produces the standalone and combined browser artifacts in `dist/`, and
 `bun run bundle:browser` creates the release archive locally. The site build fetches the pinned open-source runtime into
 ignored `public/js/`, verifies its SHA-256 and publishes it alongside the tracked upstream MIT notice.
 

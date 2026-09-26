@@ -4,3 +4,4 @@ import "./rocket/drag-group/client";
 import "./rocket/bento/client";
 import "./rocket/sortable-tree/client";
 import "./rocket/context-menu/client";
+import "./rocket/inline-edit/client";

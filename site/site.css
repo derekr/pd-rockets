@@ -1362,6 +1362,39 @@ kbd {
   background: var(--raised);
   box-shadow: var(--shadow);
 }
+
+.inline-edit-demo {
+  max-width: 550px;
+  margin: 28px 0;
+  padding: 22px;
+  border: 1px solid var(--text);
+  background: var(--raised);
+  box-shadow: var(--shadow);
+}
+.inline-edit-demo rocket-inline-edit {
+  display: block;
+  margin: 10px 0;
+  font-size: 1.3rem;
+  font-weight: 750;
+}
+.inline-edit-demo [data-inline-edit-trigger] {
+  cursor: text;
+}
+.inline-edit-demo [data-inline-edit-input] {
+  display: none;
+  width: 100%;
+  padding: 5px;
+  border: 1px solid var(--blue);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+.inline-edit-demo.editing [data-inline-edit-trigger] {
+  display: none;
+}
+.inline-edit-demo.editing [data-inline-edit-input] {
+  display: block;
+}
 .menu-demo-toolbar {
   display: flex;
   flex-wrap: wrap;

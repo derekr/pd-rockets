@@ -9,6 +9,7 @@ import { renderHTML } from "../examples/hono-datastar/adapter/render";
 import { SortableList } from "../examples/hono-datastar/adapter/sortable-list";
 import { SortableTree, type FileNode } from "../examples/hono-datastar/adapter/sortable-tree";
 import { ContextMenu } from "../examples/hono-datastar/adapter/context-menu";
+import { InlineEdit } from "../examples/hono-datastar/adapter/inline-edit";
 import { kanbanContract } from "../contracts/kanban";
 import { sortableListContract } from "../contracts/sortable-list";
 import { dragGroupContract } from "../contracts/drag-group";
@@ -61,12 +62,21 @@ if (!trashSparksBundle.success || !trashSparksBundle.outputs[0]) {
   throw new AggregateError(trashSparksBundle.logs, "rocket-kit: trash sparks build failed");
 }
 const trashSparks = await trashSparksBundle.outputs[0].text();
+const inlineEditBundle = await Bun.build({
+  entrypoints: [join(import.meta.dir, "inline-edit-demo.ts")],
+  target: "browser",
+});
+if (!inlineEditBundle.success || !inlineEditBundle.outputs[0]) {
+  throw new AggregateError(inlineEditBundle.logs, "rocket-kit: inline edit demo build failed");
+}
+const inlineEditDemo = await inlineEditBundle.outputs[0].text();
 const assetVersion = createHash("sha256")
   .update(bundle)
   .update(backendBundle)
   .update(keyboardHelp)
   .update(customAtmosphere)
   .update(trashSparks)
+  .update(inlineEditDemo)
   .update(await readFile(join(import.meta.dir, "site.css")))
   .update(await readFile(join(root, "examples/hono-datastar/demo.css")))
   .digest("hex")
@@ -1243,6 +1253,41 @@ rocket-menu-action → { action, contextId }`}</code>
                 </p>
               </section>
 
+              <section id="inline-edit" class="docs-section" aria-labelledby="inline-edit-title">
+                <p class="section-kicker">INTERACTION / INLINE EDIT</p>
+                <h2 id="inline-edit-title">Edit a title in place</h2>
+                <p>
+                  Double-click the title, change it, then press Enter or leave the field. Escape cancels. The Rocket
+                  recognizes the two title presses even when a parent captures the pointer; it emits request, commit and
+                  cancel events. The page owns edit mode, input state and saving.
+                </p>
+                <div id="inline-edit-demo" class="inline-edit-demo">
+                  <span class="section-kicker">FIELD NOTE / EXAMPLE</span>
+                  <InlineEdit contextId="example-title">
+                    <span data-inline-edit-trigger="" data-inline-edit-value="">
+                      A small observation
+                    </span>
+                    <input data-inline-edit-input="" aria-label="Edit example title" value="A small observation" />
+                  </InlineEdit>
+                  <p>Double-click the title to try the page-owned local demo.</p>
+                </div>
+                <pre>
+                  <code>{`<rocket-inline-edit data-context-id="card-a">
+  <span data-inline-edit-trigger data-inline-edit-value>Title from server</span>
+  <input data-inline-edit-input aria-label="Edit title" value="Title from server">
+</rocket-inline-edit>
+
+rocket-inline-edit-request → { contextId }
+rocket-inline-edit-commit → { contextId, value }
+rocket-inline-edit-cancel → { contextId }`}</code>
+                </pre>
+                <p>
+                  The element leaves classes and layout to your CSS; it never submits a request or stores a second copy
+                  of the title. See <a href="./source/rocket/inline-edit/client.ts.txt">editor behavior ↗</a> and{" "}
+                  <a href="./source/examples/hono-datastar/adapter/inline-edit.tsx.txt">JSX adapter ↗</a>.
+                </p>
+              </section>
+
               <section id="reference" class="docs-section reference-section" aria-labelledby="reference-title">
                 <p class="section-kicker">QUICK REFERENCE / 02</p>
                 <h2 id="reference-title">Reference</h2>
@@ -1606,6 +1651,7 @@ cd examples/go && go run .`}</code>
       <script type="module" src={`./keyboard-help.js?v=${assetVersion}`}></script>
       <script type="module" src={`./custom-atmosphere.js?v=${assetVersion}`}></script>
       <script type="module" src={`./trash-sparks.js?v=${assetVersion}`}></script>
+      <script type="module" src={`./inline-edit-demo.js?v=${assetVersion}`}></script>
     </body>
   </html>,
 );
@@ -1623,6 +1669,7 @@ const docs = [
   { slug: "bento", title: "Bento grids", group: "Drag and drop", sections: ["bento"] },
   { slug: "tree", title: "File tree", group: "Drag and drop", sections: ["tree"] },
   { slug: "context-menu", title: "Context menu", group: "Menus", sections: ["context-menu"] },
+  { slug: "inline-edit", title: "Inline edit", group: "Editing", sections: ["inline-edit"] },
   { slug: "customize", title: "Make it yours", group: "Guides", sections: ["customize"] },
   { slug: "reference", title: "Reference", group: "Guides", sections: ["reference"] },
   { slug: "examples", title: "Examples", group: "Guides", sections: ["examples"] },
@@ -1644,7 +1691,7 @@ const sidebar = (active: string) => {
   );
 };
 const catalog = `<div class="docs-catalog" aria-label="Component catalog"><p class="section-kicker">EXPLORE THE COLLECTION</p><h2>Components & guides</h2><div class="catalog-grid">${docs
-  .filter((doc) => doc.group === "Drag and drop" || doc.group === "Menus")
+  .filter((doc) => ["Drag and drop", "Menus", "Editing"].includes(doc.group))
   .map(
     (doc) =>
       `<a class="catalog-card" href="./documentation/${doc.slug}.html"><small>${doc.group}</small><strong>${doc.title}</strong><span>Live example, markup and contract <span aria-hidden="true">↗</span></span></a>`,
@@ -1766,5 +1813,6 @@ await writeFile(join(output, "fake-backend.js"), backendBundle);
 await writeFile(join(output, "keyboard-help.js"), keyboardHelp);
 await writeFile(join(output, "custom-atmosphere.js"), customAtmosphere);
 await writeFile(join(output, "trash-sparks.js"), trashSparks);
+await writeFile(join(output, "inline-edit-demo.js"), inlineEditDemo);
 
 console.error(`built ${join(output, "index.html")}`);

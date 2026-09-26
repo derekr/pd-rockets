@@ -130,6 +130,15 @@ const html = renderHTML(
           </template>
         </rocket-context-menu>
       </div>
+      <div class="fixture" id="edit-fixture">
+        <h2>Inline edit</h2>
+        <rocket-inline-edit data-context-id="row-a">
+          <span data-inline-edit-trigger="" data-inline-edit-value="">
+            Original title
+          </span>
+          <input data-inline-edit-input="" value="Original title" aria-label="Edit title" />
+        </rocket-inline-edit>
+      </div>
       <script type="module" src="/rocket-kit.js"></script>
     </body>
   </html>,
