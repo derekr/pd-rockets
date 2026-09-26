@@ -10,4 +10,5 @@ test("date release tags validate real UTC dates and same-day sequence numbers", 
   const date = new Date("2026-09-26T23:59:59Z");
   expect(nextReleaseTag(date, [])).toBe("v2026-09-26");
   expect(nextReleaseTag(date, ["v2026-09-26", "v2026-09-26-2"])).toBe("v2026-09-26-3");
+  expect(nextReleaseTag(date, ["v2026-09-26", "v2026-09-26-3"])).toBe("v2026-09-26-4");
 });
