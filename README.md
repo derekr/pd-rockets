@@ -88,7 +88,9 @@ updates. See the [Rocket reference](https://data-star.dev/reference/rocket) for 
 ## Install prebuilt browser bundles
 
 Tagged releases publish `pd-rockets-browser.tar.gz` with minified PD rockets JavaScript bundles, matching Brotli
-`.js.br` files, and their Beer-Ware license. The guide lists the Brotli size beside each bundle download.
+`.js.br` files, generated TypeScript declarations under `types/`, and their Beer-Ware license. The declarations are
+generated from the same source revision as the bundles; `types/manifest.json` records their SHA-256 digests.
+The guide lists the Brotli size beside each bundle download.
 Release tags use UTC dates: `vYYYY-MM-DD` for the first release of a day and `vYYYY-MM-DD-2`, `-3`, etc. for later
 releases that day. Pin a specific tag and verify the archive digest when vendoring; `releases/latest` follows future tags.
 Replace `<owner>/<repo>` with the published GitHub repository:
@@ -119,6 +121,10 @@ script. The surface bundles import `rocket` from the external `pd-rockets/rocket
 </script>
 <script type="module" src="/js/rocket-sortable-tree.js"></script>
 ```
+
+TypeScript consumers of the full bundle can map its browser specifier to the extracted declaration entry (for example,
+`"paths": { "/js/rocket-kit.js": ["./public/js/types/client-entry.d.ts"] }` in `tsconfig.json`). This checks installer
+options and return types without bundling TypeScript into the browser.
 
 The pinned upstream bundle includes both Datastar and Rocket, so the guide loads it without a separate `datastar.js`.
 If an application uses separate scripts, map `pd-rockets/rocket` to a Rocket ES module exporting `rocket` that uses the

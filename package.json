@@ -5,7 +5,8 @@
   "scripts": {
     "build:client": "bun run build-client.ts",
     "runtime:fetch": "bun run scripts/fetch-datastar-rocket.ts",
-    "bundle:browser": "bun run build:client && bun run scripts/package-browser.ts",
+    "bundle:browser": "bun run build:client && bun run build:types && bun run scripts/package-browser.ts",
+    "build:types": "bun run scripts/build-types.ts",
     "release:tag": "bun run scripts/tag-release.ts",
     "demo": "bun run runtime:fetch && bun run build:client && bun run examples/hono-datastar/server.tsx",
     "build:site": "bun run build:client && bun run site/build.tsx",
