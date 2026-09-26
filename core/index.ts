@@ -10,6 +10,8 @@ export { installBoardDrag } from "./board-drag";
 export type { BoardDragOptions, BoardDragMobile, BoardCell } from "./board-drag";
 export { installBoardColumnReorder } from "./board-column-reorder";
 export type { BoardColumnReorderOptions } from "./board-column-reorder";
+export { installBoardCamera } from "./board-camera";
+export type { BoardCameraOptions } from "./board-camera";
 export { installFlip } from "./flip";
 export type { FlipOptions, FlipOrigin } from "./flip";
 export { insertionBefore } from "./insertion-target";

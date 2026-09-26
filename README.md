@@ -56,6 +56,9 @@ callbacks, so its mobile tabs, pager, scrolling and command policy are independe
 mobile tabs with `data-rocket-board-mobile-column`, their handles with `data-rocket-board-column-grip` (and
 `data-rocket-board-mobile-grip` for tabs), and optional accessible steps with `data-rocket-board-column-step`. It
 produces only `(columnId, toIndex)`; the page renders and orders the columns and owns the command.
+`installBoardCamera()` optionally scrolls the page or the lane under a dragged pointer at the viewport edge and calls
+back after settling so the page can remeasure its drop target. The page supplies live lane queries and drag state; it
+can omit the camera entirely or keep its own mobile scrolling affordance.
 
 `rocket-sortable-tree` is a folder/file list with between-sibling insertion and drops into folders. Its
 `rocket-tree-move` detail carries `{ itemId, fromParent, toParent, before }`; the backend applies that change and sends
