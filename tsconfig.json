@@ -11,5 +11,6 @@
     "types": ["bun-types"],
     "resolveJsonModule": true
   },
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["tests/consumer"]
 }

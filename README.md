@@ -152,6 +152,9 @@ bun run serve:site
 Open `http://localhost:4173`. `bun run build:client` produces the standalone and combined browser artifacts in `dist/`, and
 `bun run bundle:browser` creates the release archive locally. The site build fetches the pinned open-source runtime into
 ignored `public/js/`, verifies its SHA-256 and publishes it alongside the tracked upstream MIT notice.
+After bundling, `bun run test:consumer` extracts the archive into an isolated fixture, verifies every declaration digest,
+typechecks a generic board against the shipped declarations, and checks that the bundle imports the external Rocket runtime.
+The release workflow runs this smoke test before publishing.
 
 To publish a browser bundle, run formatting, typecheck, unit/browser tests and both demo smoke tests, review the release
 tree, then push a clean `main` branch. Run `bun run release:tag` on that branch. The command fetches remote tags, confirms
