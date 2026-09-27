@@ -1,5 +1,5 @@
 export const sortableTreeContract = {
-  tag: "rocket-sortable-tree",
+  tag: "pd-sortable-tree",
   selectors: {
     node: "[data-tree-node]",
     row: "[data-tree-row]",

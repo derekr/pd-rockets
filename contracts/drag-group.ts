@@ -1,5 +1,5 @@
 export const dragGroupContract = {
-  tag: "rocket-drag-group",
+  tag: "pd-drag-group",
   selectors: {
     list: "[data-drop-list]",
     item: "[data-drag-item]",

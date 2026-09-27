@@ -15,7 +15,7 @@ async function ready(page: Page, query = "") {
       );
   });
   await page.goto(`/${query}`);
-  await expect.poll(() => page.evaluate(() => !!customElements.get("rocket-sortable-tree"))).toBe(true);
+  await expect.poll(() => page.evaluate(() => !!customElements.get("pd-sortable-tree"))).toBe(true);
 }
 
 const moves = (page: Page) =>
@@ -189,7 +189,7 @@ test("moving focus elsewhere cancels a staged move before modifier release", asy
   await page.locator("#list [data-sortable-item=list-a]").focus();
   await page.keyboard.down("Alt");
   await page.keyboard.press("j");
-  await expect(page.locator("#list rocket-sortable-list")).toHaveAttribute("data-key-staging", "");
+  await expect(page.locator("#list pd-sortable-list")).toHaveAttribute("data-key-staging", "");
   await page.locator("#outside").focus();
   await page.keyboard.up("Alt");
   expect(await moves(page)).toEqual([]);
@@ -200,10 +200,10 @@ test("focus returns after a delayed model-confirmed morph but never steals a lat
   await ready(page);
   await page.evaluate(() => {
     (window as any).__patches = 0;
-    document.querySelector("#list rocket-sortable-list")!.addEventListener("rocket-sortable-move", (event) => {
+    document.querySelector("#list pd-sortable-list")!.addEventListener("rocket-sortable-move", (event) => {
       const { itemId, before } = (event as CustomEvent<{ itemId: string; before: string }>).detail;
       setTimeout(() => {
-        const host = document.querySelector("#list rocket-sortable-list")!;
+        const host = document.querySelector("#list pd-sortable-list")!;
         const item = host.querySelector(`[data-sortable-item="${itemId}"]`)!;
         const target = before ? host.querySelector(`[data-sortable-item="${before}"]`) : null;
         host.insertBefore(item.cloneNode(true), target);
@@ -245,7 +245,7 @@ test("pointer drag emits a semantic move and staging is cancelled by a pointer g
   expect(source && destination).toBeTruthy();
   await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
   await page.mouse.down();
-  await expect(page.locator("#list rocket-sortable-list")).not.toHaveAttribute("data-key-staging", "");
+  await expect(page.locator("#list pd-sortable-list")).not.toHaveAttribute("data-key-staging", "");
   await page.mouse.move(destination!.x + destination!.width / 2, destination!.y + destination!.height / 4, {
     steps: 6,
   });
@@ -259,7 +259,7 @@ test("pointer drag emits a semantic move and staging is cancelled by a pointer g
 test("FLIP waits for a delayed item move, not removal of a custom target indicator", async ({ page }) => {
   await ready(page);
   await page.evaluate(() => {
-    const host = document.querySelector("#list rocket-sortable-list")!;
+    const host = document.querySelector("#list pd-sortable-list")!;
     const template = document.createElement("template");
     template.dataset.rocketTarget = "before";
     template.innerHTML = "<span>Place here</span>";
@@ -355,7 +355,7 @@ test("pointer targets update across Kanban lanes, group lists, and bento grids",
 test("server-rendered template outlets customize pointer preview and target indicators", async ({ page }) => {
   await ready(page);
   await page.evaluate(() => {
-    const host = document.querySelector("#list rocket-sortable-list")!;
+    const host = document.querySelector("#list pd-sortable-list")!;
     const preview = document.createElement("template");
     preview.dataset.rocketPreview = "";
     preview.className = "custom-preview";
@@ -403,12 +403,12 @@ test("server-rendered template outlets customize pointer preview and target indi
     const template = document.createElement("template");
     template.dataset.rocketTarget = "";
     template.innerHTML = '<span class="custom-target">end</span>';
-    document.querySelector("#list rocket-sortable-list")!.append(template);
+    document.querySelector("#list pd-sortable-list")!.append(template);
   });
   await page.keyboard.press("Escape");
   await page.keyboard.press("j");
   await page.keyboard.press("j");
-  await expect(page.locator("#list rocket-sortable-list > [data-rocket-target-indicator=end]")).toContainText("end");
+  await expect(page.locator("#list pd-sortable-list > [data-rocket-target-indicator=end]")).toContainText("end");
   await page.keyboard.press("Escape");
   await page.keyboard.up("Alt");
   await expect(page.locator("#list [data-rocket-target-indicator]")).toHaveCount(0);
@@ -418,8 +418,8 @@ test("tree and bento expose their layout-specific target outlets", async ({ page
   await ready(page);
   await page.evaluate(() => {
     for (const [selector, kind] of [
-      ["#tree rocket-sortable-tree", "into"],
-      ["#bento rocket-bento-workspace", "cell"],
+      ["#tree pd-sortable-tree", "into"],
+      ["#bento pd-bento-workspace", "cell"],
     ]) {
       const template = document.createElement("template");
       template.dataset.rocketTarget = kind;

@@ -17,13 +17,13 @@ export function InlineEdit({
   children?: Child;
 }) {
   return (
-    <rocket-inline-edit
+    <pd-inline-edit
       data-context-id={contextId}
       {...datastarEventBinding(inlineEditContract.events.request, request)}
       {...datastarEventBinding(inlineEditContract.events.commit, commit)}
       {...datastarEventBinding(inlineEditContract.events.cancel, cancel)}
     >
       {children}
-    </rocket-inline-edit>
+    </pd-inline-edit>
   );
 }

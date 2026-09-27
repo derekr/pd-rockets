@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 const surfaces = [
   {
     name: "kanban",
-    host: "#kanban rocket-kanban-board",
+    host: "#kanban pd-kanban-board",
     item: "[data-kanban-card]",
     id: "kanbanCard",
     count: 120,
@@ -13,7 +13,7 @@ const surfaces = [
   },
   {
     name: "list",
-    host: "#list rocket-sortable-list",
+    host: "#list pd-sortable-list",
     item: "[data-sortable-item]",
     id: "sortableItem",
     count: 160,
@@ -21,7 +21,7 @@ const surfaces = [
   },
   {
     name: "group",
-    host: "#group rocket-drag-group",
+    host: "#group pd-drag-group",
     item: "[data-drag-item]",
     id: "dragItem",
     count: 120,
@@ -29,7 +29,7 @@ const surfaces = [
   },
   {
     name: "bento",
-    host: "#bento rocket-bento-workspace",
+    host: "#bento pd-bento-workspace",
     item: "[data-bento-item]",
     id: "bentoItem",
     count: 72,
@@ -37,7 +37,7 @@ const surfaces = [
   },
   {
     name: "tree",
-    host: "#tree rocket-sortable-tree",
+    host: "#tree pd-sortable-tree",
     item: "[data-tree-node]",
     id: "treeNode",
     count: 600,
@@ -157,7 +157,7 @@ async function measurePointer(page: Page, surface: (typeof surfaces)[number]) {
 for (const surface of surfaces) {
   test(`${surface.name} interaction timing`, async ({ page }) => {
     await page.goto("/");
-    await expect.poll(() => page.evaluate(() => !!customElements.get("rocket-sortable-tree"))).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!customElements.get("pd-sortable-tree"))).toBe(true);
     await enlarge(page, surface);
     const keyboard = await measureKeyboard(page, surface);
     const pointer = await measurePointer(page, surface);

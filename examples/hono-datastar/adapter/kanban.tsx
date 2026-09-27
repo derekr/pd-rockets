@@ -52,7 +52,7 @@ export function KanbanBoard({ id, columns, keyboard, move, select, children }: K
     ...datastarEventBinding(kanbanContract.events.select, select),
   };
   return (
-    <rocket-kanban-board id={id} {...componentAttrs(kanbanComponent, {})} {...keyAttrs} {...actionAttrs}>
+    <pd-kanban-board id={id} {...componentAttrs(kanbanComponent, {})} {...keyAttrs} {...actionAttrs}>
       {columns.map((column) => (
         <section data-kanban-lane="" data-col={column.id} aria-label={column.label}>
           <h2>{column.label}</h2>
@@ -68,6 +68,6 @@ export function KanbanBoard({ id, columns, keyboard, move, select, children }: K
         </section>
       ))}
       {children}
-    </rocket-kanban-board>
+    </pd-kanban-board>
   );
 }

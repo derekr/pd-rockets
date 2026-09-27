@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
-  await expect.poll(() => page.evaluate(() => !!customElements.get("rocket-inline-edit"))).toBe(true);
+  await expect.poll(() => page.evaluate(() => !!customElements.get("pd-inline-edit"))).toBe(true);
   await page.evaluate(() => {
     (window as any).__edits = [];
     for (const event of ["rocket-inline-edit-request", "rocket-inline-edit-commit", "rocket-inline-edit-cancel"])

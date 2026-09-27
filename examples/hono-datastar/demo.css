@@ -12,7 +12,7 @@ body {
 }
 
 section,
-rocket-sortable-list {
+pd-sortable-list {
   display: block;
   padding: 1rem;
   border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
@@ -23,40 +23,40 @@ rocket-sortable-list {
   min-width: 0;
 }
 
-.kanban rocket-kanban-board {
+.kanban pd-kanban-board {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
 
 [data-kanban-lane-cards],
-rocket-sortable-list {
+pd-sortable-list {
   display: grid;
   gap: 0.5rem;
 }
 
-rocket-drag-group {
+pd-drag-group {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
 
-rocket-bento-workspace {
+pd-bento-workspace {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
 
-.nested-frame rocket-sortable-list {
+.nested-frame pd-sortable-list {
   margin-top: 0.75rem;
   padding: 0.5rem;
 }
 
-.nested-frame [data-drag-item] > rocket-sortable-list [data-sortable-item] {
+.nested-frame [data-drag-item] > pd-sortable-list [data-sortable-item] {
   margin: 0;
 }
 
-rocket-sortable-tree {
+pd-sortable-tree {
   display: block;
   font:
     13px/1.35 ui-monospace,
@@ -74,7 +74,7 @@ rocket-sortable-tree {
   display: none;
 }
 
-rocket-sortable-tree > [data-tree-children] {
+pd-sortable-tree > [data-tree-children] {
   padding-left: 0;
 }
 
@@ -261,7 +261,7 @@ body:has([data-drag-active], [data-resize-active]) {
 [data-drag-item],
 [data-kanban-lane-cards],
 [data-drop-list],
-rocket-sortable-list {
+pd-sortable-list {
   position: relative;
 }
 
@@ -270,7 +270,7 @@ rocket-sortable-list {
 }
 
 :is([data-kanban-card], [data-sortable-item], [data-drag-item])[data-drop-before]::before,
-:is([data-kanban-lane-cards], [data-drop-list], rocket-sortable-list)[data-drop-end]::after {
+:is([data-kanban-lane-cards], [data-drop-list], pd-sortable-list)[data-drop-end]::after {
   content: "";
   position: absolute;
   left: 0;
@@ -286,7 +286,7 @@ rocket-sortable-list {
   top: -7px;
 }
 
-:is([data-kanban-lane-cards], [data-drop-list], rocket-sortable-list)[data-drop-end]::after {
+:is([data-kanban-lane-cards], [data-drop-list], pd-sortable-list)[data-drop-end]::after {
   bottom: -7px;
 }
 
@@ -343,7 +343,7 @@ pre {
 
 @media (max-width: 700px) {
   .docs-grid,
-  rocket-bento-workspace {
+  pd-bento-workspace {
     grid-template-columns: 1fr;
   }
 }

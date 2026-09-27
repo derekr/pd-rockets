@@ -13,23 +13,23 @@ Datastar actions and backend handlers.
 - `examples/go/` — Go templates, Datastar actions, and SSE morphs.
 - `site/` — a static guide and live examples backed by an in-browser SSE fixture.
 
-`rocket-drag-group` coordinates multiple `[data-drop-list]` regions containing `[data-drag-item]` elements. Pointer
+`pd-drag-group` coordinates multiple `[data-drop-list]` regions containing `[data-drag-item]` elements. Pointer
 dragging or Alt + arrows (or h/j/k/l) emits `rocket-drag-group-move` with `{ itemId, fromList, toList, before }`;
 releasing Alt commits a keyboard move, and Escape cancels it. Groups are independent. Kanban keeps its own column and
 card contract while sharing the insertion and pointer mechanics.
 
-`rocket-context-menu` is a template-first, backend-neutral action menu. Server-rendered items and nested submenus are
+`pd-context-menu` is a template-first, backend-neutral action menu. Server-rendered items and nested submenus are
 cloned on open with a target `contextId`; the menu handles popover placement, keyboard navigation, and focus return,
 then emits `{ action, contextId }`. The page owns action handling and may morph the template with fresh server HTML.
 For fetched menu fragments, render a direct child marked `data-rocket-menu-content` instead of a template and call
 `openFor(trigger)` after the page installs the fragment. `closeMenu(refocus?)` and `isOpen()` expose the lifecycle;
 `rocket-menu-scope` emits `{ root, active }` for page-owned keyboard scopes. Live content remains in the DOM on close.
 
-`rocket-inline-edit` owns a title's double-press detection, Enter/blur commit, and Escape cancellation while the page
+`pd-inline-edit` owns a title's double-press detection, Enter/blur commit, and Escape cancellation while the page
 owns its input, edit mode, validation and save. Mark title and input with `data-inline-edit-trigger` / `data-inline-edit-value`
 and `data-inline-edit-input`; the host emits request, commit and cancel events with an opaque `contextId`.
 
-`rocket-bento-workspace` is an experimental two-grid dashboard surface. It reuses the pointer and FLIP lifecycle, but
+`pd-bento-workspace` is an experimental two-grid dashboard surface. It reuses the pointer and FLIP lifecycle, but
 uses cell coordinates and spans instead of list insertion targets. It calculates a transient, animated layout and emits
 all changed positions on move or resize. The backend applies those positions and returns the confirmed HTML; the guide's
 in-browser SSE fixture demonstrates that handoff without duplicating placement logic. The consuming page provides CSS
@@ -60,7 +60,7 @@ produces only `(columnId, toIndex)`; the page renders and orders the columns and
 back after settling so the page can remeasure its drop target. The page supplies live lane queries and drag state; it
 can omit the camera entirely or keep its own mobile scrolling affordance.
 
-`rocket-sortable-tree` is a folder/file list with between-sibling insertion and drops into folders. Its
+`pd-sortable-tree` is a folder/file list with between-sibling insertion and drops into folders. Its
 `rocket-tree-move` detail carries `{ itemId, fromParent, toParent, before }`; the backend applies that change and sends
 rendered HTML over SSE. Pointer drops animate the dragged row from the floating preview's final position.
 
@@ -86,6 +86,10 @@ provides the component boundary and lifecycle for local browser mechanics, while
 updates. See the [Rocket reference](https://data-star.dev/reference/rocket) for the upstream API.
 
 ## Install prebuilt browser bundles
+
+Custom-element tags use the `pd-*` prefix (for example, `<pd-kanban-board>` and `<pd-inline-edit>`). When updating from
+an older bundle, update element markup and CSS selectors together. The `rocket-*` event names, `data-rocket-*` hooks,
+and `rocket-*.js` artifact names remain unchanged.
 
 Tagged releases publish `pd-rockets-browser.tar.gz` with minified PD rockets JavaScript bundles, matching Brotli
 `.js.br` files, generated TypeScript declarations under `types/`, and their Beer-Ware license. The declarations are

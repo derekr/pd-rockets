@@ -30,7 +30,7 @@ const html = renderHTML(
       <meta charset="utf-8" />
       <title>Rocket keyboard harness</title>
       <link rel="stylesheet" href="/demo.css" />
-      <style>{`body { max-width: 1050px; } .fixture { margin-block: 16px; } .fixture > h2 { margin: 0 0 8px; } rocket-context-menu, rocket-context-menu [role=menu] { margin: 0; min-width: 160px; padding: 8px; border: 1px solid currentColor; background: Canvas; } rocket-context-menu button { display: block; width: 100%; padding: 8px; }`}</style>
+      <style>{`body { max-width: 1050px; } .fixture { margin-block: 16px; } .fixture > h2 { margin: 0 0 8px; } pd-context-menu, pd-context-menu [role=menu] { margin: 0; min-width: 160px; padding: 8px; border: 1px solid currentColor; background: Canvas; } pd-context-menu button { display: block; width: 100%; padding: 8px; }`}</style>
       <script
         type="importmap"
         dangerouslySetInnerHTML={{ __html: JSON.stringify({ imports: { [rocketModule]: "/js/datastar-rocket.js" } }) }}
@@ -65,7 +65,7 @@ const html = renderHTML(
       </div>
       <div class="fixture" id="nested">
         <h2>Nested</h2>
-        <rocket-drag-group>
+        <pd-drag-group>
           <section data-drop-list="outer" aria-label="Outer list">
             <div data-drag-item="outer-a" tabindex={0}>
               Outer item
@@ -82,7 +82,7 @@ const html = renderHTML(
               Next item
             </div>
           </section>
-        </rocket-drag-group>
+        </pd-drag-group>
       </div>
       <div class="fixture" id="menu-fixture">
         <h2>Context menu</h2>
@@ -95,7 +95,7 @@ const html = renderHTML(
         <div data-context-id="row-b" data-menu-for="fixture-menu" tabindex={0}>
           Row B
         </div>
-        <rocket-context-menu id="fixture-menu">
+        <pd-context-menu id="fixture-menu">
           <template data-rocket-menu="">
             <button type="button" role="menuitem" data-action="view">
               View {"{contextId}"}
@@ -128,26 +128,26 @@ const html = renderHTML(
               </button>
             </div>
           </template>
-        </rocket-context-menu>
+        </pd-context-menu>
         <a href="#" data-menu-for="live-menu" data-context-id="live-row">
           Fetched actions
         </a>
-        <rocket-context-menu id="live-menu" popover="auto" role="menu">
+        <pd-context-menu id="live-menu" popover="auto" role="menu">
           <div data-rocket-menu-content="">
             <button type="button" role="menuitem" data-action="shared">
               Server-rendered row-b
             </button>
           </div>
-        </rocket-context-menu>
+        </pd-context-menu>
       </div>
       <div class="fixture" id="edit-fixture">
         <h2>Inline edit</h2>
-        <rocket-inline-edit data-context-id="row-a">
+        <pd-inline-edit data-context-id="row-a">
           <span data-inline-edit-trigger="" data-inline-edit-value="">
             Original title
           </span>
           <input data-inline-edit-input="" value="Original title" aria-label="Edit title" />
-        </rocket-inline-edit>
+        </pd-inline-edit>
       </div>
       <script type="module" src="/rocket-kit.js"></script>
     </body>
@@ -163,23 +163,20 @@ Bun.serve({
       const configured = new URL(request.url).searchParams.get("keyboard");
       const page =
         configured === "custom"
-          ? html.replace(
-              "<rocket-sortable-list",
-              '<rocket-sortable-list data-key-focus-next="n" data-key-focus-previous="p"',
-            )
+          ? html.replace("<pd-sortable-list", '<pd-sortable-list data-key-focus-next="n" data-key-focus-previous="p"')
           : configured === "disabled"
-            ? html.replace("<rocket-sortable-list", '<rocket-sortable-list data-key-focus-next=""')
+            ? html.replace("<pd-sortable-list", '<pd-sortable-list data-key-focus-next=""')
             : configured === "kanban"
-              ? html.replace("<rocket-kanban-board", '<rocket-kanban-board data-key-focus-next="n"')
+              ? html.replace("<pd-kanban-board", '<pd-kanban-board data-key-focus-next="n"')
               : configured === "menu"
                 ? html.replace(
-                    '<rocket-context-menu id="fixture-menu"',
-                    '<rocket-context-menu id="fixture-menu" data-key-focus-next="n"',
+                    '<pd-context-menu id="fixture-menu"',
+                    '<pd-context-menu id="fixture-menu" data-key-focus-next="n"',
                   )
                 : configured === "menu-emacs"
                   ? html.replace(
-                      '<rocket-context-menu id="fixture-menu"',
-                      '<rocket-context-menu id="fixture-menu" data-key-focus-next="ArrowDown Ctrl+n" data-key-focus-previous="ArrowUp Ctrl+p"',
+                      '<pd-context-menu id="fixture-menu"',
+                      '<pd-context-menu id="fixture-menu" data-key-focus-next="ArrowDown Ctrl+n" data-key-focus-previous="ArrowUp Ctrl+p"',
                     )
                   : html;
       const mappedPage =

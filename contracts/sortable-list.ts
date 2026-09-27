@@ -1,5 +1,5 @@
 export const sortableListContract = {
-  tag: "rocket-sortable-list",
+  tag: "pd-sortable-list",
   selectors: { item: "[data-sortable-item]" },
   events: { move: "rocket-sortable-move" },
 } as const;

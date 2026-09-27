@@ -14,7 +14,7 @@ export function BentoWorkspace({
   resize?: DatastarEventBinding;
 }) {
   return (
-    <rocket-bento-workspace
+    <pd-bento-workspace
       {...datastarEventBinding(bentoContract.events.move, move)}
       {...datastarEventBinding(bentoContract.events.resize, resize)}
     >
@@ -41,6 +41,6 @@ export function BentoWorkspace({
           </div>
         </section>
       ))}
-    </rocket-bento-workspace>
+    </pd-bento-workspace>
   );
 }

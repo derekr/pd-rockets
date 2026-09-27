@@ -1,5 +1,5 @@
 export const bentoContract = {
-  tag: "rocket-bento-workspace",
+  tag: "pd-bento-workspace",
   selectors: {
     grid: "[data-bento-grid]",
     item: "[data-bento-item]",

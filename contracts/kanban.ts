@@ -1,7 +1,7 @@
 import { cancelKeys, focusKeys, moveKeys } from "../core/keyboard";
 
 export const kanbanContract = {
-  tag: "rocket-kanban-board",
+  tag: "pd-kanban-board",
   selectors: {
     lane: "[data-kanban-lane]",
     card: "[data-kanban-card]",

@@ -1,5 +1,5 @@
 export const inlineEditContract = {
-  tag: "rocket-inline-edit",
+  tag: "pd-inline-edit",
   selectors: {
     trigger: "[data-inline-edit-trigger]",
     value: "[data-inline-edit-value]",

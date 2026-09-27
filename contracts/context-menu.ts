@@ -1,5 +1,5 @@
 export const contextMenuContract = {
-  tag: "rocket-context-menu",
+  tag: "pd-context-menu",
   selectors: { trigger: "[data-menu-for]", item: '[role="menuitem"], [role="menuitemradio"]' },
   events: { action: "rocket-menu-action", scope: "rocket-menu-scope" },
 } as const;

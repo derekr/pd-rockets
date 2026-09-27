@@ -113,7 +113,7 @@ function CustomKanban() {
     { title: "Transmitted", code: "03 / COMPLETE", glyph: "✳" },
   ];
   return (
-    <rocket-kanban-board {...customKanbanMove.attrs} aria-label="Signal station task board">
+    <pd-kanban-board {...customKanbanMove.attrs} aria-label="Signal station task board">
       <template data-rocket-target="before">
         <span class="signal-drop-cue">
           <span>↳</span> TRANSMIT HERE
@@ -168,7 +168,7 @@ function CustomKanban() {
           </p>
         </section>
       ))}
-    </rocket-kanban-board>
+    </pd-kanban-board>
   );
 }
 
@@ -497,7 +497,7 @@ curl -fsSL "https://github.com/<owner>/<repo>/releases/latest/download/pd-rocket
                   </div>
                 </div>
                 <pre>
-                  <code>{`<rocket-kanban-board>
+                  <code>{`<pd-kanban-board>
   <section data-kanban-lane data-col="0">
     <div data-kanban-lane-cards>
       <article data-kanban-card="card-a" tabindex="0">
@@ -505,7 +505,7 @@ curl -fsSL "https://github.com/<owner>/<repo>/releases/latest/download/pd-rocket
       </article>
     </div>
   </section>
-</rocket-kanban-board>
+</pd-kanban-board>
 
 rocket-kanban-move → { cardId, col, before }`}</code>
                 </pre>
@@ -546,10 +546,10 @@ rocket-kanban-move → { cardId, col, before }`}</code>
                   </div>
                 </div>
                 <pre>
-                  <code>{`<rocket-sortable-list>
+                  <code>{`<pd-sortable-list>
   <div data-sortable-item="list-a" tabindex="0">First item</div>
   <div data-sortable-item="list-b" tabindex="0">Second item</div>
-</rocket-sortable-list>
+</pd-sortable-list>
 
 rocket-sortable-move → { itemId, before }`}</code>
                 </pre>
@@ -592,12 +592,12 @@ rocket-sortable-move → { itemId, before }`}</code>
                   </div>
                 </div>
                 <pre>
-                  <code>{`<rocket-drag-group>
+                  <code>{`<pd-drag-group>
   <section data-drop-list="inbox">
     <div data-drag-item="note-a" tabindex="0">Sketch a card</div>
   </section>
   <section data-drop-list="later"></section>
-</rocket-drag-group>
+</pd-drag-group>
 
 rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                 </pre>
@@ -635,7 +635,7 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                     </div>
                   </div>
                   <div id="nested-demo" class="example-body">
-                    <rocket-drag-group {...nestedGroupMove.attrs}>
+                    <pd-drag-group {...nestedGroupMove.attrs}>
                       <section data-drop-list="nested-a" aria-label="First region">
                         <h3>First region</h3>
                         <div data-drag-item="outer-a" tabindex={0}>
@@ -658,7 +658,7 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                           Destination item
                         </div>
                       </section>
-                    </rocket-drag-group>
+                    </pd-drag-group>
                   </div>
                 </div>
                 <p>
@@ -707,7 +707,7 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
                   </div>
                 </div>
                 <pre>
-                  <code>{`<rocket-bento-workspace>
+                  <code>{`<pd-bento-workspace>
   <div data-bento-grid="overview" data-columns="4">
     <article data-bento-item="tile-a" data-bento-col="1" data-bento-row="1"
       data-bento-width="2" data-bento-height="2" tabindex="0">
@@ -715,7 +715,7 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
     </article>
   </div>
   <div data-bento-grid="scratchpad" data-columns="4"></div>
-</rocket-bento-workspace>
+</pd-bento-workspace>
 
 rocket-bento-move → { itemId, fromGrid, toGrid, updates: [{ itemId, grid, col, row, width, height }] }
 rocket-bento-resize → { itemId, grid, updates: [{ itemId, grid, col, row, width, height }] }`}</code>
@@ -763,14 +763,14 @@ rocket-bento-resize → { itemId, grid, updates: [{ itemId, grid, col, row, widt
                   </div>
                 </div>
                 <pre>
-                  <code>{`<rocket-sortable-tree>
+                  <code>{`<pd-sortable-tree>
   <div data-tree-children data-tree-parent="">
     <div data-tree-node="src" data-tree-kind="folder">
       <div data-tree-row tabindex="0">src</div>
       <div data-tree-children data-tree-parent="src">…files…</div>
     </div>
   </div>
-</rocket-sortable-tree>
+</pd-sortable-tree>
 
 rocket-tree-move → { itemId, fromParent, toParent, before }`}</code>
                 </pre>
@@ -892,7 +892,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                   <canvas class="trash-sparks" aria-hidden="true"></canvas>
                   <div class="trash-poof" aria-hidden="true"></div>
                   <div id="trash-demo">
-                    <rocket-drag-group {...trashMove.attrs} aria-label="SPA trope disposal">
+                    <pd-drag-group {...trashMove.attrs} aria-label="SPA trope disposal">
                       <section data-drop-list="tropes" aria-label="SPA tropes">
                         <span class="trash-region-label">
                           THE BACKLOG / <span data-trope-count="">05</span> LEFT
@@ -927,15 +927,14 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                       <template data-rocket-target="end">
                         <span class="trash-target">✳ &nbsp; LET IT GO</span>
                       </template>
-                    </rocket-drag-group>
+                    </pd-drag-group>
                   </div>
                 </div>
                 <p>
-                  This is a <code>rocket-drag-group</code> with a playful destination. The page handler interprets a
-                  move to <code>bin</code> as deletion, then returns the remaining HTML over SSE. The poof is
-                  decoration; the model change is confirmed by the morph. A short canvas particle burst celebrates the
-                  bin without adding anything to the Rocket core.{" "}
-                  <a href="./source/site/trash-sparks.ts.txt">Particle source ↗</a>
+                  This is a <code>pd-drag-group</code> with a playful destination. The page handler interprets a move to{" "}
+                  <code>bin</code> as deletion, then returns the remaining HTML over SSE. The poof is decoration; the
+                  model change is confirmed by the morph. A short canvas particle burst celebrates the bin without
+                  adding anything to the Rocket core. <a href="./source/site/trash-sparks.ts.txt">Particle source ↗</a>
                 </p>
                 <h3>Set shortcuts on the host</h3>
                 <p>
@@ -947,7 +946,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                 <pre>
                   <code>{`<section class="project-queue" aria-labelledby="queue-title">
   <h2 id="queue-title">Queue</h2>
-  <rocket-sortable-list
+  <pd-sortable-list
     data-key-focus-next="ArrowDown n"
     data-key-focus-previous="ArrowUp p"
     data-key-move-down="Alt+ArrowDown Alt+n"
@@ -958,7 +957,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
       @post('/queue/move')">
     <article class="queue-item" data-sortable-item="item-a" tabindex="0">First task</article>
     <article class="queue-item" data-sortable-item="item-b" tabindex="0">Next task</article>
-  </rocket-sortable-list>
+  </pd-sortable-list>
 </section>`}</code>
                 </pre>
                 <p>
@@ -979,7 +978,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
   --queue-accent: var(--color-accent, #256c62);
   --queue-surface: var(--color-surface, #fff);
 }
-.project-queue rocket-sortable-list {
+.project-queue pd-sortable-list {
   display: grid;
   gap: .5rem;
   position: relative;
@@ -1000,7 +999,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
 .project-queue [data-dragging] { opacity: .45; }
 .queue-item[data-drag-preview] { box-shadow: 0 12px 24px #0003; }
 .project-queue [data-drop-before]::before,
-.project-queue rocket-sortable-list[data-drop-end]::after {
+.project-queue pd-sortable-list[data-drop-end]::after {
   content: "";
   position: absolute;
   left: 0;
@@ -1010,7 +1009,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
   pointer-events: none;
 }
 .project-queue [data-drop-before]::before { top: -5px; }
-.project-queue rocket-sortable-list[data-drop-end]::after { bottom: -5px; }`}</code>
+.project-queue pd-sortable-list[data-drop-end]::after { bottom: -5px; }`}</code>
                 </pre>
                 <h3>Replace the preview or target markup</h3>
                 <p>
@@ -1030,7 +1029,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
   <strong>Moving: First task</strong>
 </template>
 
-<!-- Direct children of the rocket-sortable-list host -->
+<!-- Direct children of the pd-sortable-list host -->
 <template data-rocket-target="before">
   <span class="queue-target">Place above</span>
 </template>
@@ -1217,7 +1216,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                   <code>{`<article data-context-id="record-a" data-menu-for="record-menu">
   <button data-menu-for="record-menu" aria-haspopup="menu">Actions</button>
 </article>
-<rocket-context-menu id="record-menu" data-on:rocket-menu-action="$menu = evt.detail; @post('/menu-action')">
+<pd-context-menu id="record-menu" data-on:rocket-menu-action="$menu = evt.detail; @post('/menu-action')">
   <template data-rocket-menu>
     <button role="menuitem" data-action="inspect">Inspect {contextId}</button>
     <button role="menuitem" data-submenu="more" aria-haspopup="menu">More →</button>
@@ -1225,7 +1224,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
       <button role="menuitem" data-action="archive">Archive</button>
     </div>
   </template>
-</rocket-context-menu>
+</pd-context-menu>
 
 rocket-menu-action → { action, contextId }`}</code>
                 </pre>
@@ -1276,10 +1275,10 @@ rocket-menu-action → { action, contextId }`}</code>
                   <p>Double-click the title to try the page-owned local demo.</p>
                 </div>
                 <pre>
-                  <code>{`<rocket-inline-edit data-context-id="card-a">
+                  <code>{`<pd-inline-edit data-context-id="card-a">
   <span data-inline-edit-trigger data-inline-edit-value>Title from server</span>
   <input data-inline-edit-input aria-label="Edit title" value="Title from server">
-</rocket-inline-edit>
+</pd-inline-edit>
 
 rocket-inline-edit-request → { contextId }
 rocket-inline-edit-commit → { contextId, value }
@@ -1457,7 +1456,7 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                       <tr>
                         <td>
                           <a href="./source/rocket/kanban/client.ts.txt">
-                            <code>rocket-kanban-board</code>
+                            <code>pd-kanban-board</code>
                           </a>
                         </td>
                         <td>
@@ -1480,7 +1479,7 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                       <tr>
                         <td>
                           <a href="./source/rocket/sortable-list/client.ts.txt">
-                            <code>rocket-sortable-list</code>
+                            <code>pd-sortable-list</code>
                           </a>
                         </td>
                         <td>
@@ -1498,7 +1497,7 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                       <tr>
                         <td>
                           <a href="./source/rocket/drag-group/client.ts.txt">
-                            <code>rocket-drag-group</code>
+                            <code>pd-drag-group</code>
                           </a>
                         </td>
                         <td>
@@ -1516,7 +1515,7 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                       <tr>
                         <td>
                           <a href="./source/rocket/bento/client.ts.txt">
-                            <code>rocket-bento-workspace</code>
+                            <code>pd-bento-workspace</code>
                           </a>
                         </td>
                         <td>
@@ -1533,7 +1532,7 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                       <tr>
                         <td>
                           <a href="./source/rocket/sortable-tree/client.ts.txt">
-                            <code>rocket-sortable-tree</code>
+                            <code>pd-sortable-tree</code>
                           </a>
                         </td>
                         <td>
@@ -1590,7 +1589,7 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                 </p>
                 <h3>Go template</h3>
                 <pre>
-                  <code>{`<rocket-kanban-board id="kanban-board"
+                  <code>{`<pd-kanban-board id="kanban-board"
    data-on:rocket-kanban-move="$cardId = evt.detail?.['cardId'] ?? null;
      $col = evt.detail?.['col'] ?? null;
      $before = evt.detail?.['before'] ?? null; @post('/move')">
@@ -1603,7 +1602,7 @@ rocket-inline-edit-cancel → { contextId }`}</code>
       </div>
     </section>
   {{end}}
-</rocket-kanban-board>`}</code>
+</pd-kanban-board>`}</code>
                 </pre>
                 <p>
                   <a href="./source/examples/go/main.go.txt">View the Go server source ↗</a>

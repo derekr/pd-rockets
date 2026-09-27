@@ -32,12 +32,12 @@ function Node({ node }: { node: FileNode }) {
 
 export function SortableTree({ nodes, move }: { nodes: readonly FileNode[]; move?: DatastarEventBinding }) {
   return (
-    <rocket-sortable-tree {...datastarEventBinding(sortableTreeContract.events.move, move)}>
+    <pd-sortable-tree {...datastarEventBinding(sortableTreeContract.events.move, move)}>
       <div data-tree-children="" data-tree-parent="" aria-label="Files">
         {nodes.map((node) => (
           <Node node={node} />
         ))}
       </div>
-    </rocket-sortable-tree>
+    </pd-sortable-tree>
   );
 }

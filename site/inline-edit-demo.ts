@@ -1,7 +1,7 @@
 // Page-owned synthetic edit state; the reusable editor emits intents only.
 const demo = document.querySelector<HTMLElement>("#inline-edit-demo");
 if (demo) {
-  const editor = demo.querySelector<HTMLElement>("rocket-inline-edit");
+  const editor = demo.querySelector<HTMLElement>("pd-inline-edit");
   const input = demo.querySelector<HTMLInputElement>("[data-inline-edit-input]");
   const title = demo.querySelector<HTMLElement>("[data-inline-edit-value]");
   editor?.addEventListener("rocket-inline-edit-request", () => {

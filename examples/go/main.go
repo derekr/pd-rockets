@@ -60,7 +60,7 @@ var (
   <div class="demo-block">
     <h2>Kanban</h2>
     <div class="kanban">
-      <rocket-kanban-board id="kanban-board"
+      <pd-kanban-board id="kanban-board"
         data-key-select-next="ArrowDown j"
         data-key-select-previous="ArrowUp k"
         data-key-select-left="ArrowLeft h"
@@ -84,18 +84,18 @@ var (
           </div>
         </section>
         {{end}}
-      </rocket-kanban-board>
+      </pd-kanban-board>
     </div>
   </div>
   <div class="demo-block">
     <h2>Sortable list</h2>
-    <rocket-sortable-list
+    <pd-sortable-list
       data-on:rocket-sortable-move="$itemId = evt.detail?.['itemId'] ?? null; $before = evt.detail?.['before'] ?? null; @post('/list-move')"
     >
       {{range .List}}
       <div data-sortable-item="{{.ID}}" tabindex="0">{{.Label}}</div>
       {{end}}
-    </rocket-sortable-list>
+    </pd-sortable-list>
   </div>
 </div>
 {{end}}

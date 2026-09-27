@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
-  await expect.poll(() => page.evaluate(() => !!customElements.get("rocket-context-menu"))).toBe(true);
+  await expect.poll(() => page.evaluate(() => !!customElements.get("pd-context-menu"))).toBe(true);
 });
 
 test("button and right-click open a bound menu; an action returns focus", async ({ page }) => {

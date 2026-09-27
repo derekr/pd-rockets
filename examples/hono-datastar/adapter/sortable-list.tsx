@@ -25,13 +25,13 @@ export function SortableList({
 }) {
   const actionAttrs = datastarEventBinding(sortableListContract.events.move, move);
   return (
-    <rocket-sortable-list {...componentAttrs(sortableListComponent, {})} {...actionAttrs}>
+    <pd-sortable-list {...componentAttrs(sortableListComponent, {})} {...actionAttrs}>
       {items.map((item) => (
         <div data-sortable-item={item.id} tabindex={0}>
           {item.label}
         </div>
       ))}
       {children}
-    </rocket-sortable-list>
+    </pd-sortable-list>
   );
 }

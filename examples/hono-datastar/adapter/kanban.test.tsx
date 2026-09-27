@@ -10,7 +10,7 @@ test("Datastar JSX adapter renders the Rocket DOM contract and explicit keyboard
       keyboard={{ selectNext: ["n"] }}
     />,
   );
-  expect(html).toContain('<rocket-kanban-board id="demo-board"');
+  expect(html).toContain('<pd-kanban-board id="demo-board"');
   expect(html).toContain('data-key-select-next="n"');
   expect(html).not.toContain("data-key-move-left");
   expect(html).toContain('data-kanban-lane="" data-col="0"');

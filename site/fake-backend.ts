@@ -284,7 +284,7 @@ window.fetch = interceptFetch as typeof window.fetch;
 
 document.addEventListener("rocket-kanban-select", (event) => {
   const cardId = (event as CustomEvent<{ cardId: string }>).detail.cardId;
-  const board = (event.target as Element).closest("rocket-kanban-board");
+  const board = (event.target as Element).closest("pd-kanban-board");
   board?.querySelectorAll<HTMLElement>("[data-kanban-card]").forEach((card) => {
     card.toggleAttribute("data-selected", card.dataset.kanbanCard === cardId);
   });

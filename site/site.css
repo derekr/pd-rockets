@@ -675,14 +675,14 @@ kbd {
   padding: 20px;
 }
 
-.example-body .kanban rocket-kanban-board {
+.example-body .kanban pd-kanban-board {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .example-body [data-kanban-lane],
 .example-body [data-drop-list],
-.example-body rocket-bento-workspace section,
-.example-body rocket-sortable-list {
+.example-body pd-bento-workspace section,
+.example-body pd-sortable-list {
   border: 1px solid var(--line);
   border-radius: 5px;
   background: var(--raised);
@@ -713,7 +713,7 @@ kbd {
 }
 
 .example-body :is([data-kanban-card], [data-sortable-item], [data-drag-item])[data-drop-before]::before,
-.example-body :is([data-kanban-lane-cards], [data-drop-list], rocket-sortable-list)[data-drop-end]::after {
+.example-body :is([data-kanban-lane-cards], [data-drop-list], pd-sortable-list)[data-drop-end]::after {
   background: var(--blue);
 }
 
@@ -825,7 +825,7 @@ kbd {
   color: var(--signal-lime);
 }
 
-.signal-content rocket-kanban-board {
+.signal-content pd-kanban-board {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: stretch;
@@ -1056,7 +1056,7 @@ kbd {
 }
 
 @media (max-width: 700px) {
-  .signal-content rocket-kanban-board {
+  .signal-content pd-kanban-board {
     grid-template-columns: 1fr;
   }
   .signal-content [data-kanban-lane-cards] {
@@ -1134,7 +1134,7 @@ kbd {
   background: #fffdfa;
 }
 
-.trash-stage rocket-drag-group {
+.trash-stage pd-drag-group {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(175px, 1fr);
   gap: 15px;
@@ -1330,7 +1330,7 @@ kbd {
   }
 }
 @media (max-width: 650px) {
-  .trash-stage rocket-drag-group {
+  .trash-stage pd-drag-group {
     grid-template-columns: 1fr;
   }
   .trash-stage [data-drop-list="bin"] {
@@ -1343,7 +1343,7 @@ kbd {
   }
 }
 
-.list-frame rocket-sortable-list {
+.list-frame pd-sortable-list {
   max-width: 540px;
   margin-inline: auto;
 }
@@ -1371,7 +1371,7 @@ kbd {
   background: var(--raised);
   box-shadow: var(--shadow);
 }
-.inline-edit-demo rocket-inline-edit {
+.inline-edit-demo pd-inline-edit {
   display: block;
   margin: 10px 0;
   font-size: 1.3rem;
@@ -1438,8 +1438,8 @@ kbd {
     700 0.78rem ui-monospace,
     monospace;
 }
-rocket-context-menu#guide-context-menu,
-rocket-context-menu#guide-context-menu [role="menu"] {
+pd-context-menu#guide-context-menu,
+pd-context-menu#guide-context-menu [role="menu"] {
   width: min(235px, calc(100vw - 16px));
   margin: 0;
   padding: 6px;
@@ -1449,7 +1449,7 @@ rocket-context-menu#guide-context-menu [role="menu"] {
   color: var(--text);
   box-shadow: 4px 5px 0 #20362d38;
 }
-rocket-context-menu#guide-context-menu button {
+pd-context-menu#guide-context-menu button {
   display: block;
   width: 100%;
   padding: 9px;
@@ -1460,12 +1460,12 @@ rocket-context-menu#guide-context-menu button {
   text-align: left;
   cursor: pointer;
 }
-rocket-context-menu#guide-context-menu button:is(:hover, :focus-visible) {
+pd-context-menu#guide-context-menu button:is(:hover, :focus-visible) {
   background: var(--yellow);
 }
 @media (max-width: 650px) {
-  rocket-context-menu#guide-context-menu[data-mobile-sheet],
-  rocket-context-menu#guide-context-menu [data-mobile-sheet] {
+  pd-context-menu#guide-context-menu[data-mobile-sheet],
+  pd-context-menu#guide-context-menu [data-mobile-sheet] {
     width: min(360px, calc(100vw - 20px));
     max-height: 70dvh;
     overflow-y: auto;
@@ -1575,11 +1575,11 @@ td small {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .example-body .kanban rocket-kanban-board {
+  .example-body .kanban pd-kanban-board {
     grid-template-columns: 1fr;
   }
 
-  .example-body rocket-bento-workspace {
+  .example-body pd-bento-workspace {
     grid-template-columns: 1fr;
   }
 
