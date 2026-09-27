@@ -35,8 +35,8 @@ export function showPositionedPopover(
   anchor: HTMLElement | { x: number; y: number },
   side: "below" | "beside" | "point",
 ): () => void {
-  if (CSS.supports("position-anchor: --rocket-menu-anchor") && CSS.supports("top: anchor(bottom)")) {
-    const name = `--rocket-menu-anchor-${++anchorSequence}`;
+  if (CSS.supports("position-anchor: --pd-menu-anchor") && CSS.supports("top: anchor(bottom)")) {
+    const name = `--pd-menu-anchor-${++anchorSequence}`;
     const point = anchor instanceof HTMLElement ? null : document.createElement("span");
     const target = point ?? (anchor as HTMLElement);
     const previousAnchor = target.style.getPropertyValue("anchor-name");

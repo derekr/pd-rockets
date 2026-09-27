@@ -4,7 +4,7 @@ if (demo) {
   const editor = demo.querySelector<HTMLElement>("pd-inline-edit");
   const input = demo.querySelector<HTMLInputElement>("[data-inline-edit-input]");
   const title = demo.querySelector<HTMLElement>("[data-inline-edit-value]");
-  editor?.addEventListener("rocket-inline-edit-request", () => {
+  editor?.addEventListener("pd-inline-edit-request", () => {
     if (!input || !title) return;
     input.value = title.textContent ?? "";
     demo.classList.add("editing");
@@ -15,8 +15,8 @@ if (demo) {
       input.select();
     });
   });
-  editor?.addEventListener("rocket-inline-edit-cancel", () => demo.classList.remove("editing"));
-  editor?.addEventListener("rocket-inline-edit-commit", (event) => {
+  editor?.addEventListener("pd-inline-edit-cancel", () => demo.classList.remove("editing"));
+  editor?.addEventListener("pd-inline-edit-commit", (event) => {
     const value = (event as CustomEvent<{ value: string }>).detail.value.trim().slice(0, 80);
     if (value && title) title.textContent = value;
     demo.classList.remove("editing");

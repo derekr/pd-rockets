@@ -1,5 +1,5 @@
 // @ts-ignore — consuming pages provide the same Rocket instance through their import map.
-import { rocket } from "pd-rockets/rocket";
+import { rocket } from "pd-rockets/runtime";
 import {
   contextMenuContract,
   type MenuActionDetail,
@@ -132,8 +132,8 @@ function setupMenu(
     if (focus) (options.focusFirst ? itemsIn(submenu)[0] : submenu)?.focus();
   };
   const openFor = (source: HTMLElement, point?: { x: number; y: number }, context: Record<string, string> = {}) => {
-    const template = host.querySelector<HTMLTemplateElement>(":scope > template[data-rocket-menu]");
-    const live = host.querySelector<HTMLElement>(":scope > [data-rocket-menu-content]");
+    const template = host.querySelector<HTMLTemplateElement>(":scope > template[data-pd-menu]");
+    const live = host.querySelector<HTMLElement>(":scope > [data-pd-menu-content]");
     if (!template && !live && !options.inlineContent) return;
     close();
     trigger = source;

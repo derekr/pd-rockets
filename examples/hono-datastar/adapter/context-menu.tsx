@@ -11,7 +11,7 @@ export function ContextMenu({ id, action, children }: { id: string; action?: Dat
       role="menu"
       {...datastarEventBinding(contextMenuContract.events.action, action)}
     >
-      <template data-rocket-menu="">{children}</template>
+      <template data-pd-menu="">{children}</template>
     </pd-context-menu>
   );
 }

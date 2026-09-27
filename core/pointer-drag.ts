@@ -107,7 +107,7 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     item.setAttribute("data-dragging", "true");
     const rect = item.getBoundingClientRect();
     previewOffset = { x: start!.x - rect.left, y: start!.y - rect.top };
-    const customPreview = !!item.querySelector(":scope > template[data-rocket-preview]");
+    const customPreview = !!item.querySelector(":scope > template[data-pd-preview]");
     preview = dragPreviewFor(item);
     preview.removeAttribute("id");
     preview.setAttribute("data-drag-preview", "true");
@@ -117,8 +117,8 @@ export function installPointerDrag<ItemId, Target>(options: PointerDragOptions<I
     preview.style.left = `${rect.left}px`;
     preview.style.top = `${rect.top}px`;
     preview.style.boxSizing = "border-box";
-    preview.style.setProperty("--rocket-source-width", `${rect.width}px`);
-    preview.style.setProperty("--rocket-source-height", `${rect.height}px`);
+    preview.style.setProperty("--pd-source-width", `${rect.width}px`);
+    preview.style.setProperty("--pd-source-height", `${rect.height}px`);
     if (!customPreview) {
       preview.style.width = `${rect.width}px`;
       preview.style.height = `${rect.height}px`;

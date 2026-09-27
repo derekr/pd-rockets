@@ -103,7 +103,7 @@ export function installBoardDrag(options: BoardDragOptions) {
     projection.setDropColumn(cell.col);
     projection.setDropLine(cell, cardId);
     options.onStart(cardId, cell, card);
-    const customPreview = !!card.querySelector(":scope > template[data-rocket-preview]");
+    const customPreview = !!card.querySelector(":scope > template[data-pd-preview]");
     const preview = dragPreviewFor(card);
     preview.removeAttribute("id");
     preview.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
@@ -119,8 +119,8 @@ export function installBoardDrag(options: BoardDragOptions) {
       preview.style.width = `${rect.width}px`;
       preview.style.height = `${rect.height}px`;
     }
-    preview.style.setProperty("--rocket-source-width", `${rect.width}px`);
-    preview.style.setProperty("--rocket-source-height", `${rect.height}px`);
+    preview.style.setProperty("--pd-source-width", `${rect.width}px`);
+    preview.style.setProperty("--pd-source-height", `${rect.height}px`);
     preview.style.margin = "0";
     preview.style.zIndex = "100";
     preview.style.pointerEvents = "none";
@@ -231,7 +231,7 @@ export function installBoardDrag(options: BoardDragOptions) {
     if (!card || !host.contains(card)) return;
     options.onPress?.(card);
     card.focus({ preventScroll: true });
-    if (!target?.closest("[data-rocket-board-drag-handle]")) return;
+    if (!target?.closest("[data-pd-board-drag-handle]")) return;
     if (pending || drag || options.canStart?.() === false) return;
     const cell = options.cellOf(card);
     if (!cell) return;

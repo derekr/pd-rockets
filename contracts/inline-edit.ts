@@ -6,9 +6,9 @@ export const inlineEditContract = {
     input: "[data-inline-edit-input]",
   },
   events: {
-    request: "rocket-inline-edit-request",
-    commit: "rocket-inline-edit-commit",
-    cancel: "rocket-inline-edit-cancel",
+    request: "pd-inline-edit-request",
+    commit: "pd-inline-edit-commit",
+    cancel: "pd-inline-edit-cancel",
   },
 } as const;
 

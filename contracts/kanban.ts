@@ -8,8 +8,8 @@ export const kanbanContract = {
     cardMain: "[data-kanban-card-main]",
   },
   events: {
-    move: "rocket-kanban-move",
-    select: "rocket-kanban-select",
+    move: "pd-kanban-move",
+    select: "pd-kanban-select",
   },
 } as const;
 

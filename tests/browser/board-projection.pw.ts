@@ -10,7 +10,7 @@ const boardMarkup = `
 test("a held card projects across lanes, survives a fat morph and reveals confirmed CSS", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(async (markup) => {
-    const { installBoardProjection } = (await new Function('return import("/rocket-core.js")')()) as {
+    const { installBoardProjection } = (await new Function('return import("/pd-core.js")')()) as {
       installBoardProjection: (options: object) => { sync(): void; dispose(): void };
     };
     const host = document.createElement("div");
@@ -58,7 +58,7 @@ test("a held card projects across lanes, survives a fat morph and reveals confir
 test("two overlapping holds move only the held cards and preserve other nodes", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(async (markup) => {
-    const { installBoardProjection } = (await new Function('return import("/rocket-core.js")')()) as {
+    const { installBoardProjection } = (await new Function('return import("/pd-core.js")')()) as {
       installBoardProjection: (options: object) => { sync(): void; dispose(): void };
     };
     const host = document.createElement("div");

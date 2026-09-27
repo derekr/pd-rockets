@@ -14,7 +14,7 @@ test("button and right-click open a bound menu; an action returns focus", async 
   await expect(menu.getByRole("menuitem", { name: "View row-a" })).toBeFocused();
   await page.evaluate(() => {
     (window as any).__actions = [];
-    document.querySelector("#fixture-menu")!.addEventListener("rocket-menu-action", (event) => {
+    document.querySelector("#fixture-menu")!.addEventListener("pd-menu-action", (event) => {
       (window as any).__actions.push((event as CustomEvent).detail);
     });
   });
@@ -60,10 +60,10 @@ test("template binding includes nested text and attributes without changing the 
   );
   await expect(menu.getByRole("menuitem", { name: "Label A < B" })).toHaveAttribute("data-menu-param-record", "row-b");
   expect(
-    await menu.locator("template[data-rocket-menu]").evaluate((template) => template.innerHTML.includes("{label}")),
+    await menu.locator("template[data-pd-menu]").evaluate((template) => template.innerHTML.includes("{label}")),
   ).toBe(true);
   await page.keyboard.press("Escape");
-  await menu.locator("template[data-rocket-menu]").evaluate((template: HTMLTemplateElement) => {
+  await menu.locator("template[data-pd-menu]").evaluate((template: HTMLTemplateElement) => {
     template.content.querySelector('[data-action="view"]')!.textContent = "Updated {contextId}";
   });
   await page.locator("#menu-fixture button[data-menu-for]").click();
@@ -104,8 +104,8 @@ test("point opening and nested popovers stay in the viewport", async ({ page }) 
   expect(root!.x + root!.width).toBeLessThanOrEqual(400);
   expect(root!.y + root!.height).toBeLessThanOrEqual(320);
   await page.locator("#fixture-menu [data-submenu=fixture-sub-one]").click();
-  if (await page.evaluate(() => CSS.supports("position-anchor: --rocket-menu-anchor")))
-    await expect(page.locator("#fixture-menu #fixture-sub-one")).toHaveCSS("position-anchor", /--rocket-menu-anchor-/);
+  if (await page.evaluate(() => CSS.supports("position-anchor: --pd-menu-anchor")))
+    await expect(page.locator("#fixture-menu #fixture-sub-one")).toHaveCSS("position-anchor", /--pd-menu-anchor-/);
   const sub = await page.locator("#fixture-menu #fixture-sub-one").boundingBox();
   expect(sub).not.toBeNull();
   expect(sub!.x + sub!.width).toBeLessThanOrEqual(400);
@@ -113,17 +113,17 @@ test("point opening and nested popovers stay in the viewport", async ({ page }) 
 });
 
 test("CSS anchors position button and pointer menus and are cleaned up", async ({ page }) => {
-  const supported = await page.evaluate(() => CSS.supports("position-anchor: --rocket-menu-anchor"));
+  const supported = await page.evaluate(() => CSS.supports("position-anchor: --pd-menu-anchor"));
   if (!supported) return;
   const menu = page.locator("#fixture-menu");
   const button = page.locator("#menu-fixture button[data-menu-for]");
   await button.click();
-  await expect(menu).toHaveCSS("position-anchor", /--rocket-menu-anchor-/);
-  await expect(button).toHaveCSS("anchor-name", /--rocket-menu-anchor-/);
+  await expect(menu).toHaveCSS("position-anchor", /--pd-menu-anchor-/);
+  await expect(button).toHaveCSS("anchor-name", /--pd-menu-anchor-/);
   await page.keyboard.press("Escape");
   await expect(button).toHaveCSS("anchor-name", "none");
   await page.locator("#menu-fixture [data-context-id=row-b]").click({ button: "right" });
-  await expect(menu).toHaveCSS("position-anchor", /--rocket-menu-anchor-/);
+  await expect(menu).toHaveCSS("position-anchor", /--pd-menu-anchor-/);
   await expect(page.locator("body > span[aria-hidden=true]")).toHaveCount(1);
   await page.keyboard.press("Escape");
   await expect(page.locator("body > span[aria-hidden=true]")).toHaveCount(0);
@@ -170,7 +170,7 @@ test("Enter on a newly opened menu activates its first action", async ({ page })
   const menu = page.locator("#fixture-menu");
   await page.evaluate(() => {
     (window as any).__actions = [];
-    document.querySelector("#fixture-menu")!.addEventListener("rocket-menu-action", (event) => {
+    document.querySelector("#fixture-menu")!.addEventListener("pd-menu-action", (event) => {
       (window as any).__actions.push((event as CustomEvent).detail);
     });
   });
@@ -258,7 +258,7 @@ test("a fetched live menu preserves server markup and exposes scope and close ho
   const menu = page.locator("#live-menu");
   await page.evaluate(() => {
     (window as any).__menuScopes = [];
-    document.querySelector("#live-menu")!.addEventListener("rocket-menu-scope", (event) => {
+    document.querySelector("#live-menu")!.addEventListener("pd-menu-scope", (event) => {
       const detail = (event as CustomEvent).detail;
       (window as any).__menuScopes.push({ active: detail.active, root: detail.root.id });
     });
@@ -269,7 +269,7 @@ test("a fetched live menu preserves server markup and exposes scope and close ho
   await expect(menu.getByRole("menuitem", { name: "Server-rendered row-b" })).toBeFocused();
   await menu.evaluate((host: any) => host.closeMenu(true));
   await expect(menu).not.toBeVisible();
-  await expect(menu.locator(":scope > [data-rocket-menu-content]")).toHaveCount(1);
+  await expect(menu.locator(":scope > [data-pd-menu-content]")).toHaveCount(1);
   expect(await menu.evaluate((host: any) => host.isOpen())).toBe(false);
   expect(await page.evaluate(() => (window as any).__menuScopes)).toEqual([
     { active: true, root: "live-menu" },
@@ -284,10 +284,10 @@ test("a freshly installed live fragment emits actions for the current trigger", 
   await page.evaluate(() => {
     (window as any).__liveActions = [];
     const menu = document.querySelector("#live-menu")!;
-    menu.addEventListener("rocket-menu-action", (event) =>
+    menu.addEventListener("pd-menu-action", (event) =>
       (window as any).__liveActions.push((event as CustomEvent).detail),
     );
-    menu.querySelector("[data-rocket-menu-content]")!.innerHTML =
+    menu.querySelector("[data-pd-menu-content]")!.innerHTML =
       '<button type="button" role="menuitem" data-action="inspect">Fresh action</button>';
   });
   await page.locator('a[data-menu-for="live-menu"]').click();
@@ -295,13 +295,13 @@ test("a freshly installed live fragment emits actions for the current trigger", 
   expect(await page.evaluate(() => (window as any).__liveActions)).toEqual([
     { action: "inspect", contextId: "live-row" },
   ]);
-  await expect(page.locator("#live-menu [data-rocket-menu-content]")).toContainText("Fresh action");
+  await expect(page.locator("#live-menu [data-pd-menu-content]")).toContainText("Fresh action");
   await expect(page.locator('a[data-menu-for="live-menu"]')).toBeFocused();
 });
 
 test("installer opens server-owned inline content, handles nested focus and disposal", async ({ page }) => {
   await page.evaluate(async () => {
-    const { installContextMenu } = (await new Function('return import("/rocket-kit.js")')()) as {
+    const { installContextMenu } = (await new Function('return import("/pd-kit.js")')()) as {
       installContextMenu: (host: HTMLElement, cleanup: (fn: () => void) => void, options: object) => void;
     };
     const host = document.createElement("section") as any;

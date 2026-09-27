@@ -1,10 +1,5 @@
 // A standalone page consumes only the released browser URL and its declared API.
-import {
-  installBoardCamera,
-  installBoardColumnReorder,
-  installBoardDrag,
-  installBoardProjection,
-} from "/js/rocket-kit.js";
+import { installBoardCamera, installBoardColumnReorder, installBoardDrag, installBoardProjection } from "/js/pd-kit.js";
 
 declare const host: HTMLElement;
 

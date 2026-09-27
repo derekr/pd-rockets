@@ -19,28 +19,28 @@ const state = structuredClone(fixture);
 const kanbanMove: DatastarEventBinding = {
   event: kanbanContract.events.move,
   attrs: {
-    "data-on:rocket-kanban-move":
+    "data-on:pd-kanban-move":
       "$cardId = evt.detail?.['cardId'] ?? null; $col = evt.detail?.['col'] ?? null; $before = evt.detail?.['before'] ?? null; @post('/move')",
   },
 };
 const listMove: DatastarEventBinding = {
   event: sortableListContract.events.move,
   attrs: {
-    "data-on:rocket-sortable-move":
+    "data-on:pd-sortable-move":
       "$itemId = evt.detail?.['itemId'] ?? null; $before = evt.detail?.['before'] ?? null; @post('/list-move')",
   },
 };
 const groupMove: DatastarEventBinding = {
   event: dragGroupContract.events.move,
   attrs: {
-    "data-on:rocket-drag-group-move":
+    "data-on:pd-drag-group-move":
       "$itemId = evt.detail?.['itemId'] ?? null; $fromList = evt.detail?.['fromList'] ?? null; $toList = evt.detail?.['toList'] ?? null; $before = evt.detail?.['before'] ?? null; @post('/group-move')",
   },
 };
 
 function Demo() {
   return (
-    <div id="rocket-demo">
+    <div id="pd-demo">
       <div class="demo-block">
         <h2>Kanban</h2>
         <div class="kanban">
@@ -60,7 +60,7 @@ function Demo() {
 }
 
 function patch(): Response {
-  const lines = ["event: datastar-patch-elements", "data: selector #rocket-demo", "data: mode outer"];
+  const lines = ["event: datastar-patch-elements", "data: selector #pd-demo", "data: mode outer"];
   for (const line of renderHTML(<Demo />).split("\n")) lines.push(`data: elements ${line}`);
   return new Response([...lines, "", ""].join("\n"), {
     headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-store" },
@@ -112,14 +112,14 @@ app.get("/", (c) =>
         <link rel="stylesheet" href="/demo.css" />
         <script
           type="importmap"
-          dangerouslySetInnerHTML={{ __html: '{"imports":{"pd-rockets/rocket":"/js/datastar-rocket.js"}}' }}
+          dangerouslySetInnerHTML={{ __html: '{"imports":{"pd-rockets/runtime":"/js/datastar-rocket.js"}}' }}
         />
       </head>
       <body data-signals='{"cardId":"","col":0,"before":"","itemId":""}'>
         <h1>Rocket kit spike</h1>
         <p>Drag cards, use the Kanban keyboard defaults, or reorder the list.</p>
         <Demo />
-        <script type="module" src="/rocket-kit.js"></script>
+        <script type="module" src="/pd-kit.js"></script>
       </body>
     </html>,
   ),
@@ -130,7 +130,7 @@ async function asset(path: string, contentType: string): Promise<Response> {
   return new Response(file, { headers: { "content-type": contentType } });
 }
 
-app.get("/rocket-kit.js", () => asset("dist/rocket-kit.js", "text/javascript; charset=utf-8"));
+app.get("/pd-kit.js", () => asset("dist/pd-kit.js", "text/javascript; charset=utf-8"));
 app.get(
   "/demo.css",
   async () =>

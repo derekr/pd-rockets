@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "rocket-kit",
+      "name": "pd-kit",
       "dependencies": {
         "hono": "^4",
       },

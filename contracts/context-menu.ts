@@ -1,7 +1,7 @@
 export const contextMenuContract = {
   tag: "pd-context-menu",
   selectors: { trigger: "[data-menu-for]", item: '[role="menuitem"], [role="menuitemradio"]' },
-  events: { action: "rocket-menu-action", scope: "rocket-menu-scope" },
+  events: { action: "pd-menu-action", scope: "pd-menu-scope" },
 } as const;
 
 export type MenuActionDetail = { action: string; contextId: string };

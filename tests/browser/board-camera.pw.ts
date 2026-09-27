@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("optional board camera scrolls the active lane and recomputes the target after settling", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(async () => {
-    const { installBoardCamera } = (await new Function('return import("/rocket-kit.js")')()) as {
+    const { installBoardCamera } = (await new Function('return import("/pd-kit.js")')()) as {
       installBoardCamera: (options: object) => () => void;
     };
     const host = document.createElement("section");

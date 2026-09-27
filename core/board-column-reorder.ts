@@ -18,15 +18,13 @@ export function installBoardColumnReorder(options: BoardColumnReorderOptions) {
     mobile: boolean;
   } | null = null;
   const columns = (mobile: boolean) => [
-    ...host.querySelectorAll<HTMLElement>(mobile ? "[data-rocket-board-mobile-column]" : "[data-rocket-board-column]"),
+    ...host.querySelectorAll<HTMLElement>(mobile ? "[data-pd-board-mobile-column]" : "[data-pd-board-column]"),
   ];
   const onDown = (event: PointerEvent) => {
-    const grip = (event.target as Element | null)?.closest<HTMLElement>("[data-rocket-board-column-grip]");
+    const grip = (event.target as Element | null)?.closest<HTMLElement>("[data-pd-board-column-grip]");
     if (!grip || !host.contains(grip) || event.button !== 0 || drag || options.canStart?.() === false) return;
-    const mobile = grip.hasAttribute("data-rocket-board-mobile-grip");
-    const source = grip.closest<HTMLElement>(
-      mobile ? "[data-rocket-board-mobile-column]" : "[data-rocket-board-column]",
-    );
+    const mobile = grip.hasAttribute("data-pd-board-mobile-grip");
+    const source = grip.closest<HTMLElement>(mobile ? "[data-pd-board-mobile-column]" : "[data-pd-board-column]");
     if (!source) return;
     const from = columns(mobile).indexOf(source);
     const columnId = Number(source.dataset.col);
@@ -92,13 +90,13 @@ export function installBoardColumnReorder(options: BoardColumnReorderOptions) {
     if (drag?.pointerId === event.pointerId) finish(false);
   };
   const onClick = (event: MouseEvent) => {
-    const button = (event.target as Element | null)?.closest<HTMLButtonElement>("[data-rocket-board-column-step]");
+    const button = (event.target as Element | null)?.closest<HTMLButtonElement>("[data-pd-board-column-step]");
     if (!button || !host.contains(button) || button.disabled || options.canStart?.() === false) return;
     const peers = columns(false);
-    const head = button.closest<HTMLElement>("[data-rocket-board-column]");
+    const head = button.closest<HTMLElement>("[data-pd-board-column]");
     const from = head ? peers.indexOf(head) : -1;
     const columnId = Number(head?.dataset.col);
-    const step = Number(button.dataset.rocketBoardColumnStep);
+    const step = Number(button.dataset.pdBoardColumnStep);
     if (from >= 0 && Number.isInteger(columnId) && (step === -1 || step === 1)) {
       options.onReorder(columnId, from + step);
     }

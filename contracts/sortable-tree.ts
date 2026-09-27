@@ -5,7 +5,7 @@ export const sortableTreeContract = {
     row: "[data-tree-row]",
     children: "[data-tree-children]",
   },
-  events: { move: "rocket-tree-move" },
+  events: { move: "pd-tree-move" },
 } as const;
 
 /** Empty parent IDs address the root list; before is empty for the end of a list. */

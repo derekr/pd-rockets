@@ -27,9 +27,13 @@ try {
     if (sha256(await readFile(join(typesRoot, path))) !== expected) throw new Error(`Invalid declaration: ${path}`);
   }
 
-  const bundle = await readFile(join(temp, "rocket-kit.js"), "utf8");
+  const bundle = await readFile(join(temp, "pd-kit.js"), "utf8");
+  const releaseFiles = await readdir(temp);
+  if (releaseFiles.some((file) => file.startsWith("rocket-")) || bundle.includes("rocket-")) {
+    throw new Error("Browser release exposes an obsolete Rocket-prefixed kit contract");
+  }
   const imports = [...bundle.matchAll(/\bfrom\s*["']([^"']+)["']/g)].map((match) => match[1]);
-  if (imports.length === 0 || imports.some((specifier) => specifier !== "pd-rockets/rocket")) {
+  if (imports.length === 0 || imports.some((specifier) => specifier !== "pd-rockets/runtime")) {
     throw new Error("Full browser kit must import only the shared external Rocket runtime");
   }
 
@@ -44,7 +48,7 @@ try {
         strict: true,
         noEmit: true,
         types: [],
-        paths: { "/js/rocket-kit.js": ["./types/client-entry.d.ts"] },
+        paths: { "/js/pd-kit.js": ["./types/client-entry.d.ts"] },
       },
       include: ["board.ts"],
     }),

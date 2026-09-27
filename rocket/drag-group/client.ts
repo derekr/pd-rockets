@@ -1,5 +1,5 @@
 // @ts-ignore — the consuming page resolves this external Rocket module through an import map.
-import { rocket } from "pd-rockets/rocket";
+import { rocket } from "pd-rockets/runtime";
 import { dragGroupContract, type DragGroupMoveDetail } from "../../contracts/drag-group";
 import { installFlip } from "../../core/flip";
 import { installFocusRecovery } from "../../core/focus-recovery";

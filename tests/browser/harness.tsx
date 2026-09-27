@@ -96,7 +96,7 @@ const html = renderHTML(
           Row B
         </div>
         <pd-context-menu id="fixture-menu">
-          <template data-rocket-menu="">
+          <template data-pd-menu="">
             <button type="button" role="menuitem" data-action="view">
               View {"{contextId}"}
             </button>
@@ -133,7 +133,7 @@ const html = renderHTML(
           Fetched actions
         </a>
         <pd-context-menu id="live-menu" popover="auto" role="menu">
-          <div data-rocket-menu-content="">
+          <div data-pd-menu-content="">
             <button type="button" role="menuitem" data-action="shared">
               Server-rendered row-b
             </button>
@@ -149,7 +149,7 @@ const html = renderHTML(
           <input data-inline-edit-input="" value="Original title" aria-label="Edit title" />
         </pd-inline-edit>
       </div>
-      <script type="module" src="/rocket-kit.js"></script>
+      <script type="module" src="/pd-kit.js"></script>
     </body>
   </html>,
 );
@@ -181,20 +181,20 @@ Bun.serve({
                   : html;
       const mappedPage =
         new URL(request.url).searchParams.get("runtime") === "adapter"
-          ? page.replace('"/js/datastar-rocket.js"', '"/js/rocket-adapter.js"')
+          ? page.replace('"/js/datastar-rocket.js"', '"/js/pd-adapter.js"')
           : page;
       return new Response(mappedPage, { headers: { "Content-Type": "text/html; charset=utf-8" } });
     }
     if (path === "/demo.css") return new Response(css, { headers: { "Content-Type": "text/css; charset=utf-8" } });
-    if (path === "/rocket-kit.js")
+    if (path === "/pd-kit.js")
       return new Response(bundle, { headers: { "Content-Type": "text/javascript; charset=utf-8" } });
-    if (path === "/rocket-core.js")
+    if (path === "/pd-core.js")
       return new Response(coreBundle, { headers: { "Content-Type": "text/javascript; charset=utf-8" } });
     if (path === "/js/datastar-rocket.js")
       return new Response(Bun.file(join(root, "public/js/datastar-rocket.js")), {
         headers: { "Content-Type": "text/javascript; charset=utf-8" },
       });
-    if (path === "/js/rocket-adapter.js")
+    if (path === "/js/pd-adapter.js")
       return new Response('export { rocket } from "/js/datastar-rocket.js";', {
         headers: { "Content-Type": "text/javascript; charset=utf-8" },
       });

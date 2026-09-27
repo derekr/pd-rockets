@@ -5,7 +5,7 @@ export const bentoContract = {
     item: "[data-bento-item]",
     resize: "[data-bento-resize]",
   },
-  events: { move: "rocket-bento-move", resize: "rocket-bento-resize" },
+  events: { move: "pd-bento-move", resize: "pd-bento-resize" },
 } as const;
 
 export type BentoMoveDetail = {

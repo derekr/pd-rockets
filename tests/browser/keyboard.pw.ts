@@ -3,13 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 async function ready(page: Page, query = "") {
   await page.addInitScript(() => {
     (window as any).__moves = [];
-    for (const name of [
-      "rocket-kanban-move",
-      "rocket-sortable-move",
-      "rocket-drag-group-move",
-      "rocket-bento-move",
-      "rocket-tree-move",
-    ])
+    for (const name of ["pd-kanban-move", "pd-sortable-move", "pd-drag-group-move", "pd-bento-move", "pd-tree-move"])
       document.addEventListener(name, (event) =>
         (window as any).__moves.push({ name, detail: (event as CustomEvent).detail }),
       );
@@ -172,7 +166,7 @@ test("an inner host owns navigation and staging, not its outer host", async ({ p
   await expect(page.locator("#nested [data-sortable-item=inner-b]")).toBeFocused();
   await page.keyboard.press("Alt+k");
   const events = await moves(page);
-  expect(events.map((event) => event.name)).toEqual(["rocket-sortable-move"]);
+  expect(events.map((event) => event.name)).toEqual(["pd-sortable-move"]);
 });
 
 test("Kanban keeps legacy bindings while a canonical host override takes precedence", async ({ page }) => {
@@ -200,7 +194,7 @@ test("focus returns after a delayed model-confirmed morph but never steals a lat
   await ready(page);
   await page.evaluate(() => {
     (window as any).__patches = 0;
-    document.querySelector("#list pd-sortable-list")!.addEventListener("rocket-sortable-move", (event) => {
+    document.querySelector("#list pd-sortable-list")!.addEventListener("pd-sortable-move", (event) => {
       const { itemId, before } = (event as CustomEvent<{ itemId: string; before: string }>).detail;
       setTimeout(() => {
         const host = document.querySelector("#list pd-sortable-list")!;
@@ -253,7 +247,7 @@ test("pointer drag emits a semantic move and staging is cancelled by a pointer g
   await page.keyboard.up("Alt");
   const events = await moves(page);
   expect(events).toHaveLength(1);
-  expect(events[0]).toMatchObject({ name: "rocket-sortable-move", detail: { itemId: "list-a", before: "list-c" } });
+  expect(events[0]).toMatchObject({ name: "pd-sortable-move", detail: { itemId: "list-a", before: "list-c" } });
 });
 
 test("FLIP waits for a delayed item move, not removal of a custom target indicator", async ({ page }) => {
@@ -261,7 +255,7 @@ test("FLIP waits for a delayed item move, not removal of a custom target indicat
   await page.evaluate(() => {
     const host = document.querySelector("#list pd-sortable-list")!;
     const template = document.createElement("template");
-    template.dataset.rocketTarget = "before";
+    template.dataset.pdTarget = "before";
     template.innerHTML = "<span>Place here</span>";
     host.append(template);
     (window as any).__flips = [];
@@ -270,7 +264,7 @@ test("FLIP waits for a delayed item move, not removal of a custom target indicat
       if (this.matches("[data-sortable-item]")) (window as any).__flips.push(this.getAttribute("data-sortable-item"));
       return animate.call(this, frames, options);
     };
-    host.addEventListener("rocket-sortable-move", (event) => {
+    host.addEventListener("pd-sortable-move", (event) => {
       const { itemId, before } = (event as CustomEvent<{ itemId: string; before: string }>).detail;
       (window as any).__applyMove = () => {
         const item = host.querySelector(`[data-sortable-item="${itemId}"]`)!;
@@ -285,7 +279,7 @@ test("FLIP waits for a delayed item move, not removal of a custom target indicat
   await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
   await page.mouse.down();
   await page.mouse.move(destination!.x + destination!.width / 2, destination!.y + 2, { steps: 6 });
-  await expect(page.locator("#list [data-rocket-target-indicator=before]")).toBeVisible();
+  await expect(page.locator("#list [data-pd-target-indicator=before]")).toBeVisible();
   await page.mouse.up();
   await expect.poll(() => page.evaluate(() => typeof (window as any).__applyMove)).toBe("function");
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -346,9 +340,9 @@ test("pointer targets update across Kanban lanes, group lists, and bento grids",
     await page.mouse.up();
   }
   expect((await moves(page)).map(({ name }) => name)).toEqual([
-    "rocket-kanban-move",
-    "rocket-drag-group-move",
-    "rocket-bento-move",
+    "pd-kanban-move",
+    "pd-drag-group-move",
+    "pd-bento-move",
   ]);
 });
 
@@ -357,7 +351,7 @@ test("server-rendered template outlets customize pointer preview and target indi
   await page.evaluate(() => {
     const host = document.querySelector("#list pd-sortable-list")!;
     const preview = document.createElement("template");
-    preview.dataset.rocketPreview = "";
+    preview.dataset.pdPreview = "";
     preview.className = "custom-preview";
     preview.innerHTML = '<strong class="preview-content">Floating task</strong>';
     host.querySelector("[data-sortable-item=list-a]")!.append(preview);
@@ -366,7 +360,7 @@ test("server-rendered template outlets customize pointer preview and target indi
     document.head.append(style);
     for (const kind of ["before", "end"]) {
       const target = document.createElement("template");
-      target.dataset.rocketTarget = kind;
+      target.dataset.pdTarget = kind;
       target.innerHTML = `<span class="custom-target">${kind}</span>`;
       host.append(target);
     }
@@ -386,32 +380,32 @@ test("server-rendered template outlets customize pointer preview and target indi
   expect(pointer.x).toBeLessThan(floating!.x + floating!.width);
   expect(pointer.y).toBeGreaterThan(floating!.y);
   expect(pointer.y).toBeLessThan(floating!.y + floating!.height);
-  await expect(page.locator("#list [data-sortable-item=list-c] [data-rocket-target-indicator=before]")).toContainText(
+  await expect(page.locator("#list [data-sortable-item=list-c] [data-pd-target-indicator=before]")).toContainText(
     "before",
   );
   await page.mouse.up();
   await expect(page.locator("body > [data-drag-preview]")).toHaveCount(0);
-  await expect(page.locator("#list [data-rocket-target-indicator]")).toHaveCount(0);
+  await expect(page.locator("#list [data-pd-target-indicator]")).toHaveCount(0);
 
-  await page.locator('#list template[data-rocket-target="end"]').evaluate((template) => template.remove());
+  await page.locator('#list template[data-pd-target="end"]').evaluate((template) => template.remove());
   await page.locator("#list [data-sortable-item=list-a]").focus();
   await page.keyboard.down("Alt");
   await page.keyboard.press("j");
   await page.keyboard.press("j");
-  await expect(page.locator("#list [data-rocket-target-indicator]")).toHaveCount(0);
+  await expect(page.locator("#list [data-pd-target-indicator]")).toHaveCount(0);
   await page.evaluate(() => {
     const template = document.createElement("template");
-    template.dataset.rocketTarget = "";
+    template.dataset.pdTarget = "";
     template.innerHTML = '<span class="custom-target">end</span>';
     document.querySelector("#list pd-sortable-list")!.append(template);
   });
   await page.keyboard.press("Escape");
   await page.keyboard.press("j");
   await page.keyboard.press("j");
-  await expect(page.locator("#list pd-sortable-list > [data-rocket-target-indicator=end]")).toContainText("end");
+  await expect(page.locator("#list pd-sortable-list > [data-pd-target-indicator=end]")).toContainText("end");
   await page.keyboard.press("Escape");
   await page.keyboard.up("Alt");
-  await expect(page.locator("#list [data-rocket-target-indicator]")).toHaveCount(0);
+  await expect(page.locator("#list [data-pd-target-indicator]")).toHaveCount(0);
 });
 
 test("tree and bento expose their layout-specific target outlets", async ({ page }) => {
@@ -422,7 +416,7 @@ test("tree and bento expose their layout-specific target outlets", async ({ page
       ["#bento pd-bento-workspace", "cell"],
     ]) {
       const template = document.createElement("template");
-      template.dataset.rocketTarget = kind;
+      template.dataset.pdTarget = kind;
       template.innerHTML = `<span class="custom-target">${kind}</span>`;
       document.querySelector(selector)!.append(template);
     }
@@ -436,13 +430,13 @@ test("tree and bento expose their layout-specific target outlets", async ({ page
   await page.mouse.move(folder!.x + folder!.width / 2, folder!.y + folder!.height / 2, { steps: 6 });
   await expect(page.locator("#tree [data-tree-node=docs] > [data-tree-row]")).toHaveAttribute("data-tree-into", "");
   await expect(
-    page.locator("#tree [data-tree-node=docs] > [data-tree-row] [data-rocket-target-indicator=into]"),
+    page.locator("#tree [data-tree-node=docs] > [data-tree-row] [data-pd-target-indicator=into]"),
   ).toContainText("into");
   await page.mouse.up();
   await page.locator("#bento [data-bento-item=tile-b]").focus();
   await page.keyboard.down("Alt");
   await page.keyboard.press("j");
-  await expect(page.locator("#bento [data-bento-target] [data-rocket-target-indicator=cell]")).toContainText("cell");
+  await expect(page.locator("#bento [data-bento-target] [data-pd-target-indicator=cell]")).toContainText("cell");
   await page.keyboard.press("Escape");
   await page.keyboard.up("Alt");
 });

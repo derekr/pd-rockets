@@ -1,5 +1,5 @@
 // @ts-ignore — the consuming page resolves this external Rocket module through an import map.
-import { rocket } from "pd-rockets/rocket";
+import { rocket } from "pd-rockets/runtime";
 import { bentoContract, type BentoMoveDetail, type BentoPosition, type BentoResizeDetail } from "../../contracts/bento";
 import { installFlip } from "../../core/flip";
 import { installFocusRecovery } from "../../core/focus-recovery";

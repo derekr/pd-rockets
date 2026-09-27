@@ -24,7 +24,7 @@ import { browserBundles, rocketModule } from "../browser-bundles";
 const root = join(import.meta.dir, "..");
 const output = join(root, "dist/site");
 await ensureRuntime();
-const bundle = await readFile(join(root, "dist/rocket-kit.js"), "utf8");
+const bundle = await readFile(join(root, "dist/pd-kit.js"), "utf8");
 const bundleSizes = new Map(
   await Promise.all(
     browserBundles.map(async ({ file }) => [file, (await stat(join(root, "dist", `${file}.br`))).size] as const),
@@ -32,7 +32,7 @@ const bundleSizes = new Map(
 );
 const fakeBackend = await Bun.build({ entrypoints: [join(import.meta.dir, "fake-backend.ts")], target: "browser" });
 if (!fakeBackend.success || fakeBackend.outputs.length !== 1 || !fakeBackend.outputs[0]) {
-  throw new AggregateError(fakeBackend.logs, "rocket-kit: site fake backend build failed");
+  throw new AggregateError(fakeBackend.logs, "pd-kit: site fake backend build failed");
 }
 const backendBundle = await fakeBackend.outputs[0].text();
 const keyboardHelpBundle = await Bun.build({
@@ -41,7 +41,7 @@ const keyboardHelpBundle = await Bun.build({
   minify: true,
 });
 if (!keyboardHelpBundle.success || !keyboardHelpBundle.outputs[0]) {
-  throw new AggregateError(keyboardHelpBundle.logs, "rocket-kit: keyboard help build failed");
+  throw new AggregateError(keyboardHelpBundle.logs, "pd-kit: keyboard help build failed");
 }
 const keyboardHelp = await keyboardHelpBundle.outputs[0].text();
 const customAtmosphereBundle = await Bun.build({
@@ -50,7 +50,7 @@ const customAtmosphereBundle = await Bun.build({
   minify: true,
 });
 if (!customAtmosphereBundle.success || !customAtmosphereBundle.outputs[0]) {
-  throw new AggregateError(customAtmosphereBundle.logs, "rocket-kit: custom atmosphere build failed");
+  throw new AggregateError(customAtmosphereBundle.logs, "pd-kit: custom atmosphere build failed");
 }
 const customAtmosphere = await customAtmosphereBundle.outputs[0].text();
 const trashSparksBundle = await Bun.build({
@@ -59,7 +59,7 @@ const trashSparksBundle = await Bun.build({
   minify: true,
 });
 if (!trashSparksBundle.success || !trashSparksBundle.outputs[0]) {
-  throw new AggregateError(trashSparksBundle.logs, "rocket-kit: trash sparks build failed");
+  throw new AggregateError(trashSparksBundle.logs, "pd-kit: trash sparks build failed");
 }
 const trashSparks = await trashSparksBundle.outputs[0].text();
 const inlineEditBundle = await Bun.build({
@@ -67,7 +67,7 @@ const inlineEditBundle = await Bun.build({
   target: "browser",
 });
 if (!inlineEditBundle.success || !inlineEditBundle.outputs[0]) {
-  throw new AggregateError(inlineEditBundle.logs, "rocket-kit: inline edit demo build failed");
+  throw new AggregateError(inlineEditBundle.logs, "pd-kit: inline edit demo build failed");
 }
 const inlineEditDemo = await inlineEditBundle.outputs[0].text();
 const assetVersion = createHash("sha256")
@@ -85,7 +85,7 @@ const assetVersion = createHash("sha256")
 const kanbanMove: DatastarEventBinding = {
   event: kanbanContract.events.move,
   attrs: {
-    "data-on:rocket-kanban-move":
+    "data-on:pd-kanban-move":
       "$cardId = evt.detail?.['cardId'] ?? null; $col = evt.detail?.['col'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./move')",
   },
 };
@@ -93,7 +93,7 @@ const kanbanMove: DatastarEventBinding = {
 const customKanbanMove: DatastarEventBinding = {
   event: kanbanContract.events.move,
   attrs: {
-    "data-on:rocket-kanban-move":
+    "data-on:pd-kanban-move":
       "$cardId = evt.detail?.['cardId'] ?? null; $col = evt.detail?.['col'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./custom-move')",
   },
 };
@@ -114,12 +114,12 @@ function CustomKanban() {
   ];
   return (
     <pd-kanban-board {...customKanbanMove.attrs} aria-label="Signal station task board">
-      <template data-rocket-target="before">
+      <template data-pd-target="before">
         <span class="signal-drop-cue">
           <span>↳</span> TRANSMIT HERE
         </span>
       </template>
-      <template data-rocket-target="end">
+      <template data-pd-target="end">
         <span class="signal-drop-cue">
           <span>↳</span> ADD TO CHANNEL
         </span>
@@ -153,7 +153,7 @@ function CustomKanban() {
                   <span class="signal-card-foot" aria-hidden="true">
                     <span>●</span> READY TO ROUTE <span>↗</span>
                   </span>
-                  <template data-rocket-preview="" class="signal-preview">
+                  <template data-pd-preview="" class="signal-preview">
                     <span class="signal-preview-badge">◈ IN TRANSIT</span>
                     <strong>{card.label}</strong>
                     <span class="signal-preview-trace" aria-hidden="true">
@@ -175,7 +175,7 @@ function CustomKanban() {
 const sortableMove: DatastarEventBinding = {
   event: sortableListContract.events.move,
   attrs: {
-    "data-on:rocket-sortable-move":
+    "data-on:pd-sortable-move":
       "$itemId = evt.detail?.['itemId'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./list-move')",
   },
 };
@@ -183,34 +183,34 @@ const sortableMove: DatastarEventBinding = {
 const groupMove: DatastarEventBinding = {
   event: dragGroupContract.events.move,
   attrs: {
-    "data-on:rocket-drag-group-move":
+    "data-on:pd-drag-group-move":
       "$itemId = evt.detail?.['itemId'] ?? null; $fromList = evt.detail?.['fromList'] ?? null; $toList = evt.detail?.['toList'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./group-move')",
   },
 };
 
 const bentoMove: DatastarEventBinding = {
   event: bentoContract.events.move,
-  attrs: { "data-on:rocket-bento-move": "$bento = evt.detail; @post('./bento-move')" },
+  attrs: { "data-on:pd-bento-move": "$bento = evt.detail; @post('./bento-move')" },
 };
 const bentoResize: DatastarEventBinding = {
   event: bentoContract.events.resize,
-  attrs: { "data-on:rocket-bento-resize": "$bento = evt.detail; @post('./bento-resize')" },
+  attrs: { "data-on:pd-bento-resize": "$bento = evt.detail; @post('./bento-resize')" },
 };
 const treeMove: DatastarEventBinding = {
   event: sortableTreeContract.events.move,
-  attrs: { "data-on:rocket-tree-move": "$tree = evt.detail; @post('./tree-move')" },
+  attrs: { "data-on:pd-tree-move": "$tree = evt.detail; @post('./tree-move')" },
 };
 const nestedGroupMove: DatastarEventBinding = {
   event: dragGroupContract.events.move,
   attrs: {
-    "data-on:rocket-drag-group-move":
+    "data-on:pd-drag-group-move":
       "$itemId = evt.detail?.['itemId'] ?? null; $fromList = evt.detail?.['fromList'] ?? null; $toList = evt.detail?.['toList'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./nested-group-move')",
   },
 };
 const nestedListMove: DatastarEventBinding = {
   event: sortableListContract.events.move,
   attrs: {
-    "data-on:rocket-sortable-move":
+    "data-on:pd-sortable-move":
       "$itemId = evt.detail?.['itemId'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./nested-list-move')",
   },
 };
@@ -218,13 +218,13 @@ const nestedListMove: DatastarEventBinding = {
 const trashMove: DatastarEventBinding = {
   event: dragGroupContract.events.move,
   attrs: {
-    "data-on:rocket-drag-group-move":
+    "data-on:pd-drag-group-move":
       "$itemId = evt.detail?.['itemId'] ?? null; $fromList = evt.detail?.['fromList'] ?? null; $toList = evt.detail?.['toList'] ?? null; $before = evt.detail?.['before'] ?? null; @post('./trash-move')",
   },
 };
 const menuAction: DatastarEventBinding = {
   event: contextMenuContract.events.action,
-  attrs: { "data-on:rocket-menu-action": "$menu = evt.detail; @post('./menu-action')" },
+  attrs: { "data-on:pd-menu-action": "$menu = evt.detail; @post('./menu-action')" },
 };
 
 const tropes = [
@@ -416,17 +416,17 @@ const page = renderHTML(
                   <code>{`mkdir -p public/js
 curl -fsSL "https://github.com/<owner>/<repo>/releases/latest/download/pd-rockets-browser.tar.gz" | tar -xz -C public/js
 # serve the upstream datastar-rocket.js at /js/datastar-rocket.js
-<script type="importmap">{"imports":{"pd-rockets/rocket":"/js/datastar-rocket.js"}}</script>
+<script type="importmap">{"imports":{"pd-rockets/runtime":"/js/datastar-rocket.js"}}</script>
 # choose one of the following:
-<script type="module" src="/js/rocket-sortable-tree.js"></script>
-<script type="module" src="/js/rocket-kit.js"></script>`}</code>
+<script type="module" src="/js/pd-sortable-tree.js"></script>
+<script type="module" src="/js/pd-kit.js"></script>`}</code>
                 </pre>
                 <p>
                   <a href="https://data-star.dev/reference/rocket#bundle">Get the Rocket runtime ↗</a> ·{" "}
                   <a href="./js/DATASTAR-LICENSE.md">Upstream MIT notice ↗</a>
                 </p>
                 <p>
-                  The import map resolves <code>pd-rockets/rocket</code> to the pinned upstream module. If your page
+                  The import map resolves <code>pd-rockets/runtime</code> to the pinned upstream module. If your page
                   supplies a separate Rocket ES module, map that specifier to its URL instead; it must export{" "}
                   <code>rocket</code> and use the same Datastar instance as the page. The guide uses the latest pinned
                   upstream Datastar + Rocket bundle (v1.0.4) with its MIT notice.
@@ -507,7 +507,7 @@ curl -fsSL "https://github.com/<owner>/<repo>/releases/latest/download/pd-rocket
   </section>
 </pd-kanban-board>
 
-rocket-kanban-move → { cardId, col, before }`}</code>
+pd-kanban-move → { cardId, col, before }`}</code>
                 </pre>
                 <p>
                   <a href="./source/rocket/kanban/client.ts.txt">Kanban Rocket source ↗</a> ·{" "}
@@ -551,7 +551,7 @@ rocket-kanban-move → { cardId, col, before }`}</code>
   <div data-sortable-item="list-b" tabindex="0">Second item</div>
 </pd-sortable-list>
 
-rocket-sortable-move → { itemId, before }`}</code>
+pd-sortable-move → { itemId, before }`}</code>
                 </pre>
                 <p>
                   <a href="./source/rocket/sortable-list/client.ts.txt">Sortable Rocket source ↗</a> ·{" "}
@@ -599,7 +599,7 @@ rocket-sortable-move → { itemId, before }`}</code>
   <section data-drop-list="later"></section>
 </pd-drag-group>
 
-rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
+pd-drag-group-move → { itemId, fromList, toList, before }`}</code>
                 </pre>
                 <p>
                   <a href="./source/rocket/drag-group/client.ts.txt">Drag group Rocket source ↗</a> ·{" "}
@@ -717,8 +717,8 @@ rocket-drag-group-move → { itemId, fromList, toList, before }`}</code>
   <div data-bento-grid="scratchpad" data-columns="4"></div>
 </pd-bento-workspace>
 
-rocket-bento-move → { itemId, fromGrid, toGrid, updates: [{ itemId, grid, col, row, width, height }] }
-rocket-bento-resize → { itemId, grid, updates: [{ itemId, grid, col, row, width, height }] }`}</code>
+pd-bento-move → { itemId, fromGrid, toGrid, updates: [{ itemId, grid, col, row, width, height }] }
+pd-bento-resize → { itemId, grid, updates: [{ itemId, grid, col, row, width, height }] }`}</code>
                 </pre>
                 <p>
                   <a href="./source/rocket/bento/client.ts.txt">Bento Rocket source ↗</a> ·{" "}
@@ -772,7 +772,7 @@ rocket-bento-resize → { itemId, grid, updates: [{ itemId, grid, col, row, widt
   </div>
 </pd-sortable-tree>
 
-rocket-tree-move → { itemId, fromParent, toParent, before }`}</code>
+pd-tree-move → { itemId, fromParent, toParent, before }`}</code>
                 </pre>
                 <p>
                   <a href="./source/rocket/sortable-tree/client.ts.txt">Tree Rocket source ↗</a> ·{" "}
@@ -909,7 +909,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                             <span class="trope-handle" aria-hidden="true">
                               ⠿
                             </span>
-                            <template data-rocket-preview="" class="trope-preview">
+                            <template data-pd-preview="" class="trope-preview">
                               <strong>{trope.label}</strong>
                               <span>GOOD RIDDANCE ↗</span>
                             </template>
@@ -924,7 +924,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                         <strong>Drop the baggage.</strong>
                         <span>Release to remove it from the model.</span>
                       </section>
-                      <template data-rocket-target="end">
+                      <template data-pd-target="end">
                         <span class="trash-target">✳ &nbsp; LET IT GO</span>
                       </template>
                     </pd-drag-group>
@@ -951,7 +951,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
     data-key-focus-previous="ArrowUp p"
     data-key-move-down="Alt+ArrowDown Alt+n"
     data-key-move-up="Alt+ArrowUp Alt+p"
-    data-on:rocket-sortable-move="
+    data-on:pd-sortable-move="
       $itemId = evt.detail?.['itemId'] ?? null;
       $before = evt.detail?.['before'] ?? null;
       @post('/queue/move')">
@@ -961,7 +961,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
 </section>`}</code>
                 </pre>
                 <p>
-                  The <code>rocket-sortable-move</code> detail is <code>{`{ itemId, before }`}</code>; an empty{" "}
+                  The <code>pd-sortable-move</code> detail is <code>{`{ itemId, before }`}</code>; an empty{" "}
                   <code>before</code> appends. The example route and signals belong to the page, not the bundle. Set a
                   shortcut attribute to an empty string to disable that intent; see the{" "}
                   <a href="#keyboard">keyboard reference</a> for the other surfaces and Kanban’s legacy aliases.
@@ -1014,26 +1014,26 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                 <h3>Replace the preview or target markup</h3>
                 <p>
                   For richer affordances, render inert <code>&lt;template&gt;</code> fragments with your items and host.
-                  A direct-child <code>data-rocket-preview</code> template on an item replaces that item’s floating
-                  clone; its class is copied onto the preview wrapper, which moves under <code>document.body</code>. Its
-                  size is yours to style; <code>--rocket-source-width</code> and <code>--rocket-source-height</code>
-                  expose the original dimensions if useful. Direct-child <code>data-rocket-target</code> templates on
-                  the host supply target decorations. Rocket inserts their content into a noninteractive{" "}
-                  <code>[data-rocket-target-indicator]</code> wrapper at the active target for both pointer and keyboard
+                  A direct-child <code>data-pd-preview</code> template on an item replaces that item’s floating clone;
+                  its class is copied onto the preview wrapper, which moves under <code>document.body</code>. Its size
+                  is yours to style; <code>--pd-source-width</code> and <code>--pd-source-height</code>
+                  expose the original dimensions if useful. Direct-child <code>data-pd-target</code> templates on the
+                  host supply target decorations. Rocket inserts their content into a noninteractive{" "}
+                  <code>[data-pd-target-indicator]</code> wrapper at the active target for both pointer and keyboard
                   staging. Give target items and containers <code>position: relative</code> so you can position the
                   indicator inside them:
                 </p>
                 <pre>
                   <code>{`<!-- Inside a server-rendered [data-sortable-item] -->
-<template data-rocket-preview class="queue-preview">
+<template data-pd-preview class="queue-preview">
   <strong>Moving: First task</strong>
 </template>
 
 <!-- Direct children of the pd-sortable-list host -->
-<template data-rocket-target="before">
+<template data-pd-target="before">
   <span class="queue-target">Place above</span>
 </template>
-<template data-rocket-target="end">
+<template data-pd-target="end">
   <span class="queue-target">Place at end</span>
 </template>`}</code>
                 </pre>
@@ -1042,18 +1042,18 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
   display: grid;
   place-items: center;
   width: max-content;
-  min-height: var(--rocket-source-height);
+  min-height: var(--pd-source-height);
   border: 2px solid var(--color-accent, #256c62);
   border-radius: var(--radius-card, .5rem);
   background: var(--color-surface, #fff);
 }
-.project-queue [data-rocket-target-indicator] {
+.project-queue [data-pd-target-indicator] {
   left: 0;
   right: 0;
   color: var(--queue-accent);
 }
-.project-queue [data-rocket-target-indicator="before"] { top: -1.5rem; }
-.project-queue [data-rocket-target-indicator="end"] { bottom: -1.5rem; }
+.project-queue [data-pd-target-indicator="before"] { top: -1.5rem; }
+.project-queue [data-pd-target-indicator="end"] { bottom: -1.5rem; }
 .project-queue .queue-target { display: block; }`}</code>
                 </pre>
                 <p>
@@ -1061,8 +1061,8 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                   <code>data-drop-*</code> states remain available for CSS-only markers like those above. When using a
                   template indicator, replace those pseudo-element marker rules with your indicator styles. Other target
                   kinds are <code>into</code> for tree folders and <code>cell</code> for bento grids; a bare{" "}
-                  <code>data-rocket-target</code> template can serve every kind on a host. Geometry and the semantic
-                  move event still belong to the surface.
+                  <code>data-pd-target</code> template can serve every kind on a host. Geometry and the semantic move
+                  event still belong to the surface.
                 </p>
                 <h3>Match the affordance to the layout</h3>
                 <div class="table-scroll">
@@ -1216,8 +1216,8 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
                   <code>{`<article data-context-id="record-a" data-menu-for="record-menu">
   <button data-menu-for="record-menu" aria-haspopup="menu">Actions</button>
 </article>
-<pd-context-menu id="record-menu" data-on:rocket-menu-action="$menu = evt.detail; @post('/menu-action')">
-  <template data-rocket-menu>
+<pd-context-menu id="record-menu" data-on:pd-menu-action="$menu = evt.detail; @post('/menu-action')">
+  <template data-pd-menu>
     <button role="menuitem" data-action="inspect">Inspect {contextId}</button>
     <button role="menuitem" data-submenu="more" aria-haspopup="menu">More →</button>
     <div id="more" role="menu" popover="auto">
@@ -1226,7 +1226,7 @@ data: elements <div id="kanban-demo">…complete example…</div>`}</code>
   </template>
 </pd-context-menu>
 
-rocket-menu-action → { action, contextId }`}</code>
+pd-menu-action → { action, contextId }`}</code>
                 </pre>
                 <p>
                   Menus may nest as deeply as your markup needs. Opening focuses the menu; Down starts at the first item
@@ -1244,11 +1244,11 @@ rocket-menu-action → { action, contextId }`}</code>
                 </p>
                 <p>
                   For fresh options, fetch page-owned HTML before opening and morph the template, or render a direct
-                  child marked <code>data-rocket-menu-content</code> for live server markup. Then call{" "}
+                  child marked <code>data-pd-menu-content</code> for live server markup. Then call{" "}
                   <code>menu.openFor(trigger)</code>. Live markup stays in the host after close; use{" "}
                   <code>menu.closeMenu(refocus?)</code> and <code>menu.isOpen()</code> when coordinating a page-owned
-                  menu lifecycle. <code>rocket-menu-scope</code> emits <code>{`{ root, active }`}</code> when its
-                  keyboard scope opens or closes. Additional non-sensitive values can be passed as{" "}
+                  menu lifecycle. <code>pd-menu-scope</code> emits <code>{`{ root, active }`}</code> when its keyboard
+                  scope opens or closes. Additional non-sensitive values can be passed as{" "}
                   <code>{`menu.openFor(trigger, undefined, { label: "Example" })`}</code> and used as{" "}
                   <code>{`{label}`}</code> in the template. The Rocket never fetches menus or makes authorization
                   decisions. See <a href="./source/rocket/context-menu/client.ts.txt">menu behavior ↗</a> and{" "}
@@ -1280,9 +1280,9 @@ rocket-menu-action → { action, contextId }`}</code>
   <input data-inline-edit-input aria-label="Edit title" value="Title from server">
 </pd-inline-edit>
 
-rocket-inline-edit-request → { contextId }
-rocket-inline-edit-commit → { contextId, value }
-rocket-inline-edit-cancel → { contextId }`}</code>
+pd-inline-edit-request → { contextId }
+pd-inline-edit-commit → { contextId, value }
+pd-inline-edit-cancel → { contextId }`}</code>
                 </pre>
                 <p>
                   The element leaves classes and layout to your CSS; it never submits a request or stores a second copy
@@ -1466,12 +1466,12 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                         </td>
                         <td>
                           <a href="./source/contracts/kanban.ts.txt">
-                            <code>rocket-kanban-move</code>
+                            <code>pd-kanban-move</code>
                           </a>{" "}
                           <small>{`{ cardId, col, before }`}</small>
                           <br />
                           <a href="./source/contracts/kanban.ts.txt">
-                            <code>rocket-kanban-select</code>
+                            <code>pd-kanban-select</code>
                           </a>{" "}
                           <small>{`{ cardId }`}</small>
                         </td>
@@ -1489,7 +1489,7 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                         </td>
                         <td>
                           <a href="./source/contracts/sortable-list.ts.txt">
-                            <code>rocket-sortable-move</code>
+                            <code>pd-sortable-move</code>
                           </a>{" "}
                           <small>{`{ itemId, before }`}</small>
                         </td>
@@ -1507,7 +1507,7 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                         </td>
                         <td>
                           <a href="./source/contracts/drag-group.ts.txt">
-                            <code>rocket-drag-group-move</code>
+                            <code>pd-drag-group-move</code>
                           </a>{" "}
                           <small>{`{ itemId, fromList, toList, before }`}</small>
                         </td>
@@ -1525,7 +1525,7 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                         </td>
                         <td>
                           <a href="./source/contracts/bento.ts.txt">
-                            <code>rocket-bento-move</code> / <code>rocket-bento-resize</code>
+                            <code>pd-bento-move</code> / <code>pd-bento-resize</code>
                           </a>
                         </td>
                       </tr>
@@ -1542,7 +1542,7 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                         </td>
                         <td>
                           <a href="./source/contracts/sortable-tree.ts.txt">
-                            <code>rocket-tree-move</code>
+                            <code>pd-tree-move</code>
                           </a>{" "}
                           <small>{`{ itemId, fromParent, toParent, before }`}</small>
                         </td>
@@ -1573,9 +1573,9 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                 <h3>Hono JSX</h3>
                 <pre>
                   <code>{`const move = {
-  event: "rocket-kanban-move",
+  event: "pd-kanban-move",
   attrs: {
-    "data-on:rocket-kanban-move":
+    "data-on:pd-kanban-move":
       "$cardId = evt.detail?.['cardId'] ?? null; " +
       "$col = evt.detail?.['col'] ?? null; " +
       "$before = evt.detail?.['before'] ?? null; @post('/move')",
@@ -1590,7 +1590,7 @@ rocket-inline-edit-cancel → { contextId }`}</code>
                 <h3>Go template</h3>
                 <pre>
                   <code>{`<pd-kanban-board id="kanban-board"
-   data-on:rocket-kanban-move="$cardId = evt.detail?.['cardId'] ?? null;
+   data-on:pd-kanban-move="$cardId = evt.detail?.['cardId'] ?? null;
      $col = evt.detail?.['col'] ?? null;
      $before = evt.detail?.['before'] ?? null; @post('/move')">
   {{range .Columns}}
@@ -1650,7 +1650,7 @@ cd examples/go && go run .`}</code>
         <ol data-activity-queue=""></ol>
       </aside>
       <script type="module" src={`./fake-backend.js?v=${assetVersion}`}></script>
-      <script type="module" src={`./rocket-kit.js?v=${assetVersion}`}></script>
+      <script type="module" src={`./pd-kit.js?v=${assetVersion}`}></script>
       <script type="module" src={`./keyboard-help.js?v=${assetVersion}`}></script>
       <script type="module" src={`./custom-atmosphere.js?v=${assetVersion}`}></script>
       <script type="module" src={`./trash-sparks.js?v=${assetVersion}`}></script>
@@ -1806,7 +1806,7 @@ await buildSourceIndex(root, output, assetVersion);
 
 await mkdir(join(output, "downloads"), { recursive: true });
 for (const { file } of browserBundles) {
-  const content = file === "rocket-kit.js" ? bundle : await readFile(join(root, "dist", file), "utf8");
+  const content = file === "pd-kit.js" ? bundle : await readFile(join(root, "dist", file), "utf8");
   await writeFile(join(output, "downloads", file), content);
   await copyFile(join(root, "dist", `${file}.br`), join(output, "downloads", `${file}.br`));
   await writeFile(join(output, file), content);

@@ -9,7 +9,7 @@ import {
 import { datastarEventBinding, type DatastarEventBinding } from "./event-binding";
 
 export const kanbanComponent = defineComponent({
-  id: "rocket-kit-kanban",
+  id: "pd-kit-kanban",
   tag: kanbanContract.tag,
   client: { load: "eager" },
   events: {

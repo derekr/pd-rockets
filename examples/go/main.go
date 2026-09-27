@@ -46,17 +46,17 @@ var (
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Rocket kit spike</title>
     <link rel="stylesheet" href="/demo.css">
-    <script type="importmap">{"imports":{"pd-rockets/rocket":"/js/datastar-rocket.js"}}</script>
+    <script type="importmap">{"imports":{"pd-rockets/runtime":"/js/datastar-rocket.js"}}</script>
   </head>
   <body data-signals='{"cardId":"","col":0,"before":"","itemId":""}'>
     <h1>Rocket kit spike</h1>
     <p>Drag cards, use the Kanban keyboard defaults, or reorder the list.</p>
     {{template "demo" .}}
-    <script type="module" src="/rocket-kit.js"></script>
+    <script type="module" src="/pd-kit.js"></script>
   </body>
 </html>
 {{define "demo"}}
-<div id="rocket-demo">
+<div id="pd-demo">
   <div class="demo-block">
     <h2>Kanban</h2>
     <div class="kanban">
@@ -70,7 +70,7 @@ var (
         data-key-move-left="Alt+ArrowLeft Alt+h"
         data-key-move-right="Alt+ArrowRight Alt+l"
         data-key-cancel="Escape"
-        data-on:rocket-kanban-move="$cardId = evt.detail?.['cardId'] ?? null; $col = evt.detail?.['col'] ?? null; $before = evt.detail?.['before'] ?? null; @post('/move')"
+        data-on:pd-kanban-move="$cardId = evt.detail?.['cardId'] ?? null; $col = evt.detail?.['col'] ?? null; $before = evt.detail?.['before'] ?? null; @post('/move')"
       >
         {{range .Columns}}
         <section data-kanban-lane="" data-col="{{.ID}}" aria-label="{{.Label}}">
@@ -90,7 +90,7 @@ var (
   <div class="demo-block">
     <h2>Sortable list</h2>
     <pd-sortable-list
-      data-on:rocket-sortable-move="$itemId = evt.detail?.['itemId'] ?? null; $before = evt.detail?.['before'] ?? null; @post('/list-move')"
+      data-on:pd-sortable-move="$itemId = evt.detail?.['itemId'] ?? null; $before = evt.detail?.['before'] ?? null; @post('/list-move')"
     >
       {{range .List}}
       <div data-sortable-item="{{.ID}}" tabindex="0">{{.Label}}</div>
@@ -104,7 +104,7 @@ var (
 
 func main() {
 	addr := flag.String("addr", ":3035", "HTTP listen address")
-	bundle := flag.String("bundle", "../../dist/rocket-kit.js", "vendored Rocket bundle")
+	bundle := flag.String("bundle", "../../dist/pd-kit.js", "vendored Rocket bundle")
 	datastar := flag.String("datastar", "../../public/js/datastar-rocket.js", "Datastar + Rocket bundle")
 	fixture := flag.String("fixture", "../hono-datastar/fixture.json", "shared demo fixture")
 	css := flag.String("css", "../hono-datastar/demo.css", "shared demo stylesheet")
@@ -120,7 +120,7 @@ func main() {
 	mux.HandleFunc("GET /", page)
 	mux.HandleFunc("POST /move", move)
 	mux.HandleFunc("POST /list-move", listMove)
-	mux.Handle("GET /rocket-kit.js", staticFile(*bundle, "text/javascript; charset=utf-8"))
+	mux.Handle("GET /pd-kit.js", staticFile(*bundle, "text/javascript; charset=utf-8"))
 	mux.Handle("GET /js/datastar-rocket.js", staticFile(*datastar, "text/javascript; charset=utf-8"))
 	mux.Handle("GET /demo.css", staticFile(*css, "text/css; charset=utf-8"))
 
@@ -174,7 +174,7 @@ func move(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "render failed", http.StatusInternalServerError)
 		return
 	}
-	writePatch(w, "#rocket-demo", markup)
+	writePatch(w, "#pd-demo", markup)
 }
 
 func listMove(w http.ResponseWriter, r *http.Request) {
@@ -198,7 +198,7 @@ func listMove(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "render failed", http.StatusInternalServerError)
 		return
 	}
-	writePatch(w, "#rocket-demo", markup)
+	writePatch(w, "#pd-demo", markup)
 }
 
 func readSignals(body io.Reader) (map[string]any, error) {

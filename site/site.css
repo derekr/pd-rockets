@@ -976,17 +976,17 @@ kbd {
   float: right;
 }
 
-.signal-content [data-rocket-target-indicator] {
+.signal-content [data-pd-target-indicator] {
   z-index: 5;
   left: 0;
   right: 0;
   display: block;
 }
 
-.signal-content [data-rocket-target-indicator="before"] {
+.signal-content [data-pd-target-indicator="before"] {
   top: -18px;
 }
-.signal-content [data-rocket-target-indicator="end"] {
+.signal-content [data-pd-target-indicator="end"] {
   bottom: 0;
 }
 .signal-drop-cue {
@@ -1245,10 +1245,10 @@ kbd {
   font-size: 3.6rem;
   line-height: 1;
 }
-.trash-stage [data-drop-list="tropes"] [data-rocket-target-indicator] {
+.trash-stage [data-drop-list="tropes"] [data-pd-target-indicator] {
   display: none;
 }
-.trash-stage [data-drop-list="bin"] [data-rocket-target-indicator] {
+.trash-stage [data-drop-list="bin"] [data-pd-target-indicator] {
   z-index: 2;
   top: 50%;
   left: 0;

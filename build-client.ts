@@ -13,7 +13,7 @@ for (const { entry, file } of browserBundles) {
     minify: true,
   });
   if (!result.success || result.outputs.length !== 1 || !result.outputs[0]) {
-    throw new AggregateError(result.logs, `rocket-kit: ${file} build failed`);
+    throw new AggregateError(result.logs, `pd-kit: ${file} build failed`);
   }
   mkdirSync(dirname(output), { recursive: true });
   const content = Buffer.from(await result.outputs[0].arrayBuffer());

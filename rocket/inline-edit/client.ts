@@ -1,5 +1,5 @@
 // @ts-ignore — the consuming page supplies its Rocket module through the import map.
-import { rocket } from "pd-rockets/rocket";
+import { rocket } from "pd-rockets/runtime";
 import {
   inlineEditContract,
   type InlineEditCommitDetail,

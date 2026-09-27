@@ -4,7 +4,7 @@ import { sortableListContract, type SortableMoveDetail } from "../../../contract
 import { datastarEventBinding, type DatastarEventBinding } from "./event-binding";
 
 const sortableListComponent = defineComponent({
-  id: "rocket-kit-sortable-list",
+  id: "pd-kit-sortable-list",
   tag: sortableListContract.tag,
   client: { load: "eager" },
   events: {

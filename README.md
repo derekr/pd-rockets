@@ -14,16 +14,16 @@ Datastar actions and backend handlers.
 - `site/` — a static guide and live examples backed by an in-browser SSE fixture.
 
 `pd-drag-group` coordinates multiple `[data-drop-list]` regions containing `[data-drag-item]` elements. Pointer
-dragging or Alt + arrows (or h/j/k/l) emits `rocket-drag-group-move` with `{ itemId, fromList, toList, before }`;
+dragging or Alt + arrows (or h/j/k/l) emits `pd-drag-group-move` with `{ itemId, fromList, toList, before }`;
 releasing Alt commits a keyboard move, and Escape cancels it. Groups are independent. Kanban keeps its own column and
 card contract while sharing the insertion and pointer mechanics.
 
 `pd-context-menu` is a template-first, backend-neutral action menu. Server-rendered items and nested submenus are
 cloned on open with a target `contextId`; the menu handles popover placement, keyboard navigation, and focus return,
 then emits `{ action, contextId }`. The page owns action handling and may morph the template with fresh server HTML.
-For fetched menu fragments, render a direct child marked `data-rocket-menu-content` instead of a template and call
+For fetched menu fragments, render a direct child marked `data-pd-menu-content` instead of a template and call
 `openFor(trigger)` after the page installs the fragment. `closeMenu(refocus?)` and `isOpen()` expose the lifecycle;
-`rocket-menu-scope` emits `{ root, active }` for page-owned keyboard scopes. Live content remains in the DOM on close.
+`pd-menu-scope` emits `{ root, active }` for page-owned keyboard scopes. Live content remains in the DOM on close.
 
 `pd-inline-edit` owns a title's double-press detection, Enter/blur commit, and Escape cancellation while the page
 owns its input, edit mode, validation and save. Mark title and input with `data-inline-edit-trigger` / `data-inline-edit-value`
@@ -48,20 +48,20 @@ there. Request dispatch, confirmation, and retry
 policy stay with the page.
 `installBoardDrag()` supplies lane-grid pointer capture, keep-in-place previews, hit testing and a morph-tolerant drag
 lifecycle. Cards use `data-board-card`, lanes use `data-board-lane` / `data-col`, and the explicit grip uses
-`data-rocket-board-drag-handle`. A direct child `<template data-rocket-preview>` can supply the page's preview markup
-and CSS (with `--rocket-source-width` / `--rocket-source-height` available); otherwise a non-interactive card clone is
+`data-pd-board-drag-handle`. A direct child `<template data-pd-preview>` can supply the page's preview markup
+and CSS (with `--pd-source-width` / `--pd-source-height` available); otherwise a non-interactive card clone is
 used. The page provides selection, semantic intents, projection indicators and optional mobile drag targets through
 callbacks, so its mobile tabs, pager, scrolling and command policy are independent of the kit.
-`installBoardColumnReorder()` is likewise opt-in: the page marks its desktop heads with `data-rocket-board-column`,
-mobile tabs with `data-rocket-board-mobile-column`, their handles with `data-rocket-board-column-grip` (and
-`data-rocket-board-mobile-grip` for tabs), and optional accessible steps with `data-rocket-board-column-step`. It
+`installBoardColumnReorder()` is likewise opt-in: the page marks its desktop heads with `data-pd-board-column`,
+mobile tabs with `data-pd-board-mobile-column`, their handles with `data-pd-board-column-grip` (and
+`data-pd-board-mobile-grip` for tabs), and optional accessible steps with `data-pd-board-column-step`. It
 produces only `(columnId, toIndex)`; the page renders and orders the columns and owns the command.
 `installBoardCamera()` optionally scrolls the page or the lane under a dragged pointer at the viewport edge and calls
 back after settling so the page can remeasure its drop target. The page supplies live lane queries and drag state; it
 can omit the camera entirely or keep its own mobile scrolling affordance.
 
 `pd-sortable-tree` is a folder/file list with between-sibling insertion and drops into folders. Its
-`rocket-tree-move` detail carries `{ itemId, fromParent, toParent, before }`; the backend applies that change and sends
+`pd-tree-move` detail carries `{ itemId, fromParent, toParent, before }`; the backend applies that change and sends
 rendered HTML over SSE. Pointer drops animate the dragged row from the floating preview's final position.
 
 Every surface supports arrow-key and Vim-key focus navigation. Home/End navigate list, group, grid and tree items;
@@ -87,9 +87,9 @@ updates. See the [Rocket reference](https://data-star.dev/reference/rocket) for 
 
 ## Install prebuilt browser bundles
 
-Custom-element tags use the `pd-*` prefix (for example, `<pd-kanban-board>` and `<pd-inline-edit>`). When updating from
-an older bundle, update element markup and CSS selectors together. The `rocket-*` event names, `data-rocket-*` hooks,
-and `rocket-*.js` artifact names remain unchanged.
+Custom-element tags, emitted events, data hooks, CSS variables, and bundle names use the `pd-` prefix. When updating
+from an older bundle, update markup, event bindings, CSS selectors, import maps, and script URLs together. The browser
+bundles use the external `pd-rockets/runtime` specifier for the one upstream Datastar + Rocket instance.
 
 Tagged releases publish `pd-rockets-browser.tar.gz` with minified PD rockets JavaScript bundles, matching Brotli
 `.js.br` files, generated TypeScript declarations under `types/`, and their Beer-Ware license. The declarations are
@@ -105,33 +105,33 @@ mkdir -p public/js && curl -fsSL "https://github.com/<owner>/<repo>/releases/lat
 
 Choose a single surface or the full collection:
 
-| File                        | Use                                                                     |
-| --------------------------- | ----------------------------------------------------------------------- |
-| `rocket-core.js`            | Import framework-neutral pointer, insertion, keyboard and FLIP helpers. |
-| `rocket-kanban.js`          | Kanban board.                                                           |
-| `rocket-sortable-list.js`   | One sortable list.                                                      |
-| `rocket-drag-group.js`      | Multiple lists.                                                         |
-| `rocket-bento-workspace.js` | Dashboard grids.                                                        |
-| `rocket-sortable-tree.js`   | Folder/file tree.                                                       |
-| `rocket-kit.js`             | All surfaces.                                                           |
+| File                    | Use                                                                     |
+| ----------------------- | ----------------------------------------------------------------------- |
+| `pd-core.js`            | Import framework-neutral pointer, insertion, keyboard and FLIP helpers. |
+| `pd-kanban.js`          | Kanban board.                                                           |
+| `pd-sortable-list.js`   | One sortable list.                                                      |
+| `pd-drag-group.js`      | Multiple lists.                                                         |
+| `pd-bento-workspace.js` | Dashboard grids.                                                        |
+| `pd-sortable-tree.js`   | Folder/file tree.                                                       |
+| `pd-kit.js`             | All surfaces.                                                           |
 
-Each surface bundle includes the core code it needs; `rocket-core.js` is for direct imports, not a required second
-script. The surface bundles import `rocket` from the external `pd-rockets/rocket` specifier. Map it to the open-source
+Each surface bundle includes the core code it needs; `pd-core.js` is for direct imports, not a required second
+script. The surface bundles import `rocket` from the external `pd-rockets/runtime` specifier. Map it to the open-source
 [`datastar-rocket.js` bundle](https://data-star.dev/reference/rocket#bundle) before loading a surface:
 
 ```html
 <script type="importmap">
-  { "imports": { "pd-rockets/rocket": "/js/datastar-rocket.js" } }
+  { "imports": { "pd-rockets/runtime": "/js/datastar-rocket.js" } }
 </script>
-<script type="module" src="/js/rocket-sortable-tree.js"></script>
+<script type="module" src="/js/pd-sortable-tree.js"></script>
 ```
 
 TypeScript consumers of the full bundle can map its browser specifier to the extracted declaration entry (for example,
-`"paths": { "/js/rocket-kit.js": ["./public/js/types/client-entry.d.ts"] }` in `tsconfig.json`). This checks installer
+`"paths": { "/js/pd-kit.js": ["./public/js/types/client-entry.d.ts"] }` in `tsconfig.json`). This checks installer
 options and return types without bundling TypeScript into the browser.
 
 The pinned upstream bundle includes both Datastar and Rocket, so the guide loads it without a separate `datastar.js`.
-If an application uses separate scripts, map `pd-rockets/rocket` to a Rocket ES module exporting `rocket` that uses the
+If an application uses separate scripts, map `pd-rockets/runtime` to a Rocket ES module exporting `rocket` that uses the
 same Datastar instance; a standalone Datastar script by itself does not provide Rocket. Upstream v1.0.4 currently
 publishes Rocket in the combined bundle. Keep its upstream MIT notice with the runtime; the PD rockets release archive
 does not include it.

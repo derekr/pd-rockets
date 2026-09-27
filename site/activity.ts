@@ -18,13 +18,13 @@ export function showActivity(kind: "Rocket" | "Datastar" | "SSE", label: string)
 }
 
 for (const name of [
-  "rocket-kanban-move",
-  "rocket-kanban-select",
-  "rocket-sortable-move",
-  "rocket-drag-group-move",
-  "rocket-bento-move",
-  "rocket-bento-resize",
-  "rocket-tree-move",
+  "pd-kanban-move",
+  "pd-kanban-select",
+  "pd-sortable-move",
+  "pd-drag-group-move",
+  "pd-bento-move",
+  "pd-bento-resize",
+  "pd-tree-move",
 ]) {
   document.addEventListener(name, () => showActivity("Rocket", name), { capture: true });
 }

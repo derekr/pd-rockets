@@ -4,7 +4,7 @@ export const dragGroupContract = {
     list: "[data-drop-list]",
     item: "[data-drag-item]",
   },
-  events: { move: "rocket-drag-group-move" },
+  events: { move: "pd-drag-group-move" },
 } as const;
 
 /** Item IDs are unique within a group; list IDs identify server-rendered destinations. */

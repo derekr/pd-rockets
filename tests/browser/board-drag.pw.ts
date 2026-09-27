@@ -3,14 +3,14 @@ import { expect, test } from "@playwright/test";
 test("board drag keeps the card in its lane, uses page preview markup, and commits a lane cell", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(async () => {
-    const { installBoardDrag } = (await new Function('return import("/rocket-kit.js")')()) as {
+    const { installBoardDrag } = (await new Function('return import("/pd-kit.js")')()) as {
       installBoardDrag: (options: object) => { dispose(): void };
     };
     const host = document.createElement("section");
     host.id = "drag-board";
     host.innerHTML = `<div data-board-grid style="display:flex;gap:16px">
       <div data-board-lane data-col="0" style="width:160px;display:grid;grid-auto-rows:70px;align-content:start">
-        <article data-board-card="a" tabindex="0" style="background:lightblue;height:70px"><span data-rocket-board-drag-handle>Drag A</span><template data-rocket-preview><strong>Page preview</strong></template></article>
+        <article data-board-card="a" tabindex="0" style="background:lightblue;height:70px"><span data-pd-board-drag-handle>Drag A</span><template data-pd-preview><strong>Page preview</strong></template></article>
       </div><div data-board-lane data-col="1" style="width:160px;display:grid;grid-auto-rows:70px;align-content:start">
         <article data-board-card="b" tabindex="0" style="background:lightgreen;height:70px">B</article>
       </div></div>`;
@@ -36,7 +36,7 @@ test("board drag keeps the card in its lane, uses page preview markup, and commi
       onCancel: () => (window as any).__moves.push("cancel"),
     });
   });
-  const grip = page.locator("#drag-board [data-rocket-board-drag-handle]");
+  const grip = page.locator("#drag-board [data-pd-board-drag-handle]");
   await grip.scrollIntoViewIfNeeded();
   const box = (await grip.boundingBox())!;
   const target = (await page.locator('#drag-board [data-col="1"]').boundingBox())!;
