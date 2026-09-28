@@ -12,6 +12,8 @@ export { installBoardColumnReorder } from "./board-column-reorder";
 export type { BoardColumnReorderOptions } from "./board-column-reorder";
 export { installBoardCamera } from "./board-camera";
 export type { BoardCameraOptions } from "./board-camera";
+export { installBoardLaneTabs } from "./board-lane-tabs";
+export type { BoardLaneTabsOptions, BoardDragFrames } from "./board-lane-tabs";
 export { installFlip } from "./flip";
 export type { FlipOptions, FlipOrigin } from "./flip";
 export { insertionBefore } from "./insertion-target";

@@ -59,6 +59,11 @@ produces only `(columnId, toIndex)`; the page renders and orders the columns and
 `installBoardCamera()` optionally scrolls the page or the lane under a dragged pointer at the viewport edge and calls
 back after settling so the page can remeasure its drop target. The page supplies live lane queries and drag state; it
 can omit the camera entirely or keep its own mobile scrolling affordance.
+`installBoardLaneTabs()` is an optional pager-and-tab controller: it synchronizes selected tabs with lane scrolling,
+hit-tests tabs as drag targets, and reasserts state after a DOM morph. The page supplies tab/lane selectors, lane IDs,
+attribute names and its responsive breakpoint; the drag machine calls its `startCardDrag`, `trackPointer`,
+`updateDropTarget` and `finishCardDrag` methods through `mobile`. The page handles drop-indicator styling, commands,
+and optional frame measurements via callbacks.
 
 `pd-sortable-tree` is a folder/file list with between-sibling insertion and drops into folders. Its
 `pd-tree-move` detail carries `{ itemId, fromParent, toParent, before }`; the backend applies that change and sends
