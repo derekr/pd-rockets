@@ -13,7 +13,6 @@ export { installBoardProjection } from "./core/board-projection-dom";
 export { installBoardDrag } from "./core/board-drag";
 export { installBoardColumnReorder } from "./core/board-column-reorder";
 export { installBoardCamera } from "./core/board-camera";
-export { installBoardLaneTabs } from "./core/board-lane-tabs";
 export {
   cellFromPoint,
   gridIndex,

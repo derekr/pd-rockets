@@ -2,14 +2,6 @@ import { cellFromPoint, insertOrder, parseGridTemplate, rowCenter, type BoardLan
 import { dragPreviewFor } from "./visual-outlets";
 
 export type BoardCell = { col: number; row: number };
-export type BoardDragMobile = {
-  startCardDrag(col: number): void;
-  finishCardDrag(): void;
-  trackPointer(event: PointerEvent): void;
-  updateDropTarget(): void;
-  targetColumn(): number | null;
-  show(col: number): void;
-};
 export type BoardDragOptions = {
   host: HTMLElement;
   lanes(): HTMLElement[];
@@ -21,15 +13,20 @@ export type BoardDragOptions = {
     setDropLine(cell: BoardCell | null, excludeId?: string): void;
     sync(): void;
   };
-  mobile?(): BoardDragMobile | null;
   onPress?(card: HTMLElement): void;
   canStart?(): boolean;
   onStart(cardId: string, cell: BoardCell, card: HTMLElement): void;
-  onCommit(cardId: string, cell: BoardCell, card: HTMLElement, previewRect: DOMRect, mobileTarget: number | null): void;
+  onCommit(
+    cardId: string,
+    cell: BoardCell,
+    card: HTMLElement,
+    previewRect: DOMRect,
+    dropZone: HTMLElement | null,
+  ): void;
   onCancel(): void;
 };
 
-/** Lane-grid pointer mechanics. Markup, mobile affordances and command policy belong to the page. */
+/** Lane-grid pointer mechanics; page-authored drop zones can represent the same lane elsewhere in the layout. */
 export function installBoardDrag(options: BoardDragOptions) {
   const { host, projection } = options;
   let pending: { cardId: string; pointerId: number; x: number; y: number; rect: DOMRect; cell: BoardCell } | null =
@@ -58,8 +55,33 @@ export function installBoardDrag(options: BoardDragOptions) {
   }> = [];
   let scrollX = 0;
   let scrollY = 0;
+  let activeZone: HTMLElement | null = null;
   const cardFor = (id: string) => host.querySelector<HTMLElement>(`[data-board-card="${CSS.escape(id)}"]`);
-  const mobile = () => options.mobile?.() ?? null;
+  const zones = () => host.querySelectorAll<HTMLElement>("[data-pd-board-drop-zone]");
+  function clearZone() {
+    for (const zone of zones()) zone.removeAttribute("data-pd-board-drop-over");
+    activeZone = null;
+  }
+  function zoneAt(x: number, y: number): HTMLElement | null {
+    const zone = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-pd-board-drop-zone]");
+    if (!zone || !host.contains(zone)) return null;
+    const col = Number(zone.dataset.pdBoardDropZone);
+    return Number.isInteger(col) && options.lanes().some((lane) => Number(lane.dataset.col) === col) ? zone : null;
+  }
+  function updateZone(x: number, y: number): HTMLElement | null {
+    const zone = zoneAt(x, y);
+    if (zone === activeZone) return zone;
+    clearZone();
+    activeZone = zone;
+    if (zone) {
+      const key = zone.dataset.pdBoardDropZone;
+      for (const peer of zones())
+        if (peer.dataset.pdBoardDropZone === key) peer.setAttribute("data-pd-board-drop-over", "");
+      projection.setDropColumn(null);
+      projection.setDropLine(null);
+    }
+    return zone;
+  }
   function measure() {
     geo = options.lanes().map((lane) => {
       const rect = lane.getBoundingClientRect();
@@ -145,20 +167,30 @@ export function installBoardDrag(options: BoardDragOptions) {
       base: { left: rect.left, top: rect.top },
     };
     pending = null;
-    mobile()?.startCardDrag(cell.col);
   }
   function move(event: PointerEvent) {
-    mobile()?.trackPointer(event);
     if (!drag) return;
     const left = event.clientX - drag.offsetX;
     const top = event.clientY - drag.offsetY;
     drag.preview.style.transform = `translate3d(${left - drag.base.left}px, ${top - drag.base.top}px, 0)`;
     if (!drag.item.isConnected) drag.item = cardFor(drag.cardId) ?? drag.item;
+    const wasOverZone = activeZone !== null;
+    if (updateZone(event.clientX, event.clientY)) return;
     const target = targetAt(left + drag.width / 2, top + drag.height / 2);
-    if (!target) return;
+    if (!target) {
+      if (wasOverZone) {
+        const col = geo[drag.lastLane]?.col;
+        if (col != null) {
+          projection.setDropColumn(col);
+          projection.setDropLine(landing(drag.cardId, col, drag.lastRow), drag.cardId);
+        }
+      }
+      return;
+    }
     const now = performance.now();
-    if (now - drag.changedAt < 40 || (target.lane === drag.lastLane && target.row === drag.lastRow)) return;
-    if (target.lane === drag.lastLane) {
+    if (!wasOverZone && (now - drag.changedAt < 40 || (target.lane === drag.lastLane && target.row === drag.lastRow)))
+      return;
+    if (!wasOverZone && target.lane === drag.lastLane) {
       const tracks = geo[drag.lastLane]?.tracks;
       if (tracks) {
         const center = geo[drag.lastLane]!.rect.top + rowCenter(tracks.rows, tracks.gap, drag.lastRow);
@@ -170,7 +202,6 @@ export function installBoardDrag(options: BoardDragOptions) {
     drag.lastLane = target.lane;
     drag.lastRow = target.row;
     drag.changedAt = now;
-    if (mobile()?.targetColumn() != null) return;
     projection.setDropColumn(target.col);
     projection.setDropLine(landing(drag.cardId, target.col, target.row), drag.cardId);
   }
@@ -178,6 +209,7 @@ export function installBoardDrag(options: BoardDragOptions) {
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
     queued = null;
+    clearZone();
     if (drag) {
       (cardFor(drag.cardId) ?? drag.item).removeAttribute("data-board-dragging");
       drag.preview.remove();
@@ -193,8 +225,7 @@ export function installBoardDrag(options: BoardDragOptions) {
       return;
     }
     const current = drag;
-    mobile()?.updateDropTarget();
-    const mobileTarget = mobile()?.targetColumn() ?? null;
+    const dropZone = x !== undefined && y !== undefined ? updateZone(x, y) : null;
     const fresh =
       x !== undefined && y !== undefined
         ? targetAt(x - current.offsetX + current.width / 2, y - current.offsetY + current.height / 2)
@@ -203,25 +234,22 @@ export function installBoardDrag(options: BoardDragOptions) {
     const col = lane?.col ?? current.originCol;
     const row = fresh?.row ?? current.lastRow;
     let cell = landing(current.cardId, col, row);
-    if (mobileTarget != null) {
-      const target = options.lanes().find((item) => Number(item.dataset.col) === mobileTarget);
+    if (dropZone) {
+      const destination = Number(dropZone.dataset.pdBoardDropZone);
+      const target = options.snapshots().find((lane) => lane.col === destination);
       cell = {
-        col: mobileTarget,
-        row: [...(target?.querySelectorAll<HTMLElement>(":scope > [data-board-card]") ?? [])].filter(
-          (card) => options.cardId(card) !== current.cardId,
-        ).length,
+        col: destination,
+        row: target?.ids.filter((id) => id !== current.cardId).length ?? 0,
       };
     }
     const item = cardFor(current.cardId) ?? current.item;
     const rect = current.preview.getBoundingClientRect();
     projection.setDropColumn(null);
     projection.setDropLine(null);
-    mobile()?.finishCardDrag();
-    if (commit) options.onCommit(current.cardId, cell, item, rect, mobileTarget);
+    if (commit) options.onCommit(current.cardId, cell, item, rect, dropZone);
     else options.onCancel();
     clear();
     projection.sync();
-    if (commit && mobileTarget != null) mobile()?.show(mobileTarget);
   }
   const onDown = (event: PointerEvent) => {
     if (event.button !== 0) return;
@@ -247,7 +275,6 @@ export function installBoardDrag(options: BoardDragOptions) {
     };
   };
   const onMove = (event: PointerEvent) => {
-    mobile()?.trackPointer(event);
     if (pending && !drag) {
       if (
         event.pointerId === pending.pointerId &&
@@ -286,12 +313,12 @@ export function installBoardDrag(options: BoardDragOptions) {
     settle(x: number, y: number) {
       if (!drag) return;
       measure();
+      if (updateZone(x, y)) return;
       const target = targetAt(x, y);
       if (!target) return;
       drag.lastLane = target.lane;
       drag.lastRow = target.row;
       drag.changedAt = performance.now();
-      if (mobile()?.targetColumn() != null) return;
       projection.setDropColumn(target.col);
       projection.setDropLine(landing(drag.cardId, target.col, target.row), drag.cardId);
     },

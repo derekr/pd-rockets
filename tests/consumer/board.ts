@@ -1,11 +1,5 @@
 // A standalone page consumes only the released browser URL and its declared API.
-import {
-  installBoardCamera,
-  installBoardColumnReorder,
-  installBoardDrag,
-  installBoardLaneTabs,
-  installBoardProjection,
-} from "/js/pd-kit.js";
+import { installBoardCamera, installBoardColumnReorder, installBoardDrag, installBoardProjection } from "/js/pd-kit.js";
 
 declare const host: HTMLElement;
 
@@ -39,8 +33,8 @@ const drag = installBoardDrag({
   onStart: (id, cell, card) => {
     void [id, cell.row, card];
   },
-  onCommit: (id, cell, card, rect, mobileTarget) => {
-    void [id, cell.col, card, rect.width, mobileTarget];
+  onCommit: (id, cell, card, rect, dropZone) => {
+    void [id, cell.col, card, rect.width, dropZone?.dataset.pdBoardDropZone];
   },
   onCancel: () => {},
 });
@@ -62,25 +56,6 @@ const stopCamera = installBoardCamera({
   settle: (x, y) => drag.settle(x, y),
 });
 stopCamera();
-
-const laneTabs = installBoardLaneTabs({
-  host,
-  tabSelector: "[data-tab]",
-  scrollerSelector: "[data-pager]",
-  lanes: () => [],
-  tabColumn: (tab) => Number(tab.dataset.tab),
-  laneColumn: (lane) => Number(lane.dataset.lane),
-  mobileQuery: "(max-width: 800px)",
-  draggingAttribute: "data-dragging",
-  originAttribute: "data-origin",
-  targetAttribute: "data-target",
-  onDropTarget: (column, previous) => {
-    const target: number | null = column;
-    void [target, previous];
-  },
-});
-laneTabs.reassert();
-laneTabs.dispose();
 
 // @ts-expect-error The released declarations must enforce required board callbacks.
 installBoardDrag({ host });

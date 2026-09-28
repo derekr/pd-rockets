@@ -49,3 +49,64 @@ test("board drag keeps the card in its lane, uses page preview markup, and commi
   await expect(page.locator("body > [data-board-preview]")).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).__moves)).toEqual(["start", { id: "a", cell: { col: 1, row: 0 } }]);
 });
+
+test("alternate CSS-visible drop affordances resolve to one lane and append after its cards", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(async () => {
+    const { installBoardDrag } = (await new Function('return import("/pd-kit.js")')()) as {
+      installBoardDrag: (options: object) => { dispose(): void };
+    };
+    const host = document.createElement("section");
+    host.id = "responsive-board";
+    host.style.cssText = "position:fixed;top:10px;left:10px;z-index:10000;background:white";
+    host.innerHTML = `<style>[data-pd-board-drop-zone].hidden { display:none }</style>
+      <div data-board-lane data-col="0" style="width:160px;display:grid;grid-auto-rows:70px">
+        <article data-board-card="a" tabindex="0" style="height:70px"><span data-pd-board-drag-handle>Move A</span></article></div>
+      <div data-board-lane data-col="1" style="width:160px;display:grid;grid-auto-rows:70px">
+        <article data-board-card="b" tabindex="0" style="height:70px">B</article></div>
+      <nav><button data-pd-board-drop-zone="1" class="hidden">Destination copy</button>
+        <button data-pd-board-drop-zone="1">Destination</button></nav>`;
+    document.body.append(host);
+    const lanes = () => [...host.querySelectorAll<HTMLElement>("[data-board-lane]")];
+    (window as any).__responsiveMoves = [];
+    (window as any).__responsiveDrag = installBoardDrag({
+      host,
+      lanes,
+      snapshots: () =>
+        lanes().map((lane) => ({
+          col: Number(lane.dataset.col),
+          ids: [...lane.querySelectorAll<HTMLElement>("[data-board-card]")].map((card) => card.dataset.boardCard!),
+        })),
+      cardId: (card: HTMLElement) => card.dataset.boardCard,
+      cellOf: () => ({ col: 0, row: 0 }),
+      projection: { setDropColumn() {}, setDropLine() {}, sync() {} },
+      onStart() {},
+      onCommit: (id: string, cell: object, _card: HTMLElement, _rect: DOMRect, zone: HTMLElement | null) =>
+        (window as any).__responsiveMoves.push({ id, cell, zone: zone?.textContent }),
+      onCancel() {},
+    });
+  });
+  const board = page.locator("#responsive-board");
+  const grip = board.locator("[data-pd-board-drag-handle]");
+  const source = (await grip.boundingBox())!;
+  const destination = (await board.getByRole("button", { name: "Destination", exact: true }).boundingBox())!;
+  await page.mouse.move(source.x + 5, source.y + 5);
+  await page.mouse.down();
+  await page.mouse.move(destination.x + 8, destination.y + 8, { steps: 8 });
+  await expect(board.locator("[data-pd-board-drop-over]")).toHaveCount(2);
+  const lane = (await board.locator('[data-board-lane][data-col="0"]').boundingBox())!;
+  await page.mouse.move(lane.x + 80, lane.y + 30);
+  await expect(board.locator("[data-pd-board-drop-over]")).toHaveCount(0);
+  await page.mouse.move(destination.x + 8, destination.y + 8);
+  await expect(board.locator("[data-pd-board-drop-over]")).toHaveCount(2);
+  await board.locator("nav").evaluate((nav) => {
+    nav.lastElementChild?.replaceWith(nav.lastElementChild.cloneNode(true));
+  });
+  await page.mouse.move(destination.x + 10, destination.y + 10);
+  await expect(board.locator("[data-pd-board-drop-over]")).toHaveCount(2);
+  await page.mouse.up();
+  expect(await page.evaluate(() => (window as any).__responsiveMoves)).toEqual([
+    { id: "a", cell: { col: 1, row: 1 }, zone: "Destination" },
+  ]);
+  await expect(board.locator("[data-pd-board-drop-over]")).toHaveCount(0);
+});
