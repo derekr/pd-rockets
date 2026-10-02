@@ -167,9 +167,9 @@ rocket(bentoContract.tag, {
         height: size.height,
       };
     };
-    const finishPreview = (delay = 2000) => {
+    const finishPreview = () => {
       if (pendingTimer) clearTimeout(pendingTimer);
-      pendingTimer = setTimeout(clearProjection, delay);
+      pendingTimer = setTimeout(clearProjection, Number(host.dataset.previewDelayMs ?? 2000));
     };
     const emitMove = (id: string, target: Target) => {
       const item = [...host.querySelectorAll<HTMLElement>(itemSelector)].find((candidate) => itemId(candidate) === id);
@@ -205,7 +205,7 @@ rocket(bentoContract.tag, {
           detail: { itemId: id, grid: target.gridId, updates: previewUpdates },
         }),
       );
-      finishPreview(Number(host.dataset.resizePreviewDelayMs ?? 2000));
+      finishPreview();
     };
     const pointerDispose = installPointerDrag({
       host,
