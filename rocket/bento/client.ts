@@ -169,7 +169,7 @@ rocket(bentoContract.tag, {
     };
     const finishPreview = () => {
       if (pendingTimer) clearTimeout(pendingTimer);
-      pendingTimer = setTimeout(clearProjection, 2000);
+      pendingTimer = setTimeout(clearProjection, Number(host.dataset.previewDelayMs ?? 2000));
     };
     const emitMove = (id: string, target: Target) => {
       const item = [...host.querySelectorAll<HTMLElement>(itemSelector)].find((candidate) => itemId(candidate) === id);

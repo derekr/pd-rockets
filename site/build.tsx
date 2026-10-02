@@ -707,7 +707,7 @@ pd-drag-group-move → { itemId, fromList, toList, before }`}</code>
                   </div>
                 </div>
                 <pre>
-                  <code>{`<pd-bento-workspace>
+                  <code>{`<pd-bento-workspace data-preview-delay-ms="1000">
   <div data-bento-grid="overview" data-columns="4">
     <article data-bento-item="tile-a" data-bento-col="1" data-bento-row="1"
       data-bento-width="2" data-bento-height="2" tabindex="0">
@@ -720,6 +720,13 @@ pd-drag-group-move → { itemId, fromList, toList, before }`}</code>
 pd-bento-move → { itemId, fromGrid, toGrid, updates: [{ itemId, grid, col, row, width, height }] }
 pd-bento-resize → { itemId, grid, updates: [{ itemId, grid, col, row, width, height }] }`}</code>
                 </pre>
+                <p>
+                  Set <code>data-preview-delay-ms</code> on the host to control how long move and resize projections
+                  remain after a pointer or keyboard operation commits. The default is 2000 milliseconds; use 1000 for
+                  one second or 0 to clear on the next timer turn. Supply a nonnegative delay in milliseconds. This only
+                  changes preview cleanup, not animations or backend save timing. It replaces the resize-only{" "}
+                  <code>data-resize-preview-delay-ms</code> attribute.
+                </p>
                 <p>
                   <a href="./source/rocket/bento/client.ts.txt">Bento Rocket source ↗</a> ·{" "}
                   <a href="./source/rocket/bento/placement.ts.txt">Placement rule ↗</a> ·{" "}
